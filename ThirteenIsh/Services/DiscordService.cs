@@ -2,6 +2,7 @@
 using Discord.Net;
 using Discord.WebSocket;
 using Newtonsoft.Json;
+using System.Reflection;
 
 namespace ThirteenIsh.Services;
 
@@ -13,23 +14,34 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
             new EventId(1, nameof(DiscordService)),
             "Error creating command {Name}: {Details}");
 
+    private static readonly Action<ILogger, string, string, Type, Exception?> RegisteredCommandMessage =
+        LoggerMessage.Define<string, string, Type>(
+            LogLevel.Information,
+            new EventId(2, nameof(DiscordService)),
+            "Registered command {Name} ({Description}) with handler {HandlerType}");
+
     private readonly DiscordSocketClient _client = new();
+    private readonly Dictionary<string, Type> _commandsMap = new();
 
     private readonly IConfiguration _configuration;
     private readonly ILogger<DiscordService> _logger;
+    private readonly IServiceProvider _serviceProvider;
 
     private bool _isDisposed;
 
     public DiscordService(
         IConfiguration configuration,
-        ILogger<DiscordService> logger)
+        ILogger<DiscordService> logger,
+        IServiceProvider serviceProvider)
     {
         _configuration = configuration;
         _logger = logger;
+        _serviceProvider = serviceProvider;
 
         _client.Log += OnLogAsync;
         _client.Ready += OnReadyAsync;
         _client.SlashCommandExecuted += OnSlashCommandExecutedAsync;
+        _serviceProvider = serviceProvider;
     }
 
     public void Dispose()
@@ -76,29 +88,42 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
     {
         if (_isDisposed) return;
 
-        // TODO set up commands here :)
-        // I'm adding a test command for now to check I can make this stuff work.
-        SlashCommandBuilder testCommand = new();
-        testCommand.WithName("13-test");
-        testCommand.WithDescription("A test command for ThirteenIsh");
-
-        try
+        // Set up commands
+        _commandsMap.Clear();
+        foreach (var (attribute, ty) in CommandRegistration.AllCommands)
         {
-            await _client.CreateGlobalApplicationCommandAsync(testCommand.Build());
-        }
-        catch (HttpException ex)
-        {
-            CreateCommandErrorMessage(
-                _logger,
-                testCommand.Name,
-                JsonConvert.SerializeObject(ex.Errors, Formatting.Indented),
-                ex);
+            SlashCommandBuilder commandBuilder = new();
+            commandBuilder.WithName($"13-{attribute.Name}");
+            commandBuilder.WithDescription(attribute.Description);
+            try
+            {
+                await _client.CreateGlobalApplicationCommandAsync(commandBuilder.Build());
+                _commandsMap[commandBuilder.Name] = ty;
+                RegisteredCommandMessage(_logger, commandBuilder.Name, commandBuilder.Description, ty, null);
+            }
+            catch (HttpException ex)
+            {
+                CreateCommandErrorMessage(
+                    _logger,
+                    commandBuilder.Name,
+                    JsonConvert.SerializeObject(ex.Errors, Formatting.Indented),
+                    ex);
+            }
         }
     }
 
     private async Task OnSlashCommandExecutedAsync(SocketSlashCommand command)
     {
         if (_isDisposed) return;
-        await command.RespondAsync($"You executed {command.Data.Name}");
+        if (_commandsMap.TryGetValue(command.Data.Name, out var commandType))
+        {
+            await using var scope = _serviceProvider.CreateAsyncScope();
+            var handler = (IThirteenIshCommand)scope.ServiceProvider.GetRequiredService(commandType);
+            await handler.HandleAsync(command);
+        }
+        else
+        {
+            await command.RespondAsync($"Unrecognised command: {command.Data.Name}");
+        }
     }
 }

@@ -7,6 +7,7 @@ builder.Configuration.AddCommandLine(args)
     .AddEnvironmentVariables()
     .AddUserSecrets<Worker>();
 
+CommandRegistration.RegisterCommands(builder.Services);
 builder.Services.AddSingleton<DiscordService>()
     .AddHostedService<Worker>();
 
