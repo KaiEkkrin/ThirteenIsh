@@ -1,12 +1,29 @@
-﻿using Discord.WebSocket;
+﻿using Discord;
+using Discord.WebSocket;
 
 namespace ThirteenIsh.Commands;
 
-[ThirteenIshCommand("roll", "Makes basic dice rolls")]
-internal sealed class RollCommand : IThirteenIshCommand
+internal sealed class RollCommand : CommandBase
 {
-    public Task HandleAsync(SocketSlashCommand command)
+    public RollCommand() : base("roll", "Makes basic dice rolls")
     {
-        return command.RespondAsync("TODO Roll command is not implemented yet");
+    }
+
+    public override SlashCommandBuilder CreateBuilder()
+    {
+        var builder = base.CreateBuilder();
+        builder.AddOption("dice", ApplicationCommandOptionType.String, "The dice expression to evaluate",
+            isRequired: true);
+
+        return builder;
+    }
+
+    public override Task HandleAsync(SocketSlashCommand command)
+    {
+        var diceString = command.Data.Options.Where(o => o.Name == "dice")
+            .Select(o => o.Value.ToString())
+            .First();
+
+        return command.RespondAsync($"TODO Evaluating dice command: {diceString}");
     }
 }

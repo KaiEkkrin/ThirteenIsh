@@ -2,10 +2,13 @@
 
 namespace ThirteenIsh.Commands;
 
-[ThirteenIshCommand("test", "A test command")]
-internal sealed class TestCommand : IThirteenIshCommand
+internal sealed class TestCommand : CommandBase
 {
-    public Task HandleAsync(SocketSlashCommand command)
+    public TestCommand() : base("test", "A test command")
+    {
+    }
+
+    public override Task HandleAsync(SocketSlashCommand command)
     {
         return command.RespondAsync("You ran the test command");
     }

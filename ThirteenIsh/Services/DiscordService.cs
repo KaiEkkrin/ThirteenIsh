@@ -2,7 +2,9 @@
 using Discord.Net;
 using Discord.WebSocket;
 using Newtonsoft.Json;
+using System.Collections.Concurrent;
 using System.Reflection;
+using ThirteenIsh.Commands;
 
 namespace ThirteenIsh.Services;
 
@@ -21,7 +23,7 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
             "Registered command {Name} ({Description}) with handler {HandlerType}");
 
     private readonly DiscordSocketClient _client = new();
-    private readonly Dictionary<string, Type> _commandsMap = new();
+    private readonly ConcurrentDictionary<string, CommandBase> _commandsMap = new();
 
     private readonly IConfiguration _configuration;
     private readonly ILogger<DiscordService> _logger;
@@ -90,22 +92,23 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
 
         // Set up commands
         _commandsMap.Clear();
-        foreach (var (attribute, ty) in CommandRegistration.AllCommands)
+        foreach (var ty in Assembly.GetExecutingAssembly().GetTypes())
         {
-            SlashCommandBuilder commandBuilder = new();
-            commandBuilder.WithName($"13-{attribute.Name}");
-            commandBuilder.WithDescription(attribute.Description);
+            if (!ty.IsClass || ty.IsAbstract || !ty.IsAssignableTo(typeof(CommandBase))) continue;
+
+            var command = (CommandBase)_serviceProvider.GetRequiredService(ty);
+            var builder = command.CreateBuilder();
             try
             {
-                await _client.CreateGlobalApplicationCommandAsync(commandBuilder.Build());
-                _commandsMap[commandBuilder.Name] = ty;
-                RegisteredCommandMessage(_logger, commandBuilder.Name, commandBuilder.Description, ty, null);
+                await _client.CreateGlobalApplicationCommandAsync(builder.Build());
+                _commandsMap[builder.Name] = command;
+                RegisteredCommandMessage(_logger, builder.Name, builder.Description, ty, null);
             }
             catch (HttpException ex)
             {
                 CreateCommandErrorMessage(
                     _logger,
-                    commandBuilder.Name,
+                    builder.Name,
                     JsonConvert.SerializeObject(ex.Errors, Formatting.Indented),
                     ex);
             }
@@ -115,11 +118,9 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
     private async Task OnSlashCommandExecutedAsync(SocketSlashCommand command)
     {
         if (_isDisposed) return;
-        if (_commandsMap.TryGetValue(command.Data.Name, out var commandType))
+        if (_commandsMap.TryGetValue(command.Data.Name, out var commandHandler))
         {
-            await using var scope = _serviceProvider.CreateAsyncScope();
-            var handler = (IThirteenIshCommand)scope.ServiceProvider.GetRequiredService(commandType);
-            await handler.HandleAsync(command);
+            await commandHandler.HandleAsync(command);
         }
         else
         {
