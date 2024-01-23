@@ -9,9 +9,6 @@ internal sealed class DiceRollParser : ParserBase
 
     public override ParseTreeBase Parse(string input, int offset)
     {
-        if (offset >= input.Length)
-            return new ErrorParseTree(offset, $"DiceRollParser: expected dice roll, got end of input");
-
         // Parse the dice count
         var diceCount = IntegerParser.Instance.Parse(input, offset);
         if (!string.IsNullOrEmpty(diceCount.Error)) return diceCount;

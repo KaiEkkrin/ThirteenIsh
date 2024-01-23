@@ -8,6 +8,12 @@ internal sealed class MultiCaseParser(params ParserBase[] parsers) : ParserBase
     public static readonly MultiCaseParser DiceRollOrIntegerParser =
         new(DiceRollParser.Instance, IntegerParser.Instance);
 
+    public static readonly MultiCaseParser MulDivDiceRollOrIntegerParser =
+        new(MultiplyDivideParser.Instance, DiceRollParser.Instance, IntegerParser.Instance);
+
+    public static readonly MultiCaseParser AddSubMulDivDiceRollOrIntegerParser =
+        new(AddSubtractParser.Instance, MultiplyDivideParser.Instance, DiceRollParser.Instance, IntegerParser.Instance);
+
     public override ParseTreeBase Parse(string input, int offset)
     {
         List<ParseTreeBase> errors = new();
