@@ -1,11 +1,16 @@
-﻿using System.Globalization;
+﻿using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 
 namespace ThirteenIsh.Parsing;
 
+[DebuggerDisplay("{DiceCount}d{DiceSize}")]
 internal sealed class DiceRollParseTree(int offset, int diceCount, int diceSize)
     : ParseTreeBase(offset)
 {
+    public int DiceCount => diceCount;
+    public int DiceSize => diceSize;
+
     public override int Evaluate(out string working)
     {
         var value = 0;

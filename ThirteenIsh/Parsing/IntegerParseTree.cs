@@ -1,5 +1,8 @@
-﻿namespace ThirteenIsh.Parsing;
+﻿using System.Diagnostics;
 
+namespace ThirteenIsh.Parsing;
+
+[DebuggerDisplay("{Value}")]
 internal sealed class IntegerParseTree(int offset, int value) : ParseTreeBase(offset)
 {
     public int Value => value;

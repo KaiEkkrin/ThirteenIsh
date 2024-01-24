@@ -23,4 +23,15 @@ internal abstract class ParseTreeBase(int offset)
     {
         throw new InvalidOperationException($"Cannot evaluate: {Error}");
     }
+
+    /// <summary>
+    /// Inserts a binary operation into this parse tree.
+    /// This method is necessary because chains of subtractions or divisions will naturally
+    /// parse with the wrong associativity -- by calling this the appropriate overload can
+    /// flip that associativity around.
+    /// </summary>
+    public virtual ParseTreeBase InsertBinaryOperation(ParseTreeBase insertOperand, char insertOperator)
+    {
+        return new BinaryOperationParseTree(Offset, insertOperand, this, insertOperator);
+    }
 }

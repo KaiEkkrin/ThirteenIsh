@@ -29,6 +29,6 @@ internal sealed class MultiplyDivideParser : ParserBase
         var rhs = MultiCaseParser.MulDivDiceRollOrIntegerParser.Parse(input, lhs.Offset + 1);
         if (!string.IsNullOrEmpty(rhs.Error)) return rhs;
 
-        return new BinaryOperationParseTree(rhs.Offset, lhs, rhs, op);
+        return rhs.InsertBinaryOperation(lhs, op);
     }
 }

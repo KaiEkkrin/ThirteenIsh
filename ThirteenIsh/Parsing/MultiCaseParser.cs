@@ -16,7 +16,7 @@ internal sealed class MultiCaseParser(params ParserBase[] parsers) : ParserBase
 
     public override ParseTreeBase Parse(string input, int offset)
     {
-        List<ParseTreeBase> errors = new();
+        List<ParseTreeBase> errors = [];
         foreach (var parser in parsers)
         {
             var parseTree = parser.Parse(input, offset);
