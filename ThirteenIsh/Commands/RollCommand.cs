@@ -26,7 +26,7 @@ internal sealed class RollCommand : CommandBase
             .First() ?? string.Empty;
 
         diceString = diceString.Trim();
-        var parseTree = MultiCaseParser.AddSubMulDivDiceRollOrIntegerParser.Parse(diceString, 0);
+        var parseTree = Parser.Parse(diceString);
         if (!string.IsNullOrEmpty(parseTree.Error))
             return command.RespondAsync(parseTree.Error);
 

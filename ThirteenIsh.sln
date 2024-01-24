@@ -3,12 +3,14 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34511.84
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThirteenIsh", "ThirteenIsh\ThirteenIsh.csproj", "{26432ABF-0EA1-4488-B791-B35285E58E67}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ThirteenIsh", "ThirteenIsh\ThirteenIsh.csproj", "{26432ABF-0EA1-4488-B791-B35285E58E67}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D9CF6412-D136-4B97-8601-81E25F29F9D2}"
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThirteenIsh.Tests", "ThirteenIsh.Tests\ThirteenIsh.Tests.csproj", "{C255DC5D-E198-4C83-B29A-8D0C4D626821}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -20,6 +22,10 @@ Global
 		{26432ABF-0EA1-4488-B791-B35285E58E67}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{26432ABF-0EA1-4488-B791-B35285E58E67}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{26432ABF-0EA1-4488-B791-B35285E58E67}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C255DC5D-E198-4C83-B29A-8D0C4D626821}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C255DC5D-E198-4C83-B29A-8D0C4D626821}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C255DC5D-E198-4C83-B29A-8D0C4D626821}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C255DC5D-E198-4C83-B29A-8D0C4D626821}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
