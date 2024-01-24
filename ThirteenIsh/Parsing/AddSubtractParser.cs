@@ -16,7 +16,7 @@ internal sealed class AddSubtractParser : ParserBase
         // Parse the '+' or '-'
         if (lhs.Offset >= input.Length)
             return new ErrorParseTree(lhs.Offset,
-                $"AddSubtractParser: expected '+' or '-', got end of input");
+                "AddSubtractParser: expected '+' or '-', got end of input");
 
         var op = input[lhs.Offset];
         if (op is not ('+' or '-'))

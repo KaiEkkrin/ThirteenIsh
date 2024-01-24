@@ -32,7 +32,7 @@ internal sealed class BinaryOperationParseTree(int offset, ParseTreeBase lhs, Pa
             case '+' or '-' when op is '+' or '-':
             case '*' or '/' when op is '*' or '/':
                 var newLhs = lhs.InsertBinaryOperation(insertOperand, insertOperator);
-                return new BinaryOperationParseTree(offset, newLhs, rhs, op);
+                return new BinaryOperationParseTree(Offset, newLhs, rhs, op);
 
             default:
                 return base.InsertBinaryOperation(insertOperand, insertOperator);
