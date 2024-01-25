@@ -4,8 +4,10 @@ internal sealed class SingleCharacterParser(string context, params char[] validC
 {
     private string Expectations => string.Join(" or ", validCharacters.Select(c => $"'{c}'"));
 
-    public override ParseTreeBase Parse(string input, int offset)
+    public override ParseTreeBase Parse(string input, int offset, int depth)
     {
+        CheckMaxDepth(offset, ref depth);
+
         // Skip white space at start
         while (offset < input.Length && char.IsWhiteSpace(input[offset])) ++offset;
 

@@ -16,12 +16,14 @@ internal sealed class MultiCaseParser(params ParserBase[] parsers) : ParserBase
         new(AddSubtractParser.Instance, MultiplyDivideParser.Instance, DiceRollParser.Instance, IntegerParser.Instance,
             ParenthesisedExpressionParser.Instance);
 
-    public override ParseTreeBase Parse(string input, int offset)
+    public override ParseTreeBase Parse(string input, int offset, int depth)
     {
+        CheckMaxDepth(offset, ref depth);
+
         List<ParseTreeBase> errors = [];
         foreach (var parser in parsers)
         {
-            var parseTree = parser.Parse(input, offset);
+            var parseTree = parser.Parse(input, offset, depth);
             if (string.IsNullOrEmpty(parseTree.Error)) return parseTree;
 
             errors.Add(parseTree);

@@ -7,6 +7,16 @@ namespace ThirteenIsh.Tests;
 // For now just checking the rest of the expression stuff
 public class ParsingTests
 {
+    public static readonly TheoryData<string, int> AboveMaxDepthExpressions = new()
+    {
+        { string.Join(" + ", Enumerable.Repeat("1", ParserBase.MaxDepth / 4)), ParserBase.MaxDepth / 4 }
+    };
+
+    public static readonly TheoryData<string> BelowMaxDepthExpressions = new()
+    {
+        { string.Join(" + ", Enumerable.Repeat("1", ParserBase.MaxDepth)) }
+    };
+
     [Theory]
     [InlineData("11", 11)]
     [InlineData("3+4+5", 12)]
@@ -17,6 +27,7 @@ public class ParsingTests
     [InlineData("12*10-4*3*3-12*8/4", 12 * 10 - 4 * 3 * 3 - 12 * 8 / 4)]
     [InlineData("13 - (4-5)", 14)]
     [InlineData("(120-15-3) / ( 13-2-2 )  /  ( 5-1-1 )", 102 / 27)]
+    [MemberData(nameof(AboveMaxDepthExpressions))]
     public void ExpressionIsEvaluatedCorrectly(string expression, int expectedResult)
     {
         var parseTree = Parser.Parse(expression);
@@ -29,5 +40,13 @@ public class ParsingTests
         workingParseTree.Error.ShouldBeNullOrEmpty(working);
         var workingResult = workingParseTree.Evaluate(out _);
         workingResult.ShouldBe(expectedResult);
+    }
+
+    [Theory]
+    [MemberData(nameof(BelowMaxDepthExpressions))]
+    public void OverLargeExpressionIsRejected(string expression)
+    {
+        var parseTree = Parser.Parse(expression);
+        parseTree.Error.ShouldNotBeNullOrEmpty(expression);
     }
 }

@@ -7,8 +7,10 @@ internal sealed class IntegerParser : ParserBase
 {
     public static readonly IntegerParser Instance = new();
 
-    public override ParseTreeBase Parse(string input, int offset)
+    public override ParseTreeBase Parse(string input, int offset, int depth)
     {
+        CheckMaxDepth(offset, ref depth);
+
         var nextOffset = offset;
         while (nextOffset < input.Length && char.IsAsciiDigit(input[nextOffset])) ++nextOffset;
 

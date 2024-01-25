@@ -10,18 +10,20 @@ internal sealed class ParenthesisedExpressionParser : ParserBase
     private static readonly SingleCharacterParser OpenBracketsParser = new(nameof(ParenthesisedExpressionParser), '(');
     private static readonly SingleCharacterParser CloseBracketsParser = new(nameof(ParenthesisedExpressionParser), ')');
 
-    public override ParseTreeBase Parse(string input, int offset)
+    public override ParseTreeBase Parse(string input, int offset, int depth)
     {
+        CheckMaxDepth(offset, ref depth);
+
         // Parse the (
-        var ob = OpenBracketsParser.Parse(input, offset);
+        var ob = OpenBracketsParser.Parse(input, offset, depth);
         if (!string.IsNullOrEmpty(ob.Error)) return ob;
 
         // Parse the inner expression
-        var inner = MultiCaseParser.AddSubMulDivDiceRollOrIntegerParser.Parse(input, ob.Offset);
+        var inner = MultiCaseParser.AddSubMulDivDiceRollOrIntegerParser.Parse(input, ob.Offset, depth);
         if (!string.IsNullOrEmpty(inner.Error)) return inner;
 
         // Parse the )
-        var cb = CloseBracketsParser.Parse(input, inner.Offset);
+        var cb = CloseBracketsParser.Parse(input, inner.Offset, depth);
         if (!string.IsNullOrEmpty(cb.Error)) return cb;
 
         return new ParenthesisedExpressionParseTree(cb.Offset, inner);
