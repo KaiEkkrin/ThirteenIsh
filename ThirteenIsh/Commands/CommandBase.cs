@@ -19,5 +19,13 @@ internal abstract class CommandBase(string name, string description)
         return builder;
     }
 
-    public abstract Task HandleAsync(SocketSlashCommand command);
+    /// <summary>
+    /// Handles a slash command.
+    /// </summary>
+    /// <param name="command">The command.</param>
+    /// <param name="serviceProvider">A scoped service provider to get services from.</param>
+    /// <param name="cancellationToken">A cancellation token.</param>
+    /// <returns>The handler task.</returns>
+    public abstract Task HandleAsync(SocketSlashCommand command, IServiceProvider serviceProvider,
+        CancellationToken cancellationToken);
 }

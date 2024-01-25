@@ -19,7 +19,8 @@ internal sealed class RollCommand : CommandBase
         return builder;
     }
 
-    public override Task HandleAsync(SocketSlashCommand command)
+    public override Task HandleAsync(SocketSlashCommand command, IServiceProvider serviceProvider,
+        CancellationToken cancellationToken)
     {
         var diceString = command.Data.Options.Where(o => o.Name == "dice")
             .Select(o => o.Value.ToString())

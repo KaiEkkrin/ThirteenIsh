@@ -8,7 +8,9 @@ builder.Configuration.AddCommandLine(args)
     .AddUserSecrets<Worker>();
 
 CommandRegistration.RegisterCommands(builder.Services);
-builder.Services.AddSingleton<DiscordService>()
+builder.Services
+    .AddSingleton<DataService>()
+    .AddSingleton<DiscordService>()
     .AddHostedService<Worker>();
 
 var host = builder.Build();

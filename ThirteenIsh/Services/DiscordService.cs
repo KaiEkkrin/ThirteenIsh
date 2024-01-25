@@ -10,6 +10,8 @@ namespace ThirteenIsh.Services;
 
 internal sealed class DiscordService : IAsyncDisposable, IDisposable
 {
+    private static readonly TimeSpan SlashCommandTimeout = TimeSpan.FromMilliseconds(2500);
+
     private static readonly Action<ILogger, string, string, Exception> CreateCommandErrorMessage =
         LoggerMessage.Define<string, string>(
             LogLevel.Error,
@@ -21,6 +23,12 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
             LogLevel.Information,
             new EventId(2, nameof(DiscordService)),
             "Registered command {Name} ({Description}) with handler {HandlerType}");
+
+    private static readonly Action<ILogger, string, TimeSpan, string, Exception> SlashCommandTimeoutMessage =
+        LoggerMessage.Define<string, TimeSpan, string>(
+            LogLevel.Warning,
+            new EventId(3, nameof(DiscordService)),
+            "Slash command {Name} timed out after {Timeout}: {Details}");
 
     private readonly DiscordSocketClient _client = new();
     private readonly ConcurrentDictionary<string, CommandBase> _commandsMap = new();
@@ -120,7 +128,17 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
         if (_isDisposed) return;
         if (_commandsMap.TryGetValue(command.Data.Name, out var commandHandler))
         {
-            await commandHandler.HandleAsync(command);
+            await using var scope = _serviceProvider.CreateAsyncScope();
+            using CancellationTokenSource cancellationSource = new(SlashCommandTimeout);
+            try
+            {
+                await commandHandler.HandleAsync(command, scope.ServiceProvider, cancellationSource.Token);
+            }
+            catch (OperationCanceledException ex)
+            {
+                SlashCommandTimeoutMessage(_logger, command.Data.Name, SlashCommandTimeout, ex.Message, ex);
+                await command.RespondAsync($"Command timed out after {SlashCommandTimeout}: {command.Data.Name}");
+            }
         }
         else
         {
