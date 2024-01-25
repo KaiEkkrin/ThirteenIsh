@@ -11,9 +11,19 @@ internal abstract class ParseTreeBase(int offset)
     public virtual string? Error => null;
 
     /// <summary>
+    /// The literal integer value that was parsed (only for IntegerParseTree.)
+    /// </summary>
+    public virtual int LiteralValue => throw new NotSupportedException();
+
+    /// <summary>
     /// The offset after parsing. For a successful parse this should be the string length.
     /// </summary>
     public int Offset => offset;
+
+    /// <summary>
+    /// The parsed operator character (only for SingleCharacterParseTree.)
+    /// </summary>
+    public virtual char Operator => throw new NotSupportedException();
 
     /// <summary>
     /// Evaluates the parse tree and returns the result. Fills the out parameter with

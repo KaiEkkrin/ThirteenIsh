@@ -7,6 +7,8 @@ internal sealed class MultiplyDivideParser : ParserBase
 {
     public static readonly MultiplyDivideParser Instance = new();
 
+    private static readonly SingleCharacterParser OpParser = new(nameof(MultiplyDivideParser), '*', '/');
+
     public override ParseTreeBase Parse(string input, int offset)
     {
         // Parse the left operand
@@ -14,21 +16,15 @@ internal sealed class MultiplyDivideParser : ParserBase
         if (!string.IsNullOrEmpty(lhs.Error)) return lhs;
 
         // Parse the '*' or '/'
-        if (lhs.Offset >= input.Length)
-            return new ErrorParseTree(lhs.Offset,
-                $"MultiplyDivideParser: expected '*' or '/', got end of input");
-
-        var op = input[lhs.Offset];
-        if (op is not ('*' or '/'))
-            return new ErrorParseTree(lhs.Offset,
-                $"MultiplyDivideParser: expected '*' or '/', got '{input[lhs.Offset]}'");
+        var op = OpParser.Parse(input, lhs.Offset);
+        if (!string.IsNullOrEmpty(op.Error)) return op;
 
         // Parse the right operand
         // TODO I potentially need to flip the parse tree around now to get the
         // correct associativity, don't I...
-        var rhs = MultiCaseParser.MulDivDiceRollOrIntegerParser.Parse(input, lhs.Offset + 1);
+        var rhs = MultiCaseParser.MulDivDiceRollOrIntegerParser.Parse(input, op.Offset);
         if (!string.IsNullOrEmpty(rhs.Error)) return rhs;
 
-        return rhs.InsertBinaryOperation(lhs, op);
+        return rhs.InsertBinaryOperation(lhs, op.Operator);
     }
 }

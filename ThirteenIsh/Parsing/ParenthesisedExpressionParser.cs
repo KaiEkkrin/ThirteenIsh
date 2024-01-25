@@ -7,30 +7,23 @@ internal sealed class ParenthesisedExpressionParser : ParserBase
 {
     public static readonly ParenthesisedExpressionParser Instance = new();
 
+    private static readonly SingleCharacterParser OpenBracketsParser = new(nameof(ParenthesisedExpressionParser), '(');
+    private static readonly SingleCharacterParser CloseBracketsParser = new(nameof(ParenthesisedExpressionParser), ')');
+
     public override ParseTreeBase Parse(string input, int offset)
     {
         // Parse the (
-        if (offset >= input.Length)
-            return new ErrorParseTree(offset,
-                $"ParenthesisedExpressionParser: expected '(', got end of input");
-
-        if (input[offset] != '(')
-            return new ErrorParseTree(offset,
-                $"ParenthesisedExpressionParser: expected '(', got '{input[offset]}'");
+        var ob = OpenBracketsParser.Parse(input, offset);
+        if (!string.IsNullOrEmpty(ob.Error)) return ob;
 
         // Parse the inner expression
-        var inner = MultiCaseParser.AddSubMulDivDiceRollOrIntegerParser.Parse(input, offset + 1);
+        var inner = MultiCaseParser.AddSubMulDivDiceRollOrIntegerParser.Parse(input, ob.Offset);
         if (!string.IsNullOrEmpty(inner.Error)) return inner;
 
         // Parse the )
-        if (inner.Offset >= input.Length)
-            return new ErrorParseTree(inner.Offset,
-                $"ParenthesisedExpressionParser: expected ')', got end of input");
+        var cb = CloseBracketsParser.Parse(input, inner.Offset);
+        if (!string.IsNullOrEmpty(cb.Error)) return cb;
 
-        if (input[inner.Offset] != ')')
-            return new ErrorParseTree(inner.Offset,
-                $"ParenthesisedExpressionParser: expected '(', got '{input[inner.Offset]}'");
-
-        return new ParenthesisedExpressionParseTree(inner.Offset + 1, inner);
+        return new ParenthesisedExpressionParseTree(cb.Offset, inner);
     }
 }

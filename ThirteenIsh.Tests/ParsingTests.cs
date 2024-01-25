@@ -7,7 +7,6 @@ namespace ThirteenIsh.Tests;
 // For now just checking the rest of the expression stuff
 public class ParsingTests
 {
-    // TODO also check the working
     [Theory]
     [InlineData("11", 11)]
     [InlineData("3+4+5", 12)]
@@ -21,7 +20,14 @@ public class ParsingTests
     public void ExpressionIsEvaluatedCorrectly(string expression, int expectedResult)
     {
         var parseTree = Parser.Parse(expression);
+        parseTree.Error.ShouldBeNullOrEmpty(expression);
         var result = parseTree.Evaluate(out var working);
         result.ShouldBe(expectedResult);
+
+        // TODO The working should also be a valid expression with the same result:
+        var workingParseTree = Parser.Parse(working);
+        workingParseTree.Error.ShouldBeNullOrEmpty(working);
+        var workingResult = workingParseTree.Evaluate(out _);
+        workingResult.ShouldBe(expectedResult);
     }
 }

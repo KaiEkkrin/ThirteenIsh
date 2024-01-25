@@ -7,30 +7,22 @@ internal sealed class DiceRollParser : ParserBase
 {
     public static readonly DiceRollParser Instance = new();
 
+    private static readonly SingleCharacterParser DParser = new(nameof(DiceRollParser), 'd', 'D');
+
     public override ParseTreeBase Parse(string input, int offset)
     {
         // Parse the dice count
         var diceCount = IntegerParser.Instance.Parse(input, offset);
         if (!string.IsNullOrEmpty(diceCount.Error)) return diceCount;
-        if (diceCount is not IntegerParseTree integerDiceCount)
-            throw new InvalidOperationException($"Parsed dice count as a {diceCount.GetType()}");
 
         // Parse the "d"
-        if (diceCount.Offset >= input.Length)
-            return new ErrorParseTree(diceCount.Offset,
-                $"DiceRollParser: expected 'd', got end of input");
-
-        if (input[diceCount.Offset] != 'd')
-            return new ErrorParseTree(diceCount.Offset,
-                $"DiceRollParser: expected 'd', got '{input[diceCount.Offset]}'");
+        var d = DParser.Parse(input, diceCount.Offset);
+        if (!string.IsNullOrEmpty(d.Error)) return d;
 
         // Parse the dice size
-        var diceSize = IntegerParser.Instance.Parse(input, diceCount.Offset + 1);
+        var diceSize = IntegerParser.Instance.Parse(input, d.Offset);
         if (!string.IsNullOrEmpty(diceSize.Error)) return diceSize;
-        if (diceSize is not IntegerParseTree { Value: > 0 } integerDiceSize)
-            return new ErrorParseTree(diceCount.Offset + 1,
-                $"DiceRollParser: expected dice size 1 or greater, got '{diceSize}'");
 
-        return new DiceRollParseTree(diceSize.Offset, integerDiceCount.Value, integerDiceSize.Value);
+        return new DiceRollParseTree(diceSize.Offset, diceCount.LiteralValue, diceSize.LiteralValue);
     }
 }

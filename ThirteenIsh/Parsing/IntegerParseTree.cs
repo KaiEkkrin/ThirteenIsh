@@ -2,10 +2,10 @@
 
 namespace ThirteenIsh.Parsing;
 
-[DebuggerDisplay("{Value}")]
+[DebuggerDisplay("{LiteralValue}")]
 internal sealed class IntegerParseTree(int offset, int value) : ParseTreeBase(offset)
 {
-    public int Value => value;
+    public override int LiteralValue => value;
     
     public override int Evaluate(out string working)
     {
