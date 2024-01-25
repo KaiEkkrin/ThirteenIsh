@@ -20,8 +20,6 @@ internal sealed class MultiplyDivideParser : ParserBase
         if (!string.IsNullOrEmpty(op.Error)) return op;
 
         // Parse the right operand
-        // TODO I potentially need to flip the parse tree around now to get the
-        // correct associativity, don't I...
         var rhs = MultiCaseParser.MulDivDiceRollOrIntegerParser.Parse(input, op.Offset);
         if (!string.IsNullOrEmpty(rhs.Error)) return rhs;
 

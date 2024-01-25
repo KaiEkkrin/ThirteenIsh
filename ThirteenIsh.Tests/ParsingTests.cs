@@ -24,7 +24,7 @@ public class ParsingTests
         var result = parseTree.Evaluate(out var working);
         result.ShouldBe(expectedResult);
 
-        // TODO The working should also be a valid expression with the same result:
+        // The working should also be a valid expression with the same result:
         var workingParseTree = Parser.Parse(working);
         workingParseTree.Error.ShouldBeNullOrEmpty(working);
         var workingResult = workingParseTree.Evaluate(out _);
