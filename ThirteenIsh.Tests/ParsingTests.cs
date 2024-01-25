@@ -15,8 +15,8 @@ public class ParsingTests
     [InlineData("120/4/3", 10)]
     [InlineData("120/4/3/3", 3)]
     [InlineData("12*10-4*3*3-12*8/4", 12 * 10 - 4 * 3 * 3 - 12 * 8 / 4)]
-    [InlineData("13-(4-5)", 14)]
-    [InlineData("(120-15-3)/(13-2-2)/(5-1-1)", 102 / 27)]
+    [InlineData("13 - (4-5)", 14)]
+    [InlineData("(120-15-3) / ( 13-2-2 )  /  ( 5-1-1 )", 102 / 27)]
     public void ExpressionIsEvaluatedCorrectly(string expression, int expectedResult)
     {
         var parseTree = Parser.Parse(expression);

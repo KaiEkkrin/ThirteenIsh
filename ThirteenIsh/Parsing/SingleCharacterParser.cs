@@ -6,6 +6,9 @@ internal sealed class SingleCharacterParser(string context, params char[] validC
 
     public override ParseTreeBase Parse(string input, int offset)
     {
+        // Skip white space at start
+        while (offset < input.Length && char.IsWhiteSpace(input[offset])) ++offset;
+
         if (offset >= input.Length)
             return new ErrorParseTree(offset, $"{context}: expected {Expectations}, got end of input");
 
@@ -13,6 +16,10 @@ internal sealed class SingleCharacterParser(string context, params char[] validC
         if (!validCharacters.Contains(ch))
             return new ErrorParseTree(offset, $"{context}: expected {Expectations}, got '{ch}'");
 
-        return new SingleCharacterParseTree(offset + 1, ch);
+        ++offset;
+
+        // Skip white space at end
+        while (offset < input.Length && char.IsWhiteSpace(input[offset])) ++offset;
+        return new SingleCharacterParseTree(offset, ch);
     }
 }
