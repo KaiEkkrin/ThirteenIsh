@@ -25,7 +25,6 @@ internal sealed class RollCommand : CommandBase
             .Select(o => o.Value.ToString())
             .First() ?? string.Empty;
 
-        diceString = diceString.Trim();
         var parseTree = Parser.Parse(diceString);
         if (!string.IsNullOrEmpty(parseTree.Error))
             return command.RespondAsync(parseTree.Error);

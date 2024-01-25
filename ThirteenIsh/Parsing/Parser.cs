@@ -5,5 +5,5 @@
 /// </summary>
 internal static class Parser
 {
-    public static ParseTreeBase Parse(string input) => MultiCaseParser.AddSubMulDivDiceRollOrIntegerParser.Parse(input, 0);
+    public static ParseTreeBase Parse(string input) => MultiCaseParser.AddSubMulDivDiceRollOrIntegerParser.Parse(input.Trim(), 0);
 }
