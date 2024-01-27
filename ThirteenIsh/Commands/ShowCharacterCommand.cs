@@ -22,9 +22,11 @@ internal sealed class ShowCharacterCommand : CommandBase
     public override async Task HandleAsync(SocketSlashCommand command, IServiceProvider serviceProvider,
         CancellationToken cancellationToken)
     {
-        var name = command.Data.Options.Where(o => o.Name == "name")
-            .Select(o => o.Value.ToString())
-            .First() ?? string.Empty;
+        if (!TryGetOption<string>(command.Data, "name", out var name))
+        {
+            await command.RespondAsync("Character not found");
+            return;
+        }
 
         var dataService = serviceProvider.GetRequiredService<DataService>();
         var character = await dataService.GetCharacterAsync(name, command.User.Id, cancellationToken);

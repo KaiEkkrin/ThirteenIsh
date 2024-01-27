@@ -1,6 +1,7 @@
 ﻿using Discord;
-using Discord.Net;
 using Discord.WebSocket;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 
 namespace ThirteenIsh.Commands;
 
@@ -28,4 +29,36 @@ internal abstract class CommandBase(string name, string description)
     /// <returns>The handler task.</returns>
     public abstract Task HandleAsync(SocketSlashCommand command, IServiceProvider serviceProvider,
         CancellationToken cancellationToken);
+
+    protected static bool TryConvertTo<T>(object? value, [MaybeNullWhen(false)] out T result)
+    {
+        try
+        {
+            if (Convert.ChangeType(value, typeof(T), CultureInfo.CurrentCulture) is T convertedValue)
+            {
+                result = convertedValue;
+                return true;
+            }
+        }
+        catch (Exception)
+        {
+        }
+
+        result = default;
+        return false;
+    }
+
+    protected static bool TryGetOption<T>(
+        SocketSlashCommandData data,
+        string name,
+        [MaybeNullWhen(false)] out T typedValue)
+    {
+        if (data.Options.FirstOrDefault(o => o.Name == name) is not { Value: var value })
+        {
+            typedValue = default;
+            return false;
+        }
+
+        return TryConvertTo(value, out typedValue);
+    }
 }

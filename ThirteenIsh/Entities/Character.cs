@@ -1,5 +1,6 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using ThirteenIsh.Game;
 
 namespace ThirteenIsh.Entities;
 
@@ -48,4 +49,14 @@ internal class Character
     public string Name { get; set; } = string.Empty;
 
     #endregion
+
+    /// <summary>
+    /// Creates a new character with default properties.
+    /// </summary>
+    public static Character CreateNew(ulong userId) => new()
+    {
+        UserId = ToDatabaseUserId(userId),
+        Level = 1,
+        AbilityScores = AttributeName.AbilityScores.ToDictionary(score => score, _ => 10)
+    };
 }

@@ -22,9 +22,8 @@ internal sealed class RollCommand : CommandBase
     public override Task HandleAsync(SocketSlashCommand command, IServiceProvider serviceProvider,
         CancellationToken cancellationToken)
     {
-        var diceString = command.Data.Options.Where(o => o.Name == "dice")
-            .Select(o => o.Value.ToString())
-            .First() ?? string.Empty;
+        if (!TryGetOption<string>(command.Data, "dice", out var diceString))
+            diceString = string.Empty;
 
         var parseTree = Parser.Parse(diceString);
         if (!string.IsNullOrEmpty(parseTree.Error))
