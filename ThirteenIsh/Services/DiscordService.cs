@@ -10,7 +10,7 @@ namespace ThirteenIsh.Services;
 
 internal sealed class DiscordService : IAsyncDisposable, IDisposable
 {
-    private static readonly TimeSpan SlashCommandTimeout = TimeSpan.FromMilliseconds(2500);
+    private static readonly TimeSpan SlashCommandTimeout = TimeSpan.FromMilliseconds(1500);
 
     private static readonly Action<ILogger, string, string, Exception> CreateCommandErrorMessage =
         LoggerMessage.Define<string, string>(
