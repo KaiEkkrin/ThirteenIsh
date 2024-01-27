@@ -11,13 +11,41 @@ internal class Character
     [BsonId]
     public ObjectId Id { get; set; }
 
-    public string Name { get; set; } = string.Empty;
+    #region Discord
 
     /// <summary>
     /// The owning user's Discord ID.
-    /// Mongo doesn't natively support the `ulong` type and so I'll promote to the
-    /// more precise type here :)
+    /// Mongo doesn't natively support the `ulong` type, be careful to convert this correctly
+    /// by calling ToDatabaseUserId :)
     /// TODO I'll need to ensure an index on this
     /// </summary>
-    public decimal UserId { get; set; }
+    public long UserId { get; set; }
+
+    [BsonIgnore]
+    public ulong NativeUserId => (ulong)UserId;
+
+    public static long ToDatabaseUserId(ulong userId) => (long)userId;
+
+    #endregion
+
+    #region Game stats
+
+    /// <summary>
+    /// The character's ability scores.
+    /// </summary>
+    public Dictionary<string, int> AbilityScores { get; set; } = [];
+
+    /// <summary>
+    /// The character's class.
+    /// </summary>
+    public string Class { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The character's level (between 1 and 10.)
+    /// </summary>
+    public int Level { get; set; } = 1;
+
+    public string Name { get; set; } = string.Empty;
+
+    #endregion
 }

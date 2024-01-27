@@ -19,21 +19,16 @@ internal sealed class ListCharactersCommand : CommandBase
 
         EmbedBuilder embedBuilder = new();
         embedBuilder.WithAuthor(command.User);
-        embedBuilder.WithTitle("characters");
+        embedBuilder.WithTitle("Characters");
 
         // TODO limit/paginate/what have you?  (eventually)
-        using var cursor = await dataService.GetCharacters().FindAsync(
-            Builders<Character>.Filter.Eq(o => o.UserId, (decimal)command.User.Id),
-            cancellationToken: cancellationToken);
-        while (await cursor.MoveNextAsync(cancellationToken))
+        await foreach (var character in dataService.ListCharactersAsync(
+            userId: command.User.Id, cancellationToken: cancellationToken))
         {
-            foreach (var character in cursor.Current)
-            {
-                embedBuilder.AddField(new EmbedFieldBuilder()
-                    .WithIsInline(false)
-                    .WithName(character.Name)
-                    .WithValue("..."));
-            }
+            embedBuilder.AddField(new EmbedFieldBuilder()
+                .WithIsInline(false)
+                .WithName(character.Name)
+                .WithValue($"Level {character.Level} {character.Class}"));
         }
 
         await command.RespondAsync(embed: embedBuilder.Build());

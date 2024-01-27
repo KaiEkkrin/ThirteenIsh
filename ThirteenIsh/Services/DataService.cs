@@ -1,4 +1,6 @@
-﻿using MongoDB.Driver;
+﻿using Microsoft.Extensions.Configuration.UserSecrets;
+using MongoDB.Driver;
+using System.Runtime.CompilerServices;
 using ThirteenIsh.Entities;
 
 namespace ThirteenIsh.Services;
@@ -16,5 +18,34 @@ internal sealed class DataService
         _database = _client.GetDatabase(DatabaseName);
     }
 
-    public IMongoCollection<Character> GetCharacters() => _database.GetCollection<Character>("characters");
+    public async Task<Character?> GetCharacterAsync(string name, ulong? userId = null,
+        CancellationToken cancellationToken = default)
+    {
+        return await ListCharactersAsync(name, userId, cancellationToken).FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async IAsyncEnumerable<Character> ListCharactersAsync(
+        string? name = null,
+        ulong? userId = null,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        var filter = (name, userId) switch
+        {
+            ({ } n, { } uid) => Builders<Character>.Filter.And(
+                Builders<Character>.Filter.Eq(o => o.Name, n),
+                Builders<Character>.Filter.Eq(o => o.UserId, Character.ToDatabaseUserId(uid))),
+            ({ } n, null) => Builders<Character>.Filter.Eq(o => o.Name, n),
+            (null, { } uid) => Builders<Character>.Filter.Eq(o => o.UserId, Character.ToDatabaseUserId(uid)),
+            (null, null) => throw new NotSupportedException("Cannot list all characters")
+        };
+
+        using var cursor = await GetCharacters().FindAsync(filter, cancellationToken: cancellationToken);
+        while (await cursor.MoveNextAsync(cancellationToken))
+        {
+            foreach (var character in cursor.Current) yield return character;
+        }
+    }
+
+    // TODO ensure indexes first, and all that
+    private IMongoCollection<Character> GetCharacters() => _database.GetCollection<Character>("characters");
 }
