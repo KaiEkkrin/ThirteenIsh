@@ -24,7 +24,7 @@ internal sealed class ShowCharacterCommand : CommandBase
     {
         if (!TryGetCanonicalizedMultiPartOption(command.Data, "name", out var name))
         {
-            await command.RespondAsync("Character not found");
+            await command.RespondAsync("Character not found", ephemeral: true);
             return;
         }
 
@@ -32,7 +32,7 @@ internal sealed class ShowCharacterCommand : CommandBase
         var character = await dataService.GetCharacterAsync(name, command.User.Id, cancellationToken);
         if (character is null)
         {
-            await command.RespondAsync("Character not found");
+            await command.RespondAsync("Character not found", ephemeral: true);
             return;
         }
 

@@ -26,7 +26,7 @@ internal sealed class EditCharacterCommand : CharacterCommandBase
     {
         if (!TryGetCanonicalizedMultiPartOption(command.Data, "name", out var name))
         {
-            await command.RespondAsync("Character names must contain only letters and spaces");
+            await command.RespondAsync("Character names must contain only letters and spaces", ephemeral: true);
             return;
         }
 
@@ -34,7 +34,8 @@ internal sealed class EditCharacterCommand : CharacterCommandBase
         var character = await dataService.UpdateCharacterAsync(name, UpdateSheet, command.User.Id, cancellationToken);
         if (character is null)
         {
-            await command.RespondAsync($"Cannot edit a character named '{name}'. Perhaps they do not exist?");
+            await command.RespondAsync($"Cannot edit a character named '{name}'. Perhaps they do not exist?",
+                ephemeral: true);
             return;
         }
 

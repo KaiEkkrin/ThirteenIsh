@@ -47,8 +47,16 @@ internal sealed class DataService : IDisposable
         };
 
         var collection = await GetCharactersCollectionAsync(cancellationToken);
-        await collection.InsertOneAsync(character, new InsertOneOptions { }, cancellationToken);
-        return character;
+        try
+        {
+            await collection.InsertOneAsync(character, new InsertOneOptions { }, cancellationToken);
+            return character;
+        }
+        catch (MongoWriteException ex) when (ex.WriteError.Code == 11000)
+        {
+            // This means that character already exists
+            return null;
+        }
     }
 
     public async Task<Character?> GetCharacterAsync(string name, ulong? userId = null,

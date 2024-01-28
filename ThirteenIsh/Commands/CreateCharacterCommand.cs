@@ -28,7 +28,7 @@ internal sealed class CreateCharacterCommand : CharacterCommandBase
     {
         if (!TryGetCanonicalizedMultiPartOption(command.Data, "name", out var name))
         {
-            await command.RespondAsync("Character names must contain only letters and spaces");
+            await command.RespondAsync("Character names must contain only letters and spaces", ephemeral: true);
             return;
         }
 
@@ -39,7 +39,8 @@ internal sealed class CreateCharacterCommand : CharacterCommandBase
         var character = await dataService.CreateCharacterAsync(name, sheet, command.User.Id, cancellationToken);
         if (character is null)
         {
-            await command.RespondAsync($"Cannot create a character named '{name}'. Perhaps one already exists?");
+            await command.RespondAsync($"Cannot create a character named '{name}'. Perhaps one already exists?",
+                ephemeral: true);
             return;
         }
 
