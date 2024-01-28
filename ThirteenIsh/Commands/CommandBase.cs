@@ -2,6 +2,8 @@
 using Discord.WebSocket;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using ThirteenIsh.Entities;
+using ThirteenIsh.Game;
 
 namespace ThirteenIsh.Commands;
 
@@ -12,10 +14,12 @@ namespace ThirteenIsh.Commands;
 /// </summary>
 internal abstract class CommandBase(string name, string description)
 {
+    public string Name => $"13-{name}";
+
     public virtual SlashCommandBuilder CreateBuilder()
     {
         SlashCommandBuilder builder = new();
-        builder.WithName($"13-{name}");
+        builder.WithName(Name);
         builder.WithDescription(description);
         return builder;
     }
@@ -29,6 +33,27 @@ internal abstract class CommandBase(string name, string description)
     /// <returns>The handler task.</returns>
     public abstract Task HandleAsync(SocketSlashCommand command, IServiceProvider serviceProvider,
         CancellationToken cancellationToken);
+
+    protected static Task RespondWithCharacterSheetAsync(
+        SocketSlashCommand command,
+        CharacterSheet sheet,
+        string title)
+    {
+        EmbedBuilder embedBuilder = new();
+        embedBuilder.WithAuthor(command.User);
+        embedBuilder.WithTitle(title);
+        embedBuilder.WithDescription($"Level {sheet.Level} {sheet.Class}");
+
+        foreach (var (abilityName, abilityScore) in sheet.AbilityScores)
+        {
+            embedBuilder.AddField(new EmbedFieldBuilder()
+                .WithIsInline(true)
+                .WithName(abilityName)
+                .WithValue(abilityScore));
+        }
+
+        return command.RespondAsync(embed: embedBuilder.Build());
+    }
 
     protected static bool TryConvertTo<T>(object? value, [MaybeNullWhen(false)] out T result)
     {
@@ -45,6 +70,19 @@ internal abstract class CommandBase(string name, string description)
         }
 
         result = default;
+        return false;
+    }
+
+    protected static bool TryGetCanonicalizedMultiPartOption(
+        SocketSlashCommandData data, string name, [MaybeNullWhen(false)] out string canonicalizedValue)
+    {
+        if (TryGetOption<string>(data, name, out var value) &&
+            AttributeName.TryCanonicalizeMultiPart(value, out canonicalizedValue))
+        {
+            return true;
+        }
+
+        canonicalizedValue = default;
         return false;
     }
 

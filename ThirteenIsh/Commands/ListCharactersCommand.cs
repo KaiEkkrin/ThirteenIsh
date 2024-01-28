@@ -28,7 +28,7 @@ internal sealed class ListCharactersCommand : CommandBase
             embedBuilder.AddField(new EmbedFieldBuilder()
                 .WithIsInline(false)
                 .WithName(character.Name)
-                .WithValue($"Level {character.Level} {character.Class}"));
+                .WithValue($"Level {character.Sheet.Level} {character.Sheet.Class}"));
         }
 
         await command.RespondAsync(embed: embedBuilder.Build());

@@ -1,13 +1,14 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using ThirteenIsh.Entities;
+using ThirteenIsh.Game;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands;
 
-internal sealed class CreateCharacterCommand : CharacterCommandBase
+internal sealed class EditCharacterCommand : CharacterCommandBase
 {
-    public CreateCharacterCommand() : base("create-character", "Creates a character")
+    public EditCharacterCommand() : base("edit-character", "Edits a character")
     {
     }
 
@@ -15,9 +16,6 @@ internal sealed class CreateCharacterCommand : CharacterCommandBase
     {
         var builder = base.CreateBuilder();
         builder.AddOption("name", ApplicationCommandOptionType.String, "The character name",
-            isRequired: true);
-
-        builder.AddOption("class", ApplicationCommandOptionType.String, "The character's class",
             isRequired: true);
 
         return AddCharacterSlashCommands(builder);
@@ -32,17 +30,19 @@ internal sealed class CreateCharacterCommand : CharacterCommandBase
             return;
         }
 
-        var sheet = CharacterSheet.CreateDefault();
-        ApplyCharacterSheetOptions(command, sheet);
-
         var dataService = serviceProvider.GetRequiredService<DataService>();
-        var character = await dataService.CreateCharacterAsync(name, sheet, command.User.Id, cancellationToken);
+        var character = await dataService.UpdateCharacterAsync(name, UpdateSheet, command.User.Id, cancellationToken);
         if (character is null)
         {
-            await command.RespondAsync($"Cannot create a character named '{name}'. Perhaps one already exists?");
+            await command.RespondAsync($"Cannot edit a character named '{name}'. Perhaps they do not exist?");
             return;
         }
 
-        await RespondWithCharacterSheetAsync(command, character.Sheet, $"Created character: {character.Name}");
+        await RespondWithCharacterSheetAsync(command, character.Sheet, $"Edited character: {character.Name}");
+
+        void UpdateSheet(CharacterSheet sheet)
+        {
+            ApplyCharacterSheetOptions(command, sheet);
+        }
     }
 }

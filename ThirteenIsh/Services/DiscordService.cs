@@ -1,7 +1,5 @@
 ﻿using Discord;
-using Discord.Net;
 using Discord.WebSocket;
-using Newtonsoft.Json;
 using System.Collections.Concurrent;
 using System.Reflection;
 using ThirteenIsh.Commands;
@@ -12,17 +10,23 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
 {
     private static readonly TimeSpan SlashCommandTimeout = TimeSpan.FromMilliseconds(1500);
 
-    private static readonly Action<ILogger, string, string, Exception> CreateCommandErrorMessage =
+    private static readonly Action<ILogger, string, Exception> RegisterCommandsErrorMessage =
+        LoggerMessage.Define<string>(
+            LogLevel.Error,
+            new EventId(1, nameof(DiscordService)),
+            "Error registering commands: {Details}");
+
+    private static readonly Action<ILogger, string, string, Exception> RegisterGuildCommandsErrorMessage =
         LoggerMessage.Define<string, string>(
             LogLevel.Error,
             new EventId(1, nameof(DiscordService)),
-            "Error creating command {Name}: {Details}");
+            "{Guild}: Error registering guild commands: {Details}");
 
-    private static readonly Action<ILogger, string, string, Type, Exception?> RegisteredCommandMessage =
-        LoggerMessage.Define<string, string, Type>(
+    private static readonly Action<ILogger, string, string, string, Type, Exception?> RegisteredCommandMessage =
+        LoggerMessage.Define<string, string, string, Type>(
             LogLevel.Information,
             new EventId(2, nameof(DiscordService)),
-            "Registered command {Name} ({Description}) with handler {HandlerType}");
+            "{Guild}: Registered command {Name} ({Description}) with handler {HandlerType}");
 
     private static readonly Action<ILogger, string, TimeSpan, string, Exception> SlashCommandTimeoutMessage =
         LoggerMessage.Define<string, TimeSpan, string>(
@@ -48,10 +52,14 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
         _logger = logger;
         _serviceProvider = serviceProvider;
 
+        _client.JoinedGuild += OnJoinedGuildAsync;
         _client.Log += OnLogAsync;
         _client.Ready += OnReadyAsync;
         _client.SlashCommandExecuted += OnSlashCommandExecutedAsync;
         _serviceProvider = serviceProvider;
+
+        // Set up command types (these must be ready right away.)
+        BuildCommandsMap();
     }
 
     public void Dispose()
@@ -79,6 +87,15 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
 
     public Task StopAsync() => _client.StopAsync();
 
+    private Task OnJoinedGuildAsync(SocketGuild arg)
+    {
+        if (_isDisposed) return Task.CompletedTask;
+
+        // This is slow, and should be done asynchronously.
+        Task.Run(() => RegisterGuildCommandsAsync(arg));
+        return Task.CompletedTask;
+    }
+
     private Task OnLogAsync(LogMessage message)
     {
         var logLevel = message.Severity switch
@@ -94,33 +111,16 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
         return Task.CompletedTask;
     }
 
-    private async Task OnReadyAsync()
+    private Task OnReadyAsync()
     {
-        if (_isDisposed) return;
+        if (_isDisposed) return Task.CompletedTask;
 
-        // Set up commands
-        _commandsMap.Clear();
-        foreach (var ty in Assembly.GetExecutingAssembly().GetTypes())
-        {
-            if (!ty.IsClass || ty.IsAbstract || !ty.IsAssignableTo(typeof(CommandBase))) continue;
-
-            var command = (CommandBase)_serviceProvider.GetRequiredService(ty);
-            var builder = command.CreateBuilder();
-            try
-            {
-                await _client.CreateGlobalApplicationCommandAsync(builder.Build());
-                _commandsMap[builder.Name] = command;
-                RegisteredCommandMessage(_logger, builder.Name, builder.Description, ty, null);
-            }
-            catch (HttpException ex)
-            {
-                CreateCommandErrorMessage(
-                    _logger,
-                    builder.Name,
-                    JsonConvert.SerializeObject(ex.Errors, Formatting.Indented),
-                    ex);
-            }
-        }
+        // Global commands would be more convenient but according to the Discord.net documentation they
+        // "can take up to an hour to register", so for now I'm going to use guild commands for every
+        // guild we're registered in, instead.
+        // This is slow, and should be done asynchronously.
+        var _ = Task.Run(RegisterCommandsAsync);
+        return Task.CompletedTask;
     }
 
     private async Task OnSlashCommandExecutedAsync(SocketSlashCommand command)
@@ -143,6 +143,55 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
         else
         {
             await command.RespondAsync($"Unrecognised command: {command.Data.Name}");
+        }
+    }
+
+    private void BuildCommandsMap()
+    {
+        _commandsMap.Clear();
+        foreach (var ty in Assembly.GetExecutingAssembly().GetTypes())
+        {
+            if (!ty.IsClass || ty.IsAbstract || !ty.IsAssignableTo(typeof(CommandBase))) continue;
+
+            var command = (CommandBase)_serviceProvider.GetRequiredService(ty);
+            _commandsMap[command.Name] = command;
+        }
+    }
+
+    private async Task RegisterCommandsAsync()
+    {
+        try
+        {
+            // Register with all our guilds
+            foreach (var guild in _client.Guilds)
+            {
+                await RegisterGuildCommandsAsync(guild);
+            }
+        }
+        catch (Exception ex)
+        {
+            RegisterCommandsErrorMessage(_logger, ex.Message, ex);
+        }
+    }
+
+    private async Task RegisterGuildCommandsAsync(SocketGuild guild)
+    {
+        try
+        {
+            // It might be expensive, but the easiest way to ensure all our commands are
+            // up-to-date is to delete them all and re-create them
+            // (TODO This won't scale well so I should have a better solution in future)
+            await guild.DeleteApplicationCommandsAsync();
+            foreach (var (name, command) in _commandsMap)
+            {
+                var build = command.CreateBuilder().Build();
+                await guild.CreateApplicationCommandAsync(build);
+                RegisteredCommandMessage(_logger, guild.Name, build.Name.Value, build.Description.Value, command.GetType(), null);
+            }
+        }
+        catch (Exception ex)
+        {
+            RegisterGuildCommandsErrorMessage(_logger, guild.Name, ex.Message, ex);
         }
     }
 }

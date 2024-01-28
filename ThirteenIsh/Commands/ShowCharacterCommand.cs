@@ -22,7 +22,7 @@ internal sealed class ShowCharacterCommand : CommandBase
     public override async Task HandleAsync(SocketSlashCommand command, IServiceProvider serviceProvider,
         CancellationToken cancellationToken)
     {
-        if (!TryGetOption<string>(command.Data, "name", out var name))
+        if (!TryGetCanonicalizedMultiPartOption(command.Data, "name", out var name))
         {
             await command.RespondAsync("Character not found");
             return;
@@ -36,19 +36,6 @@ internal sealed class ShowCharacterCommand : CommandBase
             return;
         }
 
-        EmbedBuilder embedBuilder = new();
-        embedBuilder.WithAuthor(command.User);
-        embedBuilder.WithTitle(character.Name);
-        embedBuilder.WithDescription($"Level {character.Level} {character.Class}");
-
-        foreach (var (abilityName, abilityScore) in character.AbilityScores)
-        {
-            embedBuilder.AddField(new EmbedFieldBuilder()
-                .WithIsInline(true)
-                .WithName(abilityName)
-                .WithValue(abilityScore));
-        }
-
-        await command.RespondAsync(embed: embedBuilder.Build());
+        await RespondWithCharacterSheetAsync(command, character.Sheet, character.Name);
     }
 }
