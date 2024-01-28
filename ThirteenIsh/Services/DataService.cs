@@ -24,6 +24,7 @@ internal sealed class DataService : IDisposable
 
     // These will be set after an index has been added
     private IMongoCollection<Character>? _characters;
+    private IMongoCollection<Guild>? _guilds;
 
     private readonly SemaphoreSlim _indexCreationSemaphore = new(1, 1);
 
@@ -59,10 +60,47 @@ internal sealed class DataService : IDisposable
         }
     }
 
+    public async Task<Guild> EnsureGuildAsync(ulong guildId, CancellationToken cancellationToken = default)
+    {
+        var guild = await GetGuildAsync(guildId, cancellationToken);
+        if (guild is null)
+        {
+            try
+            {
+                var collection = await GetGuildsCollectionAsync(cancellationToken);
+                await collection.InsertOneAsync(
+                    new Guild { GuildId = Guild.ToDatabaseGuildId(guildId) },
+                    cancellationToken: cancellationToken);
+            }
+            catch (MongoWriteException ex) when (ex.WriteError.Code == 11000)
+            {
+                // Something must have created it concurrently with us -- can ignore
+            }
+
+            guild = await GetGuildAsync(guildId, cancellationToken);
+        }
+
+        return guild ?? throw new InvalidOperationException($"Failed to create guild record for {guildId}");
+    }
+
     public async Task<Character?> GetCharacterAsync(string name, ulong? userId = null,
         CancellationToken cancellationToken = default)
     {
         return await ListCharactersAsync(name, userId, cancellationToken).FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<Guild?> GetGuildAsync(ulong guildId, CancellationToken cancellationToken = default)
+    {
+        var collection = await GetGuildsCollectionAsync(cancellationToken);
+        using var cursor = await collection.FindAsync(
+            Builders<Guild>.Filter.Eq(o => o.GuildId, Guild.ToDatabaseGuildId(guildId)),
+            cancellationToken: cancellationToken);
+        while (await cursor.MoveNextAsync(cancellationToken))
+        {
+            if (cursor.Current.FirstOrDefault() is { } guild) return guild;
+        }
+
+        return null;
     }
 
     public async IAsyncEnumerable<Character> ListCharactersAsync(
@@ -86,12 +124,12 @@ internal sealed class DataService : IDisposable
         // TODO do this in a transaction.
         // Requiring a transaction here makes the update much easier and more flexible than
         // having to write code to do the splice, and I don't care that it's less performant
-        var collection = await GetCharactersCollectionAsync(cancellationToken);
         var character = await ListCharactersAsync(name, userId, cancellationToken).FirstOrDefaultAsync(cancellationToken);
         if (character is null) return null;
 
         updateSheet(character.Sheet);
 
+        var collection = await GetCharactersCollectionAsync(cancellationToken);
         var filter = GetCharacterFilter(name, userId);
         return await collection.FindOneAndReplaceAsync(
             filter,
@@ -101,6 +139,18 @@ internal sealed class DataService : IDisposable
                 ReturnDocument = ReturnDocument.After
             },
             cancellationToken);
+    }
+
+    public async Task UpdateGuildCommandVersionAsync(ulong guildId, int commandVersion,
+        CancellationToken cancellationToken = default)
+    {
+        var collection = await GetGuildsCollectionAsync(cancellationToken);
+        await collection.UpdateOneAsync(
+            Builders<Guild>.Filter.And(
+                Builders<Guild>.Filter.Eq(o => o.GuildId, Guild.ToDatabaseGuildId(guildId)),
+                Builders<Guild>.Filter.Lt(o => o.CommandVersion, commandVersion)),
+            Builders<Guild>.Update.Set(o => o.CommandVersion, commandVersion),
+            cancellationToken: cancellationToken);
     }
 
     public void Dispose() => _indexCreationSemaphore.Dispose();
@@ -153,6 +203,36 @@ internal sealed class DataService : IDisposable
             }
 
             return _characters;
+        }
+        finally
+        {
+            _indexCreationSemaphore.Release();
+        }
+    }
+
+    private async Task<IMongoCollection<Guild>> GetGuildsCollectionAsync(
+        CancellationToken cancellationToken = default)
+    {
+        await _indexCreationSemaphore.WaitAsync(cancellationToken);
+        try
+        {
+            if (_guilds is not null) return _guilds;
+            _guilds = _database.GetCollection<Guild>("guilds");
+
+            try
+            {
+                await _guilds.Indexes.CreateOneAsync(
+                    new CreateIndexModel<Guild>(
+                        Builders<Guild>.IndexKeys.Ascending(o => o.GuildId),
+                        new CreateIndexOptions { Unique = true }),
+                    cancellationToken: cancellationToken);
+            }
+            catch (MongoException ex)
+            {
+                ErrorCreatingIndex(_logger, "GuildId", ex.Message, ex);
+            }
+
+            return _guilds;
         }
         finally
         {

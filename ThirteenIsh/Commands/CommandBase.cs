@@ -14,6 +14,13 @@ namespace ThirteenIsh.Commands;
 /// </summary>
 internal abstract class CommandBase(string name, string description)
 {
+    /// <summary>
+    /// Whenever I make any changes that would affect command registrations I should increment
+    /// this -- this will cause us to re-register commands with guilds. Otherwise, we won't
+    /// (it's time consuming and I suspect Discord would eventually throttle us.)
+    /// </summary>
+    public const int Version = 1;
+
     public string Name => $"13-{name}";
 
     public virtual SlashCommandBuilder CreateBuilder()

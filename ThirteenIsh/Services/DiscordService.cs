@@ -38,6 +38,7 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
     private readonly ConcurrentDictionary<string, CommandBase> _commandsMap = new();
 
     private readonly IConfiguration _configuration;
+    private readonly DataService _dataService;
     private readonly ILogger<DiscordService> _logger;
     private readonly IServiceProvider _serviceProvider;
 
@@ -45,10 +46,12 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
 
     public DiscordService(
         IConfiguration configuration,
+        DataService dataService,
         ILogger<DiscordService> logger,
         IServiceProvider serviceProvider)
     {
         _configuration = configuration;
+        _dataService = dataService;
         _logger = logger;
         _serviceProvider = serviceProvider;
 
@@ -178,9 +181,15 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
     {
         try
         {
+            var guildEntity = await _dataService.EnsureGuildAsync(guild.Id);
+            if (guildEntity.CommandVersion >= CommandBase.Version)
+            {
+                // Up-to-date commands are already registered
+                return;
+            }
+
             // It might be expensive, but the easiest way to ensure all our commands are
             // up-to-date is to delete them all and re-create them
-            // (TODO This won't scale well so I should have a better solution in future)
             await guild.DeleteApplicationCommandsAsync();
             foreach (var (name, command) in _commandsMap)
             {
@@ -188,6 +197,8 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
                 await guild.CreateApplicationCommandAsync(build);
                 RegisteredCommandMessage(_logger, guild.Name, build.Name.Value, build.Description.Value, command.GetType(), null);
             }
+
+            await _dataService.UpdateGuildCommandVersionAsync(guild.Id, CommandBase.Version);
         }
         catch (Exception ex)
         {
