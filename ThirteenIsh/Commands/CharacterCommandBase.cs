@@ -25,8 +25,9 @@ internal abstract class CharacterCommandBase : CommandBase
     {
     }
 
-    protected static SlashCommandBuilder AddCharacterSlashCommands(SlashCommandBuilder builder)
+    public override SlashCommandBuilder CreateBuilder()
     {
+        var builder = base.CreateBuilder();
         builder.AddOption("level", ApplicationCommandOptionType.Integer, "The character's level",
             minValue: 1, maxValue: 10);
 

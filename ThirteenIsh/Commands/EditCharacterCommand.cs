@@ -17,7 +17,7 @@ internal sealed class EditCharacterCommand : CharacterCommandBase
         builder.AddOption("name", ApplicationCommandOptionType.String, "The character name",
             isRequired: true);
 
-        return AddCharacterSlashCommands(builder);
+        return builder;
     }
 
     public override async Task HandleAsync(SocketSlashCommand command, IServiceProvider serviceProvider,

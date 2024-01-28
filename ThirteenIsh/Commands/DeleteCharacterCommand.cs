@@ -1,13 +1,12 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ThirteenIsh.Entities;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands;
 
-internal sealed class CreateCharacterCommand : CharacterCommandBase
+internal sealed class DeleteCharacterCommand : CommandBase
 {
-    public CreateCharacterCommand() : base("create-character", "Creates a character")
+    public DeleteCharacterCommand() : base("delete-character", "Deletes a character")
     {
     }
 
@@ -15,9 +14,6 @@ internal sealed class CreateCharacterCommand : CharacterCommandBase
     {
         var builder = base.CreateBuilder();
         builder.AddOption("name", ApplicationCommandOptionType.String, "The character name",
-            isRequired: true);
-
-        builder.AddOption("class", ApplicationCommandOptionType.String, "The character's class",
             isRequired: true);
 
         return builder;
@@ -32,18 +28,19 @@ internal sealed class CreateCharacterCommand : CharacterCommandBase
             return;
         }
 
-        var sheet = CharacterSheet.CreateDefault();
-        ApplyCharacterSheetOptions(command, sheet);
-
+        // TODO instead give the user a red confirm button
         var dataService = serviceProvider.GetRequiredService<DataService>();
-        var character = await dataService.CreateCharacterAsync(name, sheet, command.User.Id, cancellationToken);
-        if (character is null)
+        if (!await dataService.DeleteCharacterAsync(name, command.User.Id, cancellationToken))
         {
-            await command.RespondAsync($"Cannot create a character named '{name}'. Perhaps one already exists?",
+            await command.RespondAsync($"Cannot delete a character named '{name}'. Perhaps they do not exist?",
                 ephemeral: true);
             return;
         }
 
-        await RespondWithCharacterSheetAsync(command, character.Sheet, $"Created character: {character.Name}");
+        EmbedBuilder embedBuilder = new();
+        embedBuilder.WithAuthor(command.User);
+        embedBuilder.WithTitle($"Deleted character: {name}");
+
+        await command.RespondAsync(embed: embedBuilder.Build());
     }
 }

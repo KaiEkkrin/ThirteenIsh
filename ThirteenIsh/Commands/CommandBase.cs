@@ -19,7 +19,7 @@ internal abstract class CommandBase(string name, string description)
     /// this -- this will cause us to re-register commands with guilds. Otherwise, we won't
     /// (it's time consuming and I suspect Discord would eventually throttle us.)
     /// </summary>
-    public const int Version = 1;
+    public const int Version = 3;
 
     public string Name => $"13-{name}";
 

@@ -60,6 +60,14 @@ internal sealed class DataService : IDisposable
         }
     }
 
+    public async Task<bool> DeleteCharacterAsync(string name, ulong userId, CancellationToken cancellationToken = default)
+    {
+        var collection = await GetCharactersCollectionAsync(cancellationToken);
+        var filter = GetCharacterFilter(name, userId);
+        var result = await collection.DeleteOneAsync(filter, cancellationToken);
+        return result.DeletedCount > 0;
+    }
+
     public async Task<Guild> EnsureGuildAsync(ulong guildId, CancellationToken cancellationToken = default)
     {
         var guild = await GetGuildAsync(guildId, cancellationToken);
