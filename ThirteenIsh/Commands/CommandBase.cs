@@ -80,6 +80,19 @@ internal abstract class CommandBase(string name, string description)
         return false;
     }
 
+    protected static bool TryGetCanonicalizedOption(
+        SocketSlashCommandData data, string name, [MaybeNullWhen(false)] out string canonicalizedValue)
+    {
+        if (TryGetOption<string>(data, name, out var value) &&
+            AttributeName.TryCanonicalize(value, out canonicalizedValue))
+        {
+            return true;
+        }
+
+        canonicalizedValue = default;
+        return false;
+    }
+
     protected static bool TryGetCanonicalizedMultiPartOption(
         SocketSlashCommandData data, string name, [MaybeNullWhen(false)] out string canonicalizedValue)
     {

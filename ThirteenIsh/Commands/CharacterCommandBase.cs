@@ -42,6 +42,11 @@ internal abstract class CharacterCommandBase : CommandBase
 
     protected static void ApplyCharacterSheetOptions(SocketSlashCommand command, CharacterSheet sheet)
     {
+        if (TryGetCanonicalizedOption(command.Data, "class", out var characterClass))
+        {
+            sheet.Class = characterClass;
+        }
+
         if (TryGetOption<int>(command.Data, "level", out var level))
         {
             sheet.Level = level;

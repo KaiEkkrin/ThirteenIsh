@@ -17,6 +17,7 @@ internal sealed class CreateCharacterCommand : CharacterCommandBase
         builder.AddOption("name", ApplicationCommandOptionType.String, "The character name",
             isRequired: true);
 
+        // TODO turn this into a multi-choice that doesn't let you select an invalid option :)
         builder.AddOption("class", ApplicationCommandOptionType.String, "The character's class",
             isRequired: true);
 
