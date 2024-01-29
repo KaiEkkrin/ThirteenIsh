@@ -6,7 +6,7 @@ namespace ThirteenIsh.Entities;
 /// <summary>
 /// This entity type describes our guild-specific state.
 /// </summary>
-internal class Guild
+public class Guild
 {
     [BsonId]
     public ObjectId Id { get; set; }

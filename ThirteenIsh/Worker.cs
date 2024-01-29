@@ -7,6 +7,8 @@ internal sealed class Worker(
     ILogger<Worker> logger)
     : BackgroundService
 {
+    private static readonly TimeSpan TimerInterval = TimeSpan.FromMinutes(5);
+
     private static readonly Action<ILogger, DateTimeOffset, Exception?> WorkerRunningMessage =
         LoggerMessage.Define<DateTimeOffset>(
             LogLevel.Information,
@@ -25,6 +27,12 @@ internal sealed class Worker(
             new EventId(3, nameof(Worker)),
             "Error stopping worker: {Message}");
 
+    private static readonly Action<ILogger, Exception?> StoppingWorkerMessage =
+        LoggerMessage.Define(
+            LogLevel.Information,
+            new EventId(4, nameof(Worker)),
+            "Stopping worker");
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         try
@@ -32,11 +40,18 @@ internal sealed class Worker(
             await discordService.StartAsync();
             while (!stoppingToken.IsCancellationRequested)
             {
+                // Wake up every now and again to run timer tasks
                 WorkerRunningMessage(logger, DateTimeOffset.Now, null);
-                await Task.Delay(-1, stoppingToken);
+                await Task.Delay(TimerInterval, stoppingToken);
+
+                discordService.DeleteExpiredMessages();
             }
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException)
+        {
+            StoppingWorkerMessage(logger, null);
+        }
+        catch (Exception ex)
         {
             ErrorRunningWorkerMessage(logger, ex.Message, ex);
         }

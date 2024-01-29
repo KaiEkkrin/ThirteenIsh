@@ -3,6 +3,7 @@ using Discord.WebSocket;
 using System.Collections.Concurrent;
 using System.Reflection;
 using ThirteenIsh.Commands;
+using ThirteenIsh.Messages;
 
 namespace ThirteenIsh.Services;
 
@@ -36,6 +37,7 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
 
     private readonly DiscordSocketClient _client = new();
     private readonly ConcurrentDictionary<string, CommandBase> _commandsMap = new();
+    private readonly ConcurrentDictionary<string, MessageBase> _messagesMap = new();
 
     private readonly IConfiguration _configuration;
     private readonly DataService _dataService;
@@ -55,6 +57,7 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
         _logger = logger;
         _serviceProvider = serviceProvider;
 
+        _client.ButtonExecuted += OnButtonExecuted;
         _client.JoinedGuild += OnJoinedGuildAsync;
         _client.Log += OnLogAsync;
         _client.Ready += OnReadyAsync;
@@ -63,6 +66,28 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
 
         // Set up command types (these must be ready right away.)
         BuildCommandsMap();
+    }
+
+    public void AddMessageInteraction(MessageBase message)
+    {
+        _messagesMap.AddOrUpdate(
+            message.MessageId,
+            message,
+            (_, _) => throw new InvalidOperationException($"A message with ID {message.MessageId} is already being tracked."));
+    }
+
+    public void DeleteExpiredMessages()
+    {
+        List<string> expiredIds = [];
+        foreach (var (id, message) in _messagesMap)
+        {
+            if (message.IsExpired) expiredIds.Add(id);
+        }
+
+        foreach (var id in expiredIds)
+        {
+            _messagesMap.Remove(id, out _);
+        }
     }
 
     public void Dispose()
@@ -89,6 +114,23 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
     }
 
     public Task StopAsync() => _client.StopAsync();
+
+    private async Task OnButtonExecuted(SocketMessageComponent arg)
+    {
+        if (!_messagesMap.TryRemove(arg.Data.CustomId, out var message)) return;
+
+        await using var scope = _serviceProvider.CreateAsyncScope();
+        using CancellationTokenSource cancellationSource = new(SlashCommandTimeout);
+        try
+        {
+            await message.HandleAsync(arg, scope.ServiceProvider, cancellationSource.Token);
+        }
+        catch (OperationCanceledException ex)
+        {
+            SlashCommandTimeoutMessage(_logger, arg.Data.CustomId, SlashCommandTimeout, ex.Message, ex);
+            await arg.RespondAsync($"Message timed out after {SlashCommandTimeout}: {arg.Data.CustomId}");
+        }
+    }
 
     private Task OnJoinedGuildAsync(SocketGuild arg)
     {

@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using ThirteenIsh.Messages;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands;
@@ -28,19 +29,25 @@ internal sealed class DeleteCharacterCommand : CommandBase
             return;
         }
 
-        // TODO instead give the user a red confirm button
         var dataService = serviceProvider.GetRequiredService<DataService>();
-        if (!await dataService.DeleteCharacterAsync(name, command.User.Id, cancellationToken))
+        var character = await dataService.GetCharacterAsync(name, command.User.Id, cancellationToken);
+        if (character is null)
         {
-            await command.RespondAsync($"Cannot delete a character named '{name}'. Perhaps they do not exist?",
+            await command.RespondAsync($"Cannot find a character named '{name}'. Perhaps they were already deleted?",
                 ephemeral: true);
             return;
         }
 
-        EmbedBuilder embedBuilder = new();
-        embedBuilder.WithAuthor(command.User);
-        embedBuilder.WithTitle($"Deleted character: {name}");
+        // I'm not going to delete this right away but instead give the user a confirm button
+        DeleteCharacterMessage message = new(name, command.User.Id);
 
-        await command.RespondAsync(embed: embedBuilder.Build());
+        var discordService = serviceProvider.GetRequiredService<DiscordService>();
+        discordService.AddMessageInteraction(message);
+
+        ComponentBuilder builder = new();
+        builder.WithButton("Delete", message.MessageId, ButtonStyle.Danger);
+
+        await command.RespondAsync($"Do you really want to delete the character named '{name}'? This cannot be undone.",
+            ephemeral: true, components: builder.Build());
     }
 }

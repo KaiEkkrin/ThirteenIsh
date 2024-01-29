@@ -7,7 +7,7 @@ namespace ThirteenIsh.Services;
 /// <summary>
 /// Database adapter -- a singleton
 /// </summary>
-internal sealed class DataService : IDisposable
+public sealed class DataService : IDisposable
 {
     private const string DatabaseName = "ThirteenIsh";
 

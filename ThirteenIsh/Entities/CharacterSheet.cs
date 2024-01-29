@@ -5,7 +5,7 @@ namespace ThirteenIsh.Entities;
 /// <summary>
 /// Defines a character's stats.
 /// </summary>
-internal class CharacterSheet
+public class CharacterSheet
 {
     /// <summary>
     /// The character's ability scores.

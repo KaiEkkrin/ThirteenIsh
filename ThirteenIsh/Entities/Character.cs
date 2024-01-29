@@ -6,7 +6,7 @@ namespace ThirteenIsh.Entities;
 /// <summary>
 /// This entity type describes a character, which is owned by a user.
 /// </summary>
-internal class Character
+public class Character
 {
     [BsonId]
     public ObjectId Id { get; set; }
