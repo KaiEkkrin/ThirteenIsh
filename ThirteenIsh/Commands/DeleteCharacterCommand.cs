@@ -1,6 +1,5 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ThirteenIsh.Messages;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands;
@@ -39,10 +38,7 @@ internal sealed class DeleteCharacterCommand : CommandBase
         }
 
         // I'm not going to delete this right away but instead give the user a confirm button
-        DeleteCharacterMessage message = new(name, command.User.Id);
-
-        var discordService = serviceProvider.GetRequiredService<DiscordService>();
-        discordService.AddMessageInteraction(message);
+        var message = await dataService.CreateDeleteCharacterMessageAsync(name, command.User.Id, cancellationToken);
 
         ComponentBuilder builder = new();
         builder.WithButton("Delete", message.MessageId, ButtonStyle.Danger);

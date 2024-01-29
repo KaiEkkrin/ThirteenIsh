@@ -3,6 +3,7 @@ using ThirteenIsh.Services;
 namespace ThirteenIsh;
 
 internal sealed class Worker(
+    DataService dataService,
     DiscordService discordService,
     ILogger<Worker> logger)
     : BackgroundService
@@ -44,7 +45,7 @@ internal sealed class Worker(
                 WorkerRunningMessage(logger, DateTimeOffset.Now, null);
                 await Task.Delay(TimerInterval, stoppingToken);
 
-                discordService.DeleteExpiredMessages();
+                await dataService.DeleteOldMessagesAsync(stoppingToken);
             }
         }
         catch (OperationCanceledException)

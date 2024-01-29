@@ -1,4 +1,6 @@
-﻿using MongoDB.Driver;
+﻿using MongoDB.Bson;
+using MongoDB.Driver;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using ThirteenIsh.Entities;
 
@@ -18,6 +20,18 @@ public sealed class DataService : IDisposable
             new EventId(1, nameof(DataService)),
             "Error creating index on {Keys}: {Message}. Maybe it already exists?");
 
+    private static readonly Action<ILogger, long, TimeSpan, Exception?> DeletedOldMessages =
+        LoggerMessage.Define<long, TimeSpan>(
+            LogLevel.Information,
+            new EventId(2, nameof(DataService)),
+            "Deleted {Count} old messages in {Elapsed}");
+
+    private static readonly Action<ILogger, string, Exception> ErrorDeletingOldMessages =
+        LoggerMessage.Define<string>(
+            LogLevel.Warning,
+            new EventId(3, nameof(DataService)),
+            "Error deleting old messages: {Message}");
+
     private readonly MongoClient _client;
     private readonly IMongoDatabase _database;
     private readonly ILogger<DataService> _logger;
@@ -25,6 +39,7 @@ public sealed class DataService : IDisposable
     // These will be set after an index has been added
     private IMongoCollection<Character>? _characters;
     private IMongoCollection<Guild>? _guilds;
+    private IMongoCollection<MessageBase>? _messages;
 
     private readonly SemaphoreSlim _indexCreationSemaphore = new(1, 1);
 
@@ -44,7 +59,7 @@ public sealed class DataService : IDisposable
         {
             Name = name,
             Sheet = sheet,
-            UserId = Character.ToDatabaseUserId(userId)
+            UserId = MessageBase.ToDatabaseUserId(userId)
         };
 
         var collection = await GetCharactersCollectionAsync(cancellationToken);
@@ -60,12 +75,57 @@ public sealed class DataService : IDisposable
         }
     }
 
+    public async Task<DeleteCharacterMessage> CreateDeleteCharacterMessageAsync(string name, ulong userId,
+        CancellationToken cancellationToken = default)
+    {
+        DeleteCharacterMessage message = new()
+        {
+            Id = ObjectId.GenerateNewId(),
+            Name = name,
+            UserId = MessageBase.ToDatabaseUserId(userId)
+        };
+
+        var collection = await GetMessagesCollectionAsync(cancellationToken);
+        await collection.InsertOneAsync(message, cancellationToken: cancellationToken);
+        return message;
+    }
+
     public async Task<bool> DeleteCharacterAsync(string name, ulong userId, CancellationToken cancellationToken = default)
     {
         var collection = await GetCharactersCollectionAsync(cancellationToken);
         var filter = GetCharacterFilter(name, userId);
         var result = await collection.DeleteOneAsync(filter, cancellationToken);
         return result.DeletedCount > 0;
+    }
+
+    public async Task DeleteMessageAsync(string messageId, CancellationToken cancellationToken = default)
+    {
+        if (!ObjectId.TryParse(messageId, out var id)) return;
+
+        var collection = await GetMessagesCollectionAsync(cancellationToken);
+        await collection.DeleteOneAsync(Builders<MessageBase>.Filter.Eq(o => o.Id, id), cancellationToken);
+    }
+
+    public async Task DeleteOldMessagesAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            Stopwatch stopwatch = new();
+            stopwatch.Start();
+
+            var expiredTime = DateTimeOffset.UtcNow - MessageBase.Timeout;
+            var collection = await GetMessagesCollectionAsync(cancellationToken);
+            var result = await collection.DeleteManyAsync(
+                Builders<MessageBase>.Filter.Lt(o => o.Timestamp, expiredTime),
+                cancellationToken);
+
+            stopwatch.Stop();
+            DeletedOldMessages(_logger, result.DeletedCount, stopwatch.Elapsed, null);
+        }
+        catch (Exception ex)
+        {
+            ErrorDeletingOldMessages(_logger, ex.Message, ex);
+        }
     }
 
     public async Task<Guild> EnsureGuildAsync(ulong guildId, CancellationToken cancellationToken = default)
@@ -106,6 +166,22 @@ public sealed class DataService : IDisposable
         while (await cursor.MoveNextAsync(cancellationToken))
         {
             if (cursor.Current.FirstOrDefault() is { } guild) return guild;
+        }
+
+        return null;
+    }
+
+    public async Task<MessageBase?> GetMessageAsync(string messageId, CancellationToken cancellationToken = default)
+    {
+        if (!ObjectId.TryParse(messageId, out var id)) return null;
+
+        var collection = await GetMessagesCollectionAsync(cancellationToken);
+        using var cursor = await collection.FindAsync(
+            Builders<MessageBase>.Filter.Eq(o => o.Id, id),
+            cancellationToken: cancellationToken);
+        while (await cursor.MoveNextAsync(cancellationToken))
+        {
+            if (cursor.Current.FirstOrDefault() is { } message) return message;
         }
 
         return null;
@@ -241,6 +317,35 @@ public sealed class DataService : IDisposable
             }
 
             return _guilds;
+        }
+        finally
+        {
+            _indexCreationSemaphore.Release();
+        }
+    }
+
+    private async Task<IMongoCollection<MessageBase>> GetMessagesCollectionAsync(
+        CancellationToken cancellationToken = default)
+    {
+        await _indexCreationSemaphore.WaitAsync(cancellationToken);
+        try
+        {
+            if (_messages is not null) return _messages;
+            _messages = _database.GetCollection<MessageBase>("messages");
+
+            try
+            {
+                await _messages.Indexes.CreateOneAsync(
+                    new CreateIndexModel<MessageBase>(
+                        Builders<MessageBase>.IndexKeys.Ascending(o => o.Timestamp)),
+                    cancellationToken: cancellationToken);
+            }
+            catch (MongoException ex)
+            {
+                ErrorCreatingIndex(_logger, "Timestamp", ex.Message, ex);
+            }
+
+            return _messages;
         }
         finally
         {
