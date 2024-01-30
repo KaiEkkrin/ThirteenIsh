@@ -6,7 +6,7 @@ namespace ThirteenIsh.Commands;
 
 internal sealed class ShowCharacterCommand : CommandBase
 {
-    public ShowCharacterCommand() : base("show-character", "Shows the details of a character")
+    public ShowCharacterCommand() : base("character-show", "Shows the details of a character")
     {
     }
 

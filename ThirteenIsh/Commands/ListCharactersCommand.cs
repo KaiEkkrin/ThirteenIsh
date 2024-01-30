@@ -8,7 +8,7 @@ namespace ThirteenIsh.Commands;
 
 internal sealed class ListCharactersCommand : CommandBase
 {
-    public ListCharactersCommand() : base("list-characters", "Lists saved characters")
+    public ListCharactersCommand() : base("character-list", "Lists saved characters")
     {
     }
 

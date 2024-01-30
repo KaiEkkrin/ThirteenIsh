@@ -7,7 +7,7 @@ namespace ThirteenIsh.Commands;
 
 internal sealed class CreateCharacterCommand : CharacterCommandBase
 {
-    public CreateCharacterCommand() : base("create-character", "Creates a character")
+    public CreateCharacterCommand() : base("character-create", "Creates a character")
     {
     }
 

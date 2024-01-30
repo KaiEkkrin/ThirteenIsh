@@ -7,7 +7,7 @@ namespace ThirteenIsh.Commands;
 
 internal sealed class EditCharacterCommand : CharacterCommandBase
 {
-    public EditCharacterCommand() : base("edit-character", "Edits a character")
+    public EditCharacterCommand() : base("character-edit", "Edits a character")
     {
     }
 

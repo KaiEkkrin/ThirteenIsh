@@ -6,7 +6,7 @@ namespace ThirteenIsh.Commands;
 
 internal sealed class DeleteCharacterCommand : CommandBase
 {
-    public DeleteCharacterCommand() : base("delete-character", "Deletes a character")
+    public DeleteCharacterCommand() : base("character-delete", "Deletes a character")
     {
     }
 
