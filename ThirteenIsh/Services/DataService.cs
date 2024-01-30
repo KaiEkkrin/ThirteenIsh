@@ -1,5 +1,8 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Driver;
+using Polly;
+using Polly.Contrib.WaitAndRetry;
+using Polly.Retry;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using ThirteenIsh.Entities;
@@ -43,6 +46,12 @@ public sealed class DataService : IDisposable
 
     private readonly SemaphoreSlim _indexCreationSemaphore = new(1, 1);
 
+    // Retry policy
+    private static readonly IEnumerable<TimeSpan> Delays = Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromMilliseconds(5), 6);
+    private readonly AsyncRetryPolicy<DataResult<bool>> _boolRetryPolicy;
+    private readonly AsyncRetryPolicy<DataResult<Character?>> _characterRetryPolicy;
+    private readonly AsyncRetryPolicy<DataResult<Guild?>> _guildRetryPolicy;
+
     public DataService(
         IConfiguration configuration,
         ILogger<DataService> logger)
@@ -50,6 +59,37 @@ public sealed class DataService : IDisposable
         _client = new MongoClient(configuration[ConfigKeys.MongoConnectionString]);
         _database = _client.GetDatabase(DatabaseName);
         _logger = logger;
+
+        _boolRetryPolicy = Policy.HandleResult<DataResult<bool>>(r => !r.Success).WaitAndRetryAsync(Delays);
+        _characterRetryPolicy = Policy.HandleResult<DataResult<Character?>>(r => !r.Success).WaitAndRetryAsync(Delays);
+        _guildRetryPolicy = Policy.HandleResult<DataResult<Guild?>>(r => !r.Success).WaitAndRetryAsync(Delays);
+    }
+
+    public async Task<Guild?> CreateAdventureAsync(string name, string description, ulong guildId,
+        CancellationToken cancellationToken = default)
+    {
+        var collection = await GetGuildsCollectionAsync(cancellationToken);
+        var result = await _guildRetryPolicy.ExecuteAsync(async () =>
+        {
+            var guild = await EnsureGuildAsync(guildId, cancellationToken);
+            if (guild.Adventures.Any(o => o.Name == name)) return new DataResult<Guild?>(true, null); // adventure already exists
+
+            guild.Adventures.Add(new Adventure { Name = name, Description = description });
+            guild.CurrentAdventureName = name;
+
+            var beforeVersion = guild.Version++;
+
+            // Only replace if the guild version hasn't changed -- otherwise re-read and try again
+            guild = await collection.FindOneAndReplaceAsync(
+                GetGuildFilter(guildId, beforeVersion),
+                guild,
+                new FindOneAndReplaceOptions<Guild> { ReturnDocument = ReturnDocument.After },
+                cancellationToken);
+
+            return new DataResult<Guild?>(guild != null, guild);
+        });
+
+        return result.Value;
     }
 
     public async Task<Character?> CreateCharacterAsync(string name, CharacterSheet sheet, ulong userId,
@@ -59,7 +99,8 @@ public sealed class DataService : IDisposable
         {
             Name = name,
             Sheet = sheet,
-            UserId = MessageBase.ToDatabaseUserId(userId)
+            UserId = UserEntityBase.ToDatabaseUserId(userId),
+            Version = 1
         };
 
         var collection = await GetCharactersCollectionAsync(cancellationToken);
@@ -75,14 +116,15 @@ public sealed class DataService : IDisposable
         }
     }
 
-    public async Task<DeleteCharacterMessage> CreateDeleteCharacterMessageAsync(string name, ulong userId,
+    public async Task<DeleteAdventureMessage> CreateDeleteAdventureMessageAsync(string name, ulong guildId, ulong userId,
         CancellationToken cancellationToken = default)
     {
-        DeleteCharacterMessage message = new()
+        DeleteAdventureMessage message = new()
         {
             Id = ObjectId.GenerateNewId(),
+            GuildId = Guild.ToDatabaseGuildId(guildId),
             Name = name,
-            UserId = MessageBase.ToDatabaseUserId(userId)
+            UserId = UserEntityBase.ToDatabaseUserId(userId)
         };
 
         var collection = await GetMessagesCollectionAsync(cancellationToken);
@@ -90,10 +132,51 @@ public sealed class DataService : IDisposable
         return message;
     }
 
+    public async Task<DeleteCharacterMessage> CreateDeleteCharacterMessageAsync(string name, ulong userId,
+        CancellationToken cancellationToken = default)
+    {
+        DeleteCharacterMessage message = new()
+        {
+            Id = ObjectId.GenerateNewId(),
+            Name = name,
+            UserId = UserEntityBase.ToDatabaseUserId(userId)
+        };
+
+        var collection = await GetMessagesCollectionAsync(cancellationToken);
+        await collection.InsertOneAsync(message, cancellationToken: cancellationToken);
+        return message;
+    }
+
+    public async Task<bool> DeleteAdventureAsync(string name, ulong guildId,
+        CancellationToken cancellationToken = default)
+    {
+        var collection = await GetGuildsCollectionAsync(cancellationToken);
+        var result = await _boolRetryPolicy.ExecuteAsync(async () =>
+        {
+            var guild = await EnsureGuildAsync(guildId, cancellationToken);
+            if (!guild.Adventures.Any(o => o.Name == name)) return new DataResult<bool>(true, false); // adventure does not exist
+
+            guild.Adventures.RemoveAll(o => o.Name == name);
+            if (guild.CurrentAdventureName == name) guild.CurrentAdventureName = string.Empty;
+
+            var beforeVersion = guild.Version++;
+
+            // Only replace if the guild version hasn't changed -- otherwise re-read and try again
+            var result = await collection.ReplaceOneAsync(
+                GetGuildFilter(guildId, beforeVersion),
+                guild,
+                cancellationToken: cancellationToken);
+
+            return new DataResult<bool>(result.ModifiedCount == 1, result.ModifiedCount == 1);
+        });
+
+        return result.Value;
+    }
+
     public async Task<bool> DeleteCharacterAsync(string name, ulong userId, CancellationToken cancellationToken = default)
     {
         var collection = await GetCharactersCollectionAsync(cancellationToken);
-        var filter = GetCharacterFilter(name, userId);
+        var filter = GetCharacterFilter(name, userId, null);
         var result = await collection.DeleteOneAsync(filter, cancellationToken);
         return result.DeletedCount > 0;
     }
@@ -128,25 +211,41 @@ public sealed class DataService : IDisposable
         }
     }
 
+    public async Task<Guild?> EditAdventureAsync(string name, string description, ulong guildId,
+        CancellationToken cancellationToken = default)
+    {
+        var collection = await GetGuildsCollectionAsync(cancellationToken);
+        var result = await _guildRetryPolicy.ExecuteAsync(async () =>
+        {
+            var guild = await EnsureGuildAsync(guildId, cancellationToken);
+            var index = guild.Adventures.FindIndex(o => o.Name == name);
+            if (index < 0) return new DataResult<Guild?>(true, null); // adventure does not exist
+
+            guild.Adventures[index].Description = description;
+            var beforeVersion = guild.Version++;
+
+            // Only replace if the guild version hasn't changed -- otherwise re-read and try again
+            guild = await collection.FindOneAndReplaceAsync(
+                GetGuildFilter(guildId, beforeVersion),
+                guild,
+                new FindOneAndReplaceOptions<Guild> { ReturnDocument = ReturnDocument.After },
+                cancellationToken);
+
+            return new DataResult<Guild?>(guild != null, guild);
+        });
+
+        return result.Value;
+    }
+
     public async Task<Guild> EnsureGuildAsync(ulong guildId, CancellationToken cancellationToken = default)
     {
-        var guild = await GetGuildAsync(guildId, cancellationToken);
-        if (guild is null)
-        {
-            try
-            {
-                var collection = await GetGuildsCollectionAsync(cancellationToken);
-                await collection.InsertOneAsync(
-                    new Guild { GuildId = Guild.ToDatabaseGuildId(guildId) },
-                    cancellationToken: cancellationToken);
-            }
-            catch (MongoWriteException ex) when (ex.WriteError.Code == 11000)
-            {
-                // Something must have created it concurrently with us -- can ignore
-            }
-
-            guild = await GetGuildAsync(guildId, cancellationToken);
-        }
+        var collection = await GetGuildsCollectionAsync(cancellationToken);
+        var guild = await collection.FindOneAndUpdateAsync(
+            GetGuildFilter(guildId, null),
+            Builders<Guild>.Update.SetOnInsert(o => o.GuildId, Guild.ToDatabaseGuildId(guildId))
+                .SetOnInsert(o => o.Version, 1L),
+            new FindOneAndUpdateOptions<Guild> { IsUpsert = true, ReturnDocument = ReturnDocument.After },
+            cancellationToken);
 
         return guild ?? throw new InvalidOperationException($"Failed to create guild record for {guildId}");
     }
@@ -155,20 +254,6 @@ public sealed class DataService : IDisposable
         CancellationToken cancellationToken = default)
     {
         return await ListCharactersAsync(name, userId, cancellationToken).FirstOrDefaultAsync(cancellationToken);
-    }
-
-    public async Task<Guild?> GetGuildAsync(ulong guildId, CancellationToken cancellationToken = default)
-    {
-        var collection = await GetGuildsCollectionAsync(cancellationToken);
-        using var cursor = await collection.FindAsync(
-            Builders<Guild>.Filter.Eq(o => o.GuildId, Guild.ToDatabaseGuildId(guildId)),
-            cancellationToken: cancellationToken);
-        while (await cursor.MoveNextAsync(cancellationToken))
-        {
-            if (cursor.Current.FirstOrDefault() is { } guild) return guild;
-        }
-
-        return null;
     }
 
     public async Task<MessageBase?> GetMessageAsync(string messageId, CancellationToken cancellationToken = default)
@@ -193,7 +278,7 @@ public sealed class DataService : IDisposable
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var collection = await GetCharactersCollectionAsync(cancellationToken);
-        var filter = GetCharacterFilter(name, userId);
+        var filter = GetCharacterFilter(name, userId, null);
         using var cursor = await collection.FindAsync(filter, cancellationToken: cancellationToken);
         while (await cursor.MoveNextAsync(cancellationToken))
         {
@@ -201,28 +286,59 @@ public sealed class DataService : IDisposable
         }
     }
 
+    public async Task<Guild?> SetCurrentAdventureAsync(string name, ulong guildId,
+        CancellationToken cancellationToken = default)
+    {
+        var collection = await GetGuildsCollectionAsync(cancellationToken);
+        var result = await _guildRetryPolicy.ExecuteAsync(async () =>
+        {
+            var guild = await EnsureGuildAsync(guildId, cancellationToken);
+            var adventure = guild.Adventures.FirstOrDefault(o => o.Name == name);
+            if (adventure is null) return new DataResult<Guild?>(true, null); // no such adventure
+
+            guild.CurrentAdventureName = name;
+            var beforeVersion = guild.Version++;
+
+            // Only replace if the guild version hasn't changed -- otherwise re-read and try again
+            guild = await collection.FindOneAndReplaceAsync(
+                GetGuildFilter(guildId, beforeVersion),
+                guild,
+                new FindOneAndReplaceOptions<Guild> { ReturnDocument = ReturnDocument.After },
+                cancellationToken);
+
+            return new DataResult<Guild?>(guild != null, guild);
+        });
+
+        return result.Value;
+    }
+
     public async Task<Character?> UpdateCharacterAsync(
         string name, Action<CharacterSheet> updateSheet, ulong userId,
         CancellationToken cancellationToken = default)
     {
-        // TODO do this in a transaction.
-        // Requiring a transaction here makes the update much easier and more flexible than
-        // having to write code to do the splice, and I don't care that it's less performant
-        var character = await ListCharactersAsync(name, userId, cancellationToken).FirstOrDefaultAsync(cancellationToken);
-        if (character is null) return null;
-
-        updateSheet(character.Sheet);
-
         var collection = await GetCharactersCollectionAsync(cancellationToken);
-        var filter = GetCharacterFilter(name, userId);
-        return await collection.FindOneAndReplaceAsync(
-            filter,
-            character,
-            new FindOneAndReplaceOptions<Character>
-            {
-                ReturnDocument = ReturnDocument.After
-            },
-            cancellationToken);
+        var result = await _characterRetryPolicy.ExecuteAsync(async () =>
+        {
+            var character = await ListCharactersAsync(name, userId, cancellationToken).FirstOrDefaultAsync(cancellationToken);
+            if (character is null) return new DataResult<Character?>(true, null);
+
+            updateSheet(character.Sheet);
+            var beforeVersion = character.Version++;
+
+            var filter = GetCharacterFilter(name, userId, beforeVersion);
+            character = await collection.FindOneAndReplaceAsync(
+                filter,
+                character,
+                new FindOneAndReplaceOptions<Character>
+                {
+                    ReturnDocument = ReturnDocument.After
+                },
+                cancellationToken);
+
+            return new DataResult<Character?>(character != null, character);
+        });
+
+        return result.Value;
     }
 
     public async Task UpdateGuildCommandVersionAsync(ulong guildId, int commandVersion,
@@ -233,22 +349,59 @@ public sealed class DataService : IDisposable
             Builders<Guild>.Filter.And(
                 Builders<Guild>.Filter.Eq(o => o.GuildId, Guild.ToDatabaseGuildId(guildId)),
                 Builders<Guild>.Filter.Lt(o => o.CommandVersion, commandVersion)),
-            Builders<Guild>.Update.Set(o => o.CommandVersion, commandVersion),
+            Builders<Guild>.Update.Set(o => o.CommandVersion, commandVersion)
+                .Inc(o => o.Version, 1L),
             cancellationToken: cancellationToken);
     }
 
     public void Dispose() => _indexCreationSemaphore.Dispose();
 
-    private static FilterDefinition<Character> GetCharacterFilter(string? name, ulong? userId) =>
-        (name, userId) switch
+    private static FilterDefinition<Character> GetCharacterFilter(string? name, ulong? userId, long? version)
+    {
+        List<FilterDefinition<Character>> conditions = [];
+        if (!string.IsNullOrEmpty(name))
         {
-            ({ } n, { } uid) => Builders<Character>.Filter.And(
-                Builders<Character>.Filter.Eq(o => o.Name, n),
-                Builders<Character>.Filter.Eq(o => o.UserId, Character.ToDatabaseUserId(uid))),
-            ({ } n, null) => Builders<Character>.Filter.Eq(o => o.Name, n),
-            (null, { } uid) => Builders<Character>.Filter.Eq(o => o.UserId, Character.ToDatabaseUserId(uid)),
-            (null, null) => throw new NotSupportedException("Cannot filter all characters")
+            conditions.Add(Builders<Character>.Filter.Eq(o => o.Name, name));
+        }
+
+        if (userId.HasValue)
+        {
+            conditions.Add(Builders<Character>.Filter.Eq(o => o.UserId, UserEntityBase.ToDatabaseUserId(userId.Value)));
+        }
+
+        if (version.HasValue)
+        {
+            conditions.Add(Builders<Character>.Filter.Eq(o => o.Version, version.Value));
+        }
+
+        return conditions.Count switch
+        {
+            0 => throw new NotSupportedException("Cannot filter all characters"),
+            1 => conditions[0],
+            _ => Builders<Character>.Filter.And(conditions)
         };
+    }
+
+    private static FilterDefinition<Guild> GetGuildFilter(ulong? guildId, long? version)
+    {
+        List<FilterDefinition<Guild>> conditions = [];
+        if (guildId.HasValue)
+        {
+            conditions.Add(Builders<Guild>.Filter.Eq(o => o.GuildId, Guild.ToDatabaseGuildId(guildId.Value)));
+        }
+
+        if (version.HasValue)
+        {
+            conditions.Add(Builders<Guild>.Filter.Eq(o => o.Version, version.Value));
+        }
+
+        return conditions.Count switch
+        {
+            0 => throw new NotSupportedException("Cannot filter all guilds"),
+            1 => conditions[0],
+            _ => Builders<Guild>.Filter.And(conditions)
+        };
+    }
 
     private async Task<IMongoCollection<Character>> GetCharactersCollectionAsync(
         CancellationToken cancellationToken = default)

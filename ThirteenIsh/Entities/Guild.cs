@@ -25,5 +25,26 @@ public class Guild
     [BsonIgnore]
     public ulong NativeGuildId => (ulong)GuildId;
 
+    /// <summary>
+    /// This guild's list of adventures.
+    /// </summary>
+    public List<Adventure> Adventures { get; set; } = [];
+
+    /// <summary>
+    /// This guild's current adventure.
+    /// </summary>
+    public string CurrentAdventureName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// An incrementing version number, used to detect conflicts.
+    /// </summary>
+    public long Version { get; set; }
+
+    /// <summary>
+    /// The current adventure, if any.
+    /// </summary>
+    [BsonIgnore]
+    public Adventure? CurrentAdventure => Adventures.FirstOrDefault(o => o.Name == CurrentAdventureName);
+
     public static long ToDatabaseGuildId(ulong guildId) => (long)guildId;
 }

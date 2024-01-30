@@ -4,29 +4,29 @@ using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands;
 
-internal sealed class ListCharactersCommand : CommandBase
+internal sealed class ListAdventuresCommand : CommandBase
 {
-    public ListCharactersCommand() : base("character-list", "Lists saved characters")
+    public ListAdventuresCommand() : base("adventure-list", "Lists adventures")
     {
     }
 
     public override async Task HandleAsync(SocketSlashCommand command, IServiceProvider serviceProvider,
         CancellationToken cancellationToken)
     {
+        if (command.GuildId is not { } guildId) return;
+
         var dataService = serviceProvider.GetRequiredService<DataService>();
+        var guild = await dataService.EnsureGuildAsync(guildId, cancellationToken);
 
         EmbedBuilder embedBuilder = new();
-        embedBuilder.WithAuthor(command.User);
-        embedBuilder.WithTitle("Characters");
+        embedBuilder.WithTitle("Adventures");
 
-        // TODO limit/paginate/what have you?  (eventually)
-        await foreach (var character in dataService.ListCharactersAsync(
-            userId: command.User.Id, cancellationToken: cancellationToken))
+        foreach (var adventure in guild.Adventures.OrderBy(o => o.Name))
         {
             embedBuilder.AddField(new EmbedFieldBuilder()
                 .WithIsInline(false)
-                .WithName(character.Name)
-                .WithValue($"Level {character.Sheet.Level} {character.Sheet.Class}"));
+                .WithName(adventure.Name)
+                .WithValue($"{adventure.Adventurers.Count} adventurers"));
         }
 
         await command.RespondAsync(embed: embedBuilder.Build());

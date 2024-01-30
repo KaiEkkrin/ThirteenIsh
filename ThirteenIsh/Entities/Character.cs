@@ -11,4 +11,9 @@ public class Character : UserEntityBase
     /// The character sheet.
     /// </summary>
     public CharacterSheet Sheet { get; set; } = new();
+
+    /// <summary>
+    /// An incrementing version number, used to detect conflicts.
+    /// </summary>
+    public long Version { get; set; }
 }

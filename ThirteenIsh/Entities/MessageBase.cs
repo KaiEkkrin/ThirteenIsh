@@ -6,7 +6,7 @@ namespace ThirteenIsh.Entities;
 /// <summary>
 /// Common base class for tracked message types.
 /// </summary>
-[BsonKnownTypes(typeof(DeleteCharacterMessage))]
+[BsonKnownTypes(typeof(DeleteAdventureMessage), typeof(DeleteCharacterMessage))]
 public class MessageBase : UserEntityBase
 {
     /// <summary>
