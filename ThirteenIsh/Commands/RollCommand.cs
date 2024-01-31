@@ -22,12 +22,12 @@ internal sealed class RollCommand : CommandBase
     public override Task HandleAsync(SocketSlashCommand command, IServiceProvider serviceProvider,
         CancellationToken cancellationToken)
     {
-        if (!TryGetOption<string>(command.Data, "dice", out var diceString))
+        if (!CommandUtil.TryGetOption<string>(command.Data, "dice", out var diceString))
             diceString = string.Empty;
 
         var parseTree = Parser.Parse(diceString);
         if (!string.IsNullOrEmpty(parseTree.Error))
-            return command.RespondAsync(parseTree.Error);
+            return command.RespondAsync(parseTree.Error, ephemeral: true);
 
         if (parseTree.Offset < diceString.Length)
             return command.RespondAsync($"Unrecognised input at end of string: '{diceString[parseTree.Offset..]}'");

@@ -22,6 +22,18 @@ public class CharacterSheet
     /// </summary>
     public int Level { get; set; } = 1;
 
+    /// <summary>
+    /// Gets an ability modifier for this character.
+    /// </summary>
+    public int GetAbilityModifier(string abilityScore)
+    {
+        // This needs to always round down -- the divide operator rounds towards zero
+        if (!AbilityScores.TryGetValue(abilityScore, out int score)) return 0;
+
+        var (quotient, remainder) = Math.DivRem(score - 10, 2);
+        return remainder == -1 ? quotient - 1 : quotient;
+    }
+
     public static CharacterSheet CreateDefault() => new()
     {
         AbilityScores = AttributeName.AbilityScores.ToDictionary(score => score, _ => 10),

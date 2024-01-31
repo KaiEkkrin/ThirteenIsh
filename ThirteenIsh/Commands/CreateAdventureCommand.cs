@@ -25,13 +25,13 @@ internal sealed class CreateAdventureCommand : CommandBase
         CancellationToken cancellationToken)
     {
         if (command.GuildId is not { } guildId) return;
-        if (!TryGetCanonicalizedMultiPartOption(command.Data, "name", out var name))
+        if (!CommandUtil.TryGetCanonicalizedMultiPartOption(command.Data, "name", out var name))
         {
             await command.RespondAsync("Adventure names must contain only letters and spaces", ephemeral: true);
             return;
         }
 
-        if (!TryGetOption<string>(command.Data, "description", out var description))
+        if (!CommandUtil.TryGetOption<string>(command.Data, "description", out var description))
             description = string.Empty;
 
         // This will also make it the current adventure
@@ -44,7 +44,7 @@ internal sealed class CreateAdventureCommand : CommandBase
             return;
         }
 
-        await RespondWithAdventureSummaryAsync(command, guild.CurrentAdventure, $"Created adventure: {name}");
+        await CommandUtil.RespondWithAdventureSummaryAsync(command, guild.CurrentAdventure, $"Created adventure: {name}");
     }
 }
 

@@ -2,16 +2,12 @@
 using Discord.WebSocket;
 using ThirteenIsh.Services;
 
-namespace ThirteenIsh.Commands;
+namespace ThirteenIsh.Commands.Character;
 
-internal sealed class ListCharactersCommand : CommandBase
+internal sealed class CharacterListGetSubCommand() : SubCommandBase("get", "Lists your characters.")
 {
-    public ListCharactersCommand() : base("character-list", "Lists saved characters")
-    {
-    }
-
-    public override async Task HandleAsync(SocketSlashCommand command, IServiceProvider serviceProvider,
-        CancellationToken cancellationToken)
+    public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
+        IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
         var dataService = serviceProvider.GetRequiredService<DataService>();
 

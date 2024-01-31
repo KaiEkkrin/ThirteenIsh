@@ -1,28 +1,22 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using ThirteenIsh.Game;
 using ThirteenIsh.Services;
 
-namespace ThirteenIsh.Commands;
+namespace ThirteenIsh.Commands.Character;
 
-internal sealed class DeleteCharacterCommand : CommandBase
+internal class CharacterListRemoveSubCommand() : SubCommandBase("remove", "Deletes a character.")
 {
-    public DeleteCharacterCommand() : base("character-delete", "Deletes a character")
+    public override SlashCommandOptionBuilder CreateBuilder()
     {
+        return base.CreateBuilder()
+            .AddCharacterOption("name");
     }
 
-    public override SlashCommandBuilder CreateBuilder()
+    public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
+        IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
-        var builder = base.CreateBuilder();
-        builder.AddOption("name", ApplicationCommandOptionType.String, "The character name",
-            isRequired: true);
-
-        return builder;
-    }
-
-    public override async Task HandleAsync(SocketSlashCommand command, IServiceProvider serviceProvider,
-        CancellationToken cancellationToken)
-    {
-        if (!TryGetCanonicalizedMultiPartOption(command.Data, "name", out var name))
+        if (!CommandUtil.TryGetCanonicalizedMultiPartOption(option, "name", out var name))
         {
             await command.RespondAsync("Character names must contain only letters and spaces", ephemeral: true);
             return;

@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using Discord;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
 namespace ThirteenIsh.Game;
@@ -34,6 +35,45 @@ internal static partial class AttributeName
 
     [GeneratedRegex(@"\s+")]
     private static partial Regex WhiteSpaceRegex();
+
+    /// <summary>
+    /// Adds the ability score choices to a command.
+    /// </summary>
+    public static SlashCommandOptionBuilder AddAbilityScoreChoices(
+        this SlashCommandOptionBuilder builder)
+    {
+        return AbilityScores.Aggregate(builder, (b, a) => b.AddChoice(a, a))
+            .WithType(ApplicationCommandOptionType.String);
+    }
+
+    /// <summary>
+    /// Adds an ability score choice option to a command.
+    /// </summary>
+    public static SlashCommandOptionBuilder AddAbilityScoreOption(
+        this SlashCommandOptionBuilder builder,
+        string name = "name",
+        string description = "The ability score.",
+        bool required = true)
+    {
+        return builder.AddOption(new SlashCommandOptionBuilder()
+            .WithName(name)
+            .WithDescription(description)
+            .WithRequired(required)
+            .AddAbilityScoreChoices());
+    }
+
+    /// <summary>
+    /// Adds a character selection option to a command.
+    /// </summary>
+    public static SlashCommandOptionBuilder AddCharacterOption(
+        this SlashCommandOptionBuilder builder, string name = "character")
+    {
+        return builder.AddOption(new SlashCommandOptionBuilder()
+            .WithName(name)
+            .WithDescription("The character name.")
+            .WithRequired(true) // TODO in future, have none use the user's current active character in the guild (?)
+            .WithType(ApplicationCommandOptionType.String));
+    }
 
     /// <summary>
     /// Finds an attribute name that matches the input name including unambiguous string overlap.

@@ -24,7 +24,7 @@ internal class DeleteAdventureCommand : CommandBase
         CancellationToken cancellationToken)
     {
         if (command.GuildId is not { } guildId) return;
-        if (!TryGetCanonicalizedMultiPartOption(command.Data, "name", out var name))
+        if (!CommandUtil.TryGetCanonicalizedMultiPartOption(command.Data, "name", out var name))
         {
             await command.RespondAsync("Adventure names must contain only letters and spaces", ephemeral: true);
             return;

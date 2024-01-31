@@ -25,7 +25,7 @@ internal sealed class ShowAdventureCommand : CommandBase
         var dataService = serviceProvider.GetRequiredService<DataService>();
         var guild = await dataService.EnsureGuildAsync(guildId, cancellationToken);
 
-        var adventureName = TryGetCanonicalizedMultiPartOption(command.Data, "name", out var name)
+        var adventureName = CommandUtil.TryGetCanonicalizedMultiPartOption(command.Data, "name", out var name)
             ? name
             : guild.CurrentAdventureName;
 
@@ -36,6 +36,6 @@ internal sealed class ShowAdventureCommand : CommandBase
             return;
         }
 
-        await RespondWithAdventureSummaryAsync(command, adventure, adventure.Name);
+        await CommandUtil.RespondWithAdventureSummaryAsync(command, adventure, adventure.Name);
     }
 }

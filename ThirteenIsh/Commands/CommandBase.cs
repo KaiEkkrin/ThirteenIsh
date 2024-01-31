@@ -1,9 +1,5 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using ThirteenIsh.Entities;
-using ThirteenIsh.Game;
 
 namespace ThirteenIsh.Commands;
 
@@ -14,14 +10,14 @@ namespace ThirteenIsh.Commands;
 /// TODO I already have unmanageably many commands -- make `character-*`, `adventure-*` etc into
 /// sub-commands.
 /// </summary>
-internal abstract class CommandBase(string name, string description)
+internal abstract class CommandBase(string name, string description, params SubCommandGroupBase[] subCommandGroups)
 {
     /// <summary>
     /// Whenever I make any changes that would affect command registrations I should increment
     /// this -- this will cause us to re-register commands with guilds. Otherwise, we won't
     /// (it's time consuming and I suspect Discord would eventually throttle us.)
     /// </summary>
-    public const int Version = 7;
+    public const int Version = 8;
 
     public string Name => $"13-{name}";
 
@@ -30,116 +26,32 @@ internal abstract class CommandBase(string name, string description)
         SlashCommandBuilder builder = new();
         builder.WithName(Name);
         builder.WithDescription(description);
+
+        foreach (var subCommandGroup in subCommandGroups)
+        {
+            builder.AddOption(subCommandGroup.CreateBuilder());
+        }
+
         return builder;
     }
 
     /// <summary>
-    /// Handles a slash command.
+    /// Handles a slash command. The default implementation tries to delegate to the
+    /// selected sub-command group, or if none does nothing.
     /// </summary>
     /// <param name="command">The command.</param>
     /// <param name="serviceProvider">A scoped service provider to get services from.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns>The handler task.</returns>
-    public abstract Task HandleAsync(SocketSlashCommand command, IServiceProvider serviceProvider,
-        CancellationToken cancellationToken);
-
-    protected static Task RespondWithAdventureSummaryAsync(
-        SocketSlashCommand command,
-        Adventure adventure,
-        string title)
+    public virtual Task HandleAsync(SocketSlashCommand command, IServiceProvider serviceProvider,
+        CancellationToken cancellationToken)
     {
-        EmbedBuilder embedBuilder = new();
-        embedBuilder.WithAuthor(command.User);
-        embedBuilder.WithTitle(title);
-        embedBuilder.WithDescription(adventure.Description);
+        var option = command.Data.Options.FirstOrDefault();
+        if (option is null) return Task.CompletedTask;
 
-        foreach (var (_, adventurer) in adventure.Adventurers.OrderBy(kv => kv.Value.Name))
-        {
-            embedBuilder.AddField(new EmbedFieldBuilder()
-                .WithIsInline(true)
-                .WithName(adventurer.Name)
-                .WithValue($"Level {adventurer.Sheet.Level} {adventurer.Sheet.Class}"));
-        }
-
-        return command.RespondAsync(embed: embedBuilder.Build());
-    }
-
-    protected static Task RespondWithCharacterSheetAsync(
-        SocketSlashCommand command,
-        CharacterSheet sheet,
-        string title)
-    {
-        EmbedBuilder embedBuilder = new();
-        embedBuilder.WithAuthor(command.User);
-        embedBuilder.WithTitle(title);
-        embedBuilder.WithDescription($"Level {sheet.Level} {sheet.Class}");
-
-        foreach (var (abilityName, abilityScore) in sheet.AbilityScores)
-        {
-            embedBuilder.AddField(new EmbedFieldBuilder()
-                .WithIsInline(true)
-                .WithName(abilityName)
-                .WithValue(abilityScore));
-        }
-
-        return command.RespondAsync(embed: embedBuilder.Build());
-    }
-
-    protected static bool TryConvertTo<T>(object? value, [MaybeNullWhen(false)] out T result)
-    {
-        try
-        {
-            if (Convert.ChangeType(value, typeof(T), CultureInfo.CurrentCulture) is T convertedValue)
-            {
-                result = convertedValue;
-                return true;
-            }
-        }
-        catch (Exception)
-        {
-        }
-
-        result = default;
-        return false;
-    }
-
-    protected static bool TryGetCanonicalizedOption(
-        SocketSlashCommandData data, string name, [MaybeNullWhen(false)] out string canonicalizedValue)
-    {
-        if (TryGetOption<string>(data, name, out var value) &&
-            AttributeName.TryCanonicalize(value, out canonicalizedValue))
-        {
-            return true;
-        }
-
-        canonicalizedValue = default;
-        return false;
-    }
-
-    protected static bool TryGetCanonicalizedMultiPartOption(
-        SocketSlashCommandData data, string name, [MaybeNullWhen(false)] out string canonicalizedValue)
-    {
-        if (TryGetOption<string>(data, name, out var value) &&
-            AttributeName.TryCanonicalizeMultiPart(value, out canonicalizedValue))
-        {
-            return true;
-        }
-
-        canonicalizedValue = default;
-        return false;
-    }
-
-    protected static bool TryGetOption<T>(
-        SocketSlashCommandData data,
-        string name,
-        [MaybeNullWhen(false)] out T typedValue)
-    {
-        if (data.Options.FirstOrDefault(o => o.Name == name) is not { Value: var value })
-        {
-            typedValue = default;
-            return false;
-        }
-
-        return TryConvertTo(value, out typedValue);
+        var subCommandGroup = subCommandGroups.FirstOrDefault(o => o.Name == option.Name);
+        return subCommandGroup != null
+            ? subCommandGroup.HandleAsync(command, option, serviceProvider, cancellationToken)
+            : Task.CompletedTask;
     }
 }
