@@ -151,19 +151,19 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
         {
             case LogSeverity.Critical:
             case LogSeverity.Error:
-                DiscordErrorMessage(_logger, message.Message, null);
+                DiscordErrorMessage(_logger, message.Message, message.Exception);
                 break;
 
             case LogSeverity.Warning:
-                DiscordWarningMessage(_logger, message.Message, null);
+                DiscordWarningMessage(_logger, message.Message, message.Exception);
                 break;
 
             case LogSeverity.Info:
-                DiscordInformationMessage(_logger, message.Message, null);
+                DiscordInformationMessage(_logger, message.Message, message.Exception);
                 break;
 
             default:
-                DiscordDebugMessage(_logger, message.Message, null);
+                DiscordDebugMessage(_logger, message.Message, message.Exception);
                 break;
         }
 

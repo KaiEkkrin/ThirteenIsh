@@ -34,12 +34,12 @@ internal sealed class AdventureAddSubCommand() : SubCommandBase("add", "Adds a n
         var updatedGuild = await dataService.EditGuildAsync(
             guild =>
             {
-                if (guild.Adventures.Any(o => o.Name == name)) return null; // adventure already exists
+                if (guild.Adventures.Any(o => o.Name == name)) return new EditResult<Guild>(null); // adventure already exists
 
                 guild.Adventures.Add(new Adventure { Name = name, Description = description });
                 guild.CurrentAdventureName = name;
 
-                return guild;
+                return new EditResult<Guild>(guild);
             }, guildId, cancellationToken);
 
         if (updatedGuild?.CurrentAdventure is null)

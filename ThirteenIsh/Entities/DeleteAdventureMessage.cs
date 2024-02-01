@@ -16,7 +16,7 @@ public class DeleteAdventureMessage : MessageBase
     public ulong NativeGuildId => (ulong)GuildId;
 
     /// <summary>
-    /// The character name to delete.
+    /// The adventure name to delete.
     /// </summary>
     public string Name { get; set; } = string.Empty;
 
@@ -24,8 +24,17 @@ public class DeleteAdventureMessage : MessageBase
         CancellationToken cancellationToken = default)
     {
         var dataService = serviceProvider.GetRequiredService<DataService>();
-        var deleted = await dataService.DeleteAdventureAsync(Name, NativeGuildId, cancellationToken);
-        if (!deleted)
+        var updatedGuild = await dataService.EditGuildAsync(
+            guild =>
+            {
+                if (!guild.Adventures.Any(o => o.Name == Name)) return new EditResult<Guild>(null); // adventure does not exist
+
+                guild.Adventures.RemoveAll(o => o.Name == Name);
+                if (guild.CurrentAdventureName == Name) guild.CurrentAdventureName = string.Empty;
+                return new EditResult<Guild>(guild);
+            }, NativeGuildId, cancellationToken);
+
+        if (updatedGuild is null)
         {
             await component.RespondAsync(
                 $"Cannot delete an adventure named '{Name}'. Perhaps it was already deleted?",

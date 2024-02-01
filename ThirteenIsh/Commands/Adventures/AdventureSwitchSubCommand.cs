@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using ThirteenIsh.Entities;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Adventures;
@@ -28,10 +29,10 @@ internal sealed class AdventureSwitchSubCommand() : SubCommandBase("switch", "Se
             guild =>
             {
                 var adventure = guild.Adventures.FirstOrDefault(o => o.Name == name);
-                if (adventure is null) return null; // no such adventure
+                if (adventure is null) return new EditResult<Guild>(null); // no such adventure
 
                 guild.CurrentAdventureName = name;
-                return guild;
+                return new EditResult<Guild>(guild);
             },
             guildId, cancellationToken);
 

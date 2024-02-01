@@ -33,10 +33,10 @@ internal sealed class AdventureEditSubCommand() : SubCommandBase("edit", "Edits 
             guild =>
             {
                 var index = guild.Adventures.FindIndex(o => o.Name == name);
-                if (index < 0) return null;
+                if (index < 0) return new EditResult<Guild>(null);
 
                 guild.Adventures[index].Description = description;
-                return guild;
+                return new EditResult<Guild>(guild);
             },
             guildId, cancellationToken);
 

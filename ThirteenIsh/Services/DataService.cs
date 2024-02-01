@@ -116,30 +116,6 @@ public sealed class DataService : IDisposable
         return message;
     }
 
-    public async Task<bool> DeleteAdventureAsync(string name, ulong guildId,
-        CancellationToken cancellationToken = default)
-    {
-        var collection = await GetGuildsCollectionAsync(cancellationToken);
-        return await _retryPolicy.ExecuteAsync(async () =>
-        {
-            var guild = await EnsureGuildAsync(guildId, cancellationToken);
-            if (!guild.Adventures.Any(o => o.Name == name)) return false; // adventure does not exist
-
-            guild.Adventures.RemoveAll(o => o.Name == name);
-            if (guild.CurrentAdventureName == name) guild.CurrentAdventureName = string.Empty;
-
-            var beforeVersion = guild.Version++;
-
-            // Only replace if the guild version hasn't changed -- otherwise re-read and try again
-            var result = await collection.ReplaceOneAsync(
-                GetGuildFilter(guildId, beforeVersion),
-                guild,
-                cancellationToken: cancellationToken);
-
-            return result.ModifiedCount == 1 ? true : throw new WriteConflictException(nameof(result));
-        });
-    }
-
     public async Task<bool> DeleteCharacterAsync(string name, ulong userId, CancellationToken cancellationToken = default)
     {
         var collection = await GetCharactersCollectionAsync(cancellationToken);
@@ -178,16 +154,15 @@ public sealed class DataService : IDisposable
         }
     }
 
-    public async Task<T?> EditGuildAsync<T>(Func<Guild, T?> editFunc, ulong guildId,
+    public async Task<T?> EditGuildAsync<T>(Func<Guild, EditResult<T>> editFunc, ulong guildId,
         CancellationToken cancellationToken = default)
-        where T : class
     {
         var collection = await GetGuildsCollectionAsync(cancellationToken);
         return await _retryPolicy.ExecuteAsync(async () =>
         {
             var guild = await EnsureGuildAsync(guildId, cancellationToken);
             var editResult = editFunc(guild);
-            if (editResult is null) return null;
+            if (!editResult.Success) return editResult.Value;
 
             var beforeVersion = guild.Version++;
 
@@ -198,7 +173,7 @@ public sealed class DataService : IDisposable
                 cancellationToken: cancellationToken);
 
             if (replaceResult.ModifiedCount < 1) throw new WriteConflictException(nameof(guild));
-            return editResult;
+            return editResult.Value;
         });
     }
 

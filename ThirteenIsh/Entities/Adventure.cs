@@ -1,4 +1,7 @@
-﻿namespace ThirteenIsh.Entities;
+﻿using MongoDB.Bson.Serialization.Attributes;
+using ThirteenIsh.Serialization;
+
+namespace ThirteenIsh.Entities;
 
 /// <summary>
 /// An Adventure has a collection of characters with state.
@@ -13,5 +16,6 @@ public class Adventure
     /// <summary>
     /// Maps each user ID to their Adventurer.
     /// </summary>
-    public Dictionary<long, Adventurer> Adventurers { get; set; } = [];
+    [BsonSerializer(typeof(UlongDictionarySerializer<Adventurer>))]
+    public Dictionary<ulong, Adventurer> Adventurers { get; set; } = [];
 }
