@@ -12,12 +12,13 @@ internal static class CommandUtil
 
     public static Task RespondWithAdventureSummaryAsync(
         SocketSlashCommand command,
+        Guild guild,
         Adventure adventure,
         string title)
     {
         EmbedBuilder embedBuilder = new();
         embedBuilder.WithAuthor(command.User);
-        embedBuilder.WithTitle(title);
+        embedBuilder.WithTitle(adventure.Name == guild.CurrentAdventureName ? $"{title} [Current]" : title);
         embedBuilder.WithDescription(adventure.Description);
 
         foreach (var (_, adventurer) in adventure.Adventurers.OrderBy(kv => kv.Value.Name))
@@ -148,5 +149,27 @@ internal static class CommandUtil
         }
 
         return TryConvertTo(value, out typedValue);
+    }
+
+    public static bool TryGetSelectedAdventure(Guild guild, SocketSlashCommandDataOption option,
+        string name, [MaybeNullWhen(false)] out Adventure adventure)
+    {
+        var adventureName = TryGetCanonicalizedMultiPartOption(option, name, out var optionName)
+            ? optionName
+            : guild.CurrentAdventureName;
+
+        if (string.IsNullOrWhiteSpace(adventureName))
+        {
+            adventure = null;
+            return false;
+        }
+        else if (guild.Adventures.FirstOrDefault(o => o.Name == adventureName) is { } selectedAdventure)
+        {
+            adventure = selectedAdventure;
+            return true;
+        }
+
+        adventure = null;
+        return false;
     }
 }

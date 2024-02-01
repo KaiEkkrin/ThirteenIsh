@@ -2,29 +2,22 @@
 using Discord.WebSocket;
 using ThirteenIsh.Services;
 
-namespace ThirteenIsh.Commands;
+namespace ThirteenIsh.Commands.Adventures;
 
-internal class DeleteAdventureCommand : CommandBase
+internal sealed class AdventureRemoveSubCommand() : SubCommandBase("remove", "Deletes an adventure.")
 {
-    public DeleteAdventureCommand() : base("adventure-delete", "Deletes an adventure")
+    public override SlashCommandOptionBuilder CreateBuilder()
     {
+        return base.CreateBuilder()
+            .AddOption("name", ApplicationCommandOptionType.String, "The adventure name.",
+                isRequired: true);
     }
 
-    public override SlashCommandBuilder CreateBuilder()
-    {
-        var builder = base.CreateBuilder();
-        builder.AddOption("name", ApplicationCommandOptionType.String, "The adventure name",
-            isRequired: true);
-
-        builder.WithDefaultMemberPermissions(GuildPermission.ManageGuild);
-        return builder;
-    }
-
-    public override async Task HandleAsync(SocketSlashCommand command, IServiceProvider serviceProvider,
-        CancellationToken cancellationToken)
+    public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
+        IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
         if (command.GuildId is not { } guildId) return;
-        if (!CommandUtil.TryGetCanonicalizedMultiPartOption(command.Data, "name", out var name))
+        if (!CommandUtil.TryGetCanonicalizedMultiPartOption(option, "name", out var name))
         {
             await command.RespondAsync("Adventure names must contain only letters and spaces", ephemeral: true);
             return;

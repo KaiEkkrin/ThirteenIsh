@@ -10,14 +10,14 @@ namespace ThirteenIsh.Commands;
 /// TODO I already have unmanageably many commands -- make `character-*`, `adventure-*` etc into
 /// sub-commands.
 /// </summary>
-internal abstract class CommandBase(string name, string description, params SubCommandGroupBase[] subCommandGroups)
+internal abstract class CommandBase(string name, string description, params CommandOptionBase[] subOptions)
 {
     /// <summary>
     /// Whenever I make any changes that would affect command registrations I should increment
     /// this -- this will cause us to re-register commands with guilds. Otherwise, we won't
     /// (it's time consuming and I suspect Discord would eventually throttle us.)
     /// </summary>
-    public const int Version = 8;
+    public const int Version = 9;
 
     public string Name => $"13-{name}";
 
@@ -27,9 +27,9 @@ internal abstract class CommandBase(string name, string description, params SubC
         builder.WithName(Name);
         builder.WithDescription(description);
 
-        foreach (var subCommandGroup in subCommandGroups)
+        foreach (var option in subOptions)
         {
-            builder.AddOption(subCommandGroup.CreateBuilder());
+            builder.AddOption(option.CreateBuilder());
         }
 
         return builder;
@@ -49,9 +49,9 @@ internal abstract class CommandBase(string name, string description, params SubC
         var option = command.Data.Options.FirstOrDefault();
         if (option is null) return Task.CompletedTask;
 
-        var subCommandGroup = subCommandGroups.FirstOrDefault(o => o.Name == option.Name);
-        return subCommandGroup != null
-            ? subCommandGroup.HandleAsync(command, option, serviceProvider, cancellationToken)
+        var subOption = subOptions.FirstOrDefault(o => o.Name == option.Name);
+        return subOption != null
+            ? subOption.HandleAsync(command, option, serviceProvider, cancellationToken)
             : Task.CompletedTask;
     }
 }

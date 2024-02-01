@@ -34,6 +34,30 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
             new EventId(3, nameof(DiscordService)),
             "Slash command {Name} timed out after {Timeout}: {Details}");
 
+    private static readonly Action<ILogger, string, Exception?> DiscordErrorMessage =
+        LoggerMessage.Define<string>(
+            LogLevel.Error,
+            new EventId(4, nameof(DiscordService)),
+            "[Discord]: {Message}");
+
+    private static readonly Action<ILogger, string, Exception?> DiscordWarningMessage =
+        LoggerMessage.Define<string>(
+            LogLevel.Warning,
+            new EventId(5, nameof(DiscordService)),
+            "[Discord]: {Message}");
+
+    private static readonly Action<ILogger, string, Exception?> DiscordInformationMessage =
+        LoggerMessage.Define<string>(
+            LogLevel.Information,
+            new EventId(6, nameof(DiscordService)),
+            "[Discord]: {Message}");
+
+    private static readonly Action<ILogger, string, Exception?> DiscordDebugMessage =
+        LoggerMessage.Define<string>(
+            LogLevel.Debug,
+            new EventId(7, nameof(DiscordService)),
+            "[Discord]: {Message}");
+
     private readonly DiscordSocketClient _client = new();
     private readonly ConcurrentDictionary<string, CommandBase> _commandsMap = new();
 
@@ -123,16 +147,26 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
 
     private Task OnLogAsync(LogMessage message)
     {
-        var logLevel = message.Severity switch
+        switch (message.Severity)
         {
-            LogSeverity.Critical => LogLevel.Critical,
-            LogSeverity.Error => LogLevel.Error,
-            LogSeverity.Warning => LogLevel.Warning,
-            LogSeverity.Info => LogLevel.Information,
-            _ => LogLevel.Debug
-        };
+            case LogSeverity.Critical:
+            case LogSeverity.Error:
+                DiscordErrorMessage(_logger, message.Message, null);
+                break;
 
-        _logger.Log(logLevel, message.Exception, "{Message}", message.Message);
+            case LogSeverity.Warning:
+                DiscordWarningMessage(_logger, message.Message, null);
+                break;
+
+            case LogSeverity.Info:
+                DiscordInformationMessage(_logger, message.Message, null);
+                break;
+
+            default:
+                DiscordDebugMessage(_logger, message.Message, null);
+                break;
+        }
+
         return Task.CompletedTask;
     }
 

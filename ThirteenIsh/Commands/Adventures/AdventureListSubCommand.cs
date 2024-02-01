@@ -2,16 +2,12 @@
 using Discord.WebSocket;
 using ThirteenIsh.Services;
 
-namespace ThirteenIsh.Commands;
+namespace ThirteenIsh.Commands.Adventures;
 
-internal sealed class ListAdventuresCommand : CommandBase
+internal sealed class AdventureListSubCommand() : SubCommandBase("list", "Lists the adventures in this guild.")
 {
-    public ListAdventuresCommand() : base("adventure-list", "Lists adventures")
-    {
-    }
-
-    public override async Task HandleAsync(SocketSlashCommand command, IServiceProvider serviceProvider,
-        CancellationToken cancellationToken)
+    public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
+        IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
         if (command.GuildId is not { } guildId) return;
 

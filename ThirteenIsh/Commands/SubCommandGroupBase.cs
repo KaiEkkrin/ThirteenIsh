@@ -4,20 +4,15 @@ using Discord.WebSocket;
 namespace ThirteenIsh.Commands;
 
 internal class SubCommandGroupBase(string name, string description, params SubCommandBase[] subCommands)
+    : CommandOptionBase(name, description, ApplicationCommandOptionType.SubCommandGroup)
 {
-    public string Name => name;
-
-    public virtual SlashCommandOptionBuilder CreateBuilder()
+    public override SlashCommandOptionBuilder CreateBuilder()
     {
-        var builder = new SlashCommandOptionBuilder()
-            .WithName(name)
-            .WithDescription(description)
-            .WithType(ApplicationCommandOptionType.SubCommandGroup);
-
+        var builder = base.CreateBuilder();
         return subCommands.Aggregate(builder, (b, s) => b.AddOption(s.CreateBuilder()));
     }
 
-    public virtual Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
+    public override Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
         IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
         var subCommandOption = option.Options.FirstOrDefault();
