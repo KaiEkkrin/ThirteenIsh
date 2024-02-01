@@ -21,7 +21,7 @@ internal sealed class AdventureListSubCommand() : SubCommandBase("list", "Lists 
         {
             embedBuilder.AddField(new EmbedFieldBuilder()
                 .WithIsInline(false)
-                .WithName(adventure.Name)
+                .WithName(adventure.Name == guild.CurrentAdventureName ? $"{adventure.Name} [Current]" : adventure.Name)
                 .WithValue($"{adventure.Adventurers.Count} adventurers"));
         }
 

@@ -43,15 +43,21 @@ internal abstract class CommandBase(string name, string description, params Comm
     /// <param name="serviceProvider">A scoped service provider to get services from.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns>The handler task.</returns>
-    public virtual Task HandleAsync(SocketSlashCommand command, IServiceProvider serviceProvider,
+    public virtual async Task HandleAsync(SocketSlashCommand command, IServiceProvider serviceProvider,
         CancellationToken cancellationToken)
     {
         var option = command.Data.Options.FirstOrDefault();
-        if (option is null) return Task.CompletedTask;
+        if (option is null) return;
 
-        var subOption = subOptions.FirstOrDefault(o => o.Name == option.Name);
-        return subOption != null
-            ? subOption.HandleAsync(command, option, serviceProvider, cancellationToken)
-            : Task.CompletedTask;
+        if (subOptions.FirstOrDefault(o => o.Name == option.Name) is not { } subOption) return;
+        try
+        {
+            await subOption.HandleAsync(command, option, serviceProvider, cancellationToken);
+        }
+        catch (WriteConflictException)
+        {
+            await command.RespondAsync("These data were concurrently modified. Please try again.",
+                ephemeral: true);
+        }
     }
 }

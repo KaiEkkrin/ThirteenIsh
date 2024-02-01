@@ -3,9 +3,7 @@
 /// <summary>
 /// Character-related command.
 /// </summary>
-internal sealed class CharacterCommand : CommandBase
-{
-    public CharacterCommand() : base("character", "Manage characters.",
+internal sealed class CharacterCommand() : CommandBase("character", "Manage characters.",
         new SubCommandGroupBase("ability", "Manage a character's ability scores.",
             new CharacterAbilityGetSubCommand(),
             new CharacterAbilityRollSubCommand(),
@@ -19,6 +17,5 @@ internal sealed class CharacterCommand : CommandBase
             new CharacterListRemoveSubCommand()),
         new SubCommandGroupBase("sheet", "Manage your character's sheet.",
             new CharacterSheetGetSubCommand()))
-    {
-    }
+{
 }

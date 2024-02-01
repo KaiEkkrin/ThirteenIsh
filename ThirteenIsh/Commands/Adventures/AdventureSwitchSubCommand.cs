@@ -24,13 +24,23 @@ internal sealed class AdventureSwitchSubCommand() : SubCommandBase("switch", "Se
         }
 
         var dataService = serviceProvider.GetRequiredService<DataService>();
-        var guild = await dataService.SetCurrentAdventureAsync(name, guildId, cancellationToken);
-        if (guild?.CurrentAdventure is null)
+        var updatedGuild = await dataService.EditGuildAsync(
+            guild =>
+            {
+                var adventure = guild.Adventures.FirstOrDefault(o => o.Name == name);
+                if (adventure is null) return null; // no such adventure
+
+                guild.CurrentAdventureName = name;
+                return guild;
+            },
+            guildId, cancellationToken);
+
+        if (updatedGuild?.CurrentAdventure is null)
         {
             await command.RespondAsync($"No such adventure '{name}'", ephemeral: true);
             return;
         }
 
-        await CommandUtil.RespondWithAdventureSummaryAsync(command, guild, guild.CurrentAdventure, name);
+        await CommandUtil.RespondWithAdventureSummaryAsync(command, updatedGuild, updatedGuild.CurrentAdventure, name);
     }
 }

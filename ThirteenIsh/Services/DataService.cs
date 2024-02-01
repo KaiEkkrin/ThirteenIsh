@@ -48,9 +48,7 @@ public sealed class DataService : IDisposable
 
     // Retry policy
     private static readonly IEnumerable<TimeSpan> Delays = Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromMilliseconds(5), 6);
-    private readonly AsyncRetryPolicy<DataResult<bool>> _boolRetryPolicy;
-    private readonly AsyncRetryPolicy<DataResult<Character?>> _characterRetryPolicy;
-    private readonly AsyncRetryPolicy<DataResult<Guild?>> _guildRetryPolicy;
+    private readonly AsyncRetryPolicy _retryPolicy;
 
     public DataService(
         IConfiguration configuration,
@@ -60,36 +58,7 @@ public sealed class DataService : IDisposable
         _database = _client.GetDatabase(DatabaseName);
         _logger = logger;
 
-        _boolRetryPolicy = Policy.HandleResult<DataResult<bool>>(r => !r.Success).WaitAndRetryAsync(Delays);
-        _characterRetryPolicy = Policy.HandleResult<DataResult<Character?>>(r => !r.Success).WaitAndRetryAsync(Delays);
-        _guildRetryPolicy = Policy.HandleResult<DataResult<Guild?>>(r => !r.Success).WaitAndRetryAsync(Delays);
-    }
-
-    public async Task<Guild?> CreateAdventureAsync(string name, string description, ulong guildId,
-        CancellationToken cancellationToken = default)
-    {
-        var collection = await GetGuildsCollectionAsync(cancellationToken);
-        var result = await _guildRetryPolicy.ExecuteAsync(async () =>
-        {
-            var guild = await EnsureGuildAsync(guildId, cancellationToken);
-            if (guild.Adventures.Any(o => o.Name == name)) return new DataResult<Guild?>(true, null); // adventure already exists
-
-            guild.Adventures.Add(new Adventure { Name = name, Description = description });
-            guild.CurrentAdventureName = name;
-
-            var beforeVersion = guild.Version++;
-
-            // Only replace if the guild version hasn't changed -- otherwise re-read and try again
-            guild = await collection.FindOneAndReplaceAsync(
-                GetGuildFilter(guildId, beforeVersion),
-                guild,
-                new FindOneAndReplaceOptions<Guild> { ReturnDocument = ReturnDocument.After },
-                cancellationToken);
-
-            return new DataResult<Guild?>(guild != null, guild);
-        });
-
-        return result.Value;
+        _retryPolicy = Policy.Handle<WriteConflictException>().WaitAndRetryAsync(Delays);
     }
 
     public async Task<Character?> CreateCharacterAsync(string name, CharacterSheet sheet, ulong userId,
@@ -151,10 +120,10 @@ public sealed class DataService : IDisposable
         CancellationToken cancellationToken = default)
     {
         var collection = await GetGuildsCollectionAsync(cancellationToken);
-        var result = await _boolRetryPolicy.ExecuteAsync(async () =>
+        return await _retryPolicy.ExecuteAsync(async () =>
         {
             var guild = await EnsureGuildAsync(guildId, cancellationToken);
-            if (!guild.Adventures.Any(o => o.Name == name)) return new DataResult<bool>(true, false); // adventure does not exist
+            if (!guild.Adventures.Any(o => o.Name == name)) return false; // adventure does not exist
 
             guild.Adventures.RemoveAll(o => o.Name == name);
             if (guild.CurrentAdventureName == name) guild.CurrentAdventureName = string.Empty;
@@ -167,10 +136,8 @@ public sealed class DataService : IDisposable
                 guild,
                 cancellationToken: cancellationToken);
 
-            return new DataResult<bool>(result.ModifiedCount == 1, result.ModifiedCount == 1);
+            return result.ModifiedCount == 1 ? true : throw new WriteConflictException(nameof(result));
         });
-
-        return result.Value;
     }
 
     public async Task<bool> DeleteCharacterAsync(string name, ulong userId, CancellationToken cancellationToken = default)
@@ -211,30 +178,28 @@ public sealed class DataService : IDisposable
         }
     }
 
-    public async Task<Guild?> EditAdventureAsync(string name, string description, ulong guildId,
+    public async Task<T?> EditGuildAsync<T>(Func<Guild, T?> editFunc, ulong guildId,
         CancellationToken cancellationToken = default)
+        where T : class
     {
         var collection = await GetGuildsCollectionAsync(cancellationToken);
-        var result = await _guildRetryPolicy.ExecuteAsync(async () =>
+        return await _retryPolicy.ExecuteAsync(async () =>
         {
             var guild = await EnsureGuildAsync(guildId, cancellationToken);
-            var index = guild.Adventures.FindIndex(o => o.Name == name);
-            if (index < 0) return new DataResult<Guild?>(true, null); // adventure does not exist
+            var editResult = editFunc(guild);
+            if (editResult is null) return null;
 
-            guild.Adventures[index].Description = description;
             var beforeVersion = guild.Version++;
 
             // Only replace if the guild version hasn't changed -- otherwise re-read and try again
-            guild = await collection.FindOneAndReplaceAsync(
+            var replaceResult = await collection.ReplaceOneAsync(
                 GetGuildFilter(guildId, beforeVersion),
                 guild,
-                new FindOneAndReplaceOptions<Guild> { ReturnDocument = ReturnDocument.After },
-                cancellationToken);
+                cancellationToken: cancellationToken);
 
-            return new DataResult<Guild?>(guild != null, guild);
+            if (replaceResult.ModifiedCount < 1) throw new WriteConflictException(nameof(guild));
+            return editResult;
         });
-
-        return result.Value;
     }
 
     public async Task<Guild> EnsureGuildAsync(ulong guildId, CancellationToken cancellationToken = default)
@@ -286,41 +251,15 @@ public sealed class DataService : IDisposable
         }
     }
 
-    public async Task<Guild?> SetCurrentAdventureAsync(string name, ulong guildId,
-        CancellationToken cancellationToken = default)
-    {
-        var collection = await GetGuildsCollectionAsync(cancellationToken);
-        var result = await _guildRetryPolicy.ExecuteAsync(async () =>
-        {
-            var guild = await EnsureGuildAsync(guildId, cancellationToken);
-            var adventure = guild.Adventures.FirstOrDefault(o => o.Name == name);
-            if (adventure is null) return new DataResult<Guild?>(true, null); // no such adventure
-
-            guild.CurrentAdventureName = name;
-            var beforeVersion = guild.Version++;
-
-            // Only replace if the guild version hasn't changed -- otherwise re-read and try again
-            guild = await collection.FindOneAndReplaceAsync(
-                GetGuildFilter(guildId, beforeVersion),
-                guild,
-                new FindOneAndReplaceOptions<Guild> { ReturnDocument = ReturnDocument.After },
-                cancellationToken);
-
-            return new DataResult<Guild?>(guild != null, guild);
-        });
-
-        return result.Value;
-    }
-
     public async Task<Character?> UpdateCharacterAsync(
         string name, Action<CharacterSheet> updateSheet, ulong userId,
         CancellationToken cancellationToken = default)
     {
         var collection = await GetCharactersCollectionAsync(cancellationToken);
-        var result = await _characterRetryPolicy.ExecuteAsync(async () =>
+        return await _retryPolicy.ExecuteAsync(async () =>
         {
             var character = await ListCharactersAsync(name, userId, cancellationToken).FirstOrDefaultAsync(cancellationToken);
-            if (character is null) return new DataResult<Character?>(true, null);
+            if (character is null) return null;
 
             updateSheet(character.Sheet);
             var beforeVersion = character.Version++;
@@ -335,10 +274,8 @@ public sealed class DataService : IDisposable
                 },
                 cancellationToken);
 
-            return new DataResult<Character?>(character != null, character);
+            return character ?? throw new WriteConflictException(nameof(character));
         });
-
-        return result.Value;
     }
 
     public async Task UpdateGuildCommandVersionAsync(ulong guildId, int commandVersion,

@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using ThirteenIsh.Entities;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Adventures;
@@ -30,14 +31,25 @@ internal sealed class AdventureAddSubCommand() : SubCommandBase("add", "Adds a n
 
         // This will also make it the current adventure
         var dataService = serviceProvider.GetRequiredService<DataService>();
-        var guild = await dataService.CreateAdventureAsync(name, description, guildId, cancellationToken);
-        if (guild?.CurrentAdventure is null)
+        var updatedGuild = await dataService.EditGuildAsync(
+            guild =>
+            {
+                if (guild.Adventures.Any(o => o.Name == name)) return null; // adventure already exists
+
+                guild.Adventures.Add(new Adventure { Name = name, Description = description });
+                guild.CurrentAdventureName = name;
+
+                return guild;
+            }, guildId, cancellationToken);
+
+        if (updatedGuild?.CurrentAdventure is null)
         {
             await command.RespondAsync($"Cannot create an adventure named '{name}'. Perhaps it was already created?",
                 ephemeral: true);
             return;
         }
 
-        await CommandUtil.RespondWithAdventureSummaryAsync(command, guild, guild.CurrentAdventure, $"Created adventure: {name}");
+        await CommandUtil.RespondWithAdventureSummaryAsync(command, updatedGuild, updatedGuild.CurrentAdventure,
+            $"Created adventure: {name}");
     }
 }

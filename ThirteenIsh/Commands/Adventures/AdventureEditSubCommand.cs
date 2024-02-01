@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using ThirteenIsh.Entities;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Adventures;
@@ -28,15 +29,24 @@ internal sealed class AdventureEditSubCommand() : SubCommandBase("edit", "Edits 
         if (!CommandUtil.TryGetOption<string>(option, "description", out var description)) description = string.Empty;
 
         var dataService = serviceProvider.GetRequiredService<DataService>();
-        var guild = await dataService.EditAdventureAsync(name, description, guildId, cancellationToken);
-        var adventure = guild?.Adventures.FirstOrDefault(o => o.Name == name);
-        if (guild is null || adventure is null)
+        var updatedGuild = await dataService.EditGuildAsync(
+            guild =>
+            {
+                var index = guild.Adventures.FindIndex(o => o.Name == name);
+                if (index < 0) return null;
+
+                guild.Adventures[index].Description = description;
+                return guild;
+            },
+            guildId, cancellationToken);
+
+        if (updatedGuild?.Adventures.FirstOrDefault(o => o.Name == name) is not { } adventure)
         {
             await command.RespondAsync($"Cannot edit an adventure named '{name}'. Perhaps it does not exist?",
                 ephemeral: true);
             return;
         }
 
-        await CommandUtil.RespondWithAdventureSummaryAsync(command, guild, adventure, adventure.Name);
+        await CommandUtil.RespondWithAdventureSummaryAsync(command, updatedGuild, adventure, adventure.Name);
     }
 }
