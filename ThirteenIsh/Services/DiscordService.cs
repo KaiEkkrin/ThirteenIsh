@@ -104,6 +104,12 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
         _isDisposed = true;
     }
 
+    public Task<IGuildUser> GetGuildUserAsync(ulong guildId, ulong userId)
+    {
+        var guild = _client.GetGuild(guildId);
+        return ((IGuild)guild).GetUserAsync(userId);
+    }
+
     public async Task StartAsync()
     {
         if (_configuration[ConfigKeys.BotToken] is not { } botToken)

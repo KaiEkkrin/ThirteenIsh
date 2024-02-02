@@ -42,6 +42,7 @@ internal sealed class AdventureSwitchSubCommand() : SubCommandBase("switch", "Se
             return;
         }
 
-        await CommandUtil.RespondWithAdventureSummaryAsync(command, updatedGuild, updatedGuild.CurrentAdventure, name);
+        var discordService = serviceProvider.GetRequiredService<DiscordService>();
+        await discordService.RespondWithAdventureSummaryAsync(command, updatedGuild, updatedGuild.CurrentAdventure, name);
     }
 }

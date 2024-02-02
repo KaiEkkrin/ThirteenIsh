@@ -4,13 +4,14 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using ThirteenIsh.Entities;
 using ThirteenIsh.Game;
+using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands;
 
 internal static class CommandUtil
 {
-
-    public static Task RespondWithAdventureSummaryAsync(
+    public static async Task RespondWithAdventureSummaryAsync(
+        this DiscordService discordService,
         SocketSlashCommand command,
         Guild guild,
         Adventure adventure,
@@ -21,15 +22,16 @@ internal static class CommandUtil
         embedBuilder.WithTitle(adventure.Name == guild.CurrentAdventureName ? $"{title} [Current]" : title);
         embedBuilder.WithDescription(adventure.Description);
 
-        foreach (var (_, adventurer) in adventure.Adventurers.OrderBy(kv => kv.Value.Name))
+        foreach (var (userId, adventurer) in adventure.Adventurers.OrderBy(kv => kv.Value.Name))
         {
+            var guildUser = await discordService.GetGuildUserAsync(guild.NativeGuildId, userId);
             embedBuilder.AddField(new EmbedFieldBuilder()
                 .WithIsInline(true)
-                .WithName(adventurer.Name)
+                .WithName($"{adventurer.Name} [{guildUser.DisplayName}]")
                 .WithValue($"Level {adventurer.Sheet.Level} {adventurer.Sheet.Class}"));
         }
 
-        return command.RespondAsync(embed: embedBuilder.Build());
+        await command.RespondAsync(embed: embedBuilder.Build());
     }
 
     public static Task RespondWithCharacterSheetAsync(

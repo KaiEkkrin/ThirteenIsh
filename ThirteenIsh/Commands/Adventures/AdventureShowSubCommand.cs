@@ -26,6 +26,7 @@ internal sealed class AdventureShowSubCommand() : SubCommandBase("show", "Shows 
             return;
         }
 
-        await CommandUtil.RespondWithAdventureSummaryAsync(command, guild, adventure, adventure.Name);
+        var discordService = serviceProvider.GetRequiredService<DiscordService>();
+        await discordService.RespondWithAdventureSummaryAsync(command, guild, adventure, adventure.Name);
     }
 }

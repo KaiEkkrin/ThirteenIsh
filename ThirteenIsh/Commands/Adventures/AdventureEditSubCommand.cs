@@ -47,6 +47,7 @@ internal sealed class AdventureEditSubCommand() : SubCommandBase("edit", "Edits 
             return;
         }
 
-        await CommandUtil.RespondWithAdventureSummaryAsync(command, updatedGuild, adventure, adventure.Name);
+        var discordService = serviceProvider.GetRequiredService<DiscordService>();
+        await discordService.RespondWithAdventureSummaryAsync(command, updatedGuild, adventure, adventure.Name);
     }
 }

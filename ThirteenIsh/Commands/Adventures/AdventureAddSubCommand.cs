@@ -49,7 +49,8 @@ internal sealed class AdventureAddSubCommand() : SubCommandBase("add", "Adds a n
             return;
         }
 
-        await CommandUtil.RespondWithAdventureSummaryAsync(command, updatedGuild, updatedGuild.CurrentAdventure,
+        var discordService = serviceProvider.GetRequiredService<DiscordService>();
+        await discordService.RespondWithAdventureSummaryAsync(command, updatedGuild, updatedGuild.CurrentAdventure,
             $"Created adventure: {name}");
     }
 }
