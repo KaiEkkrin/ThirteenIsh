@@ -154,14 +154,15 @@ public sealed class DataService : IDisposable
         }
     }
 
-    public async Task<T?> EditGuildAsync<T>(Func<Guild, EditResult<T>> editFunc, ulong guildId,
+    public async Task<T?> EditGuildAsync<T, TResult>(EditOperation<T, Guild, TResult> operation, ulong guildId,
         CancellationToken cancellationToken = default)
+        where TResult : EditResult<T>
     {
         var collection = await GetGuildsCollectionAsync(cancellationToken);
         return await _retryPolicy.ExecuteAsync(async () =>
         {
             var guild = await EnsureGuildAsync(guildId, cancellationToken);
-            var editResult = editFunc(guild);
+            var editResult = await operation.DoEditAsync(guild, cancellationToken);
             if (!editResult.Success) return editResult.Value;
 
             var beforeVersion = guild.Version++;

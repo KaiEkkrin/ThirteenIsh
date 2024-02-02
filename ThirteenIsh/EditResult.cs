@@ -25,7 +25,13 @@ public class EditResult<T>(T? value)
 /// <param name="value"></param>
 /// <param name="errorMessage"></param>
 public class MessageEditResult<T>(T? value, string? errorMessage = null)
-    : EditResult<(T? Value, string? ErrorMessage)>((value, errorMessage))
+    : EditResult<ResultOrMessage<T>>(new ResultOrMessage<T>(value, errorMessage))
 {
     public override bool Success => string.IsNullOrEmpty(errorMessage);
 }
+
+/// <summary>
+/// Carries around either a result or an error message.
+/// </summary>
+public readonly record struct ResultOrMessage<T>(T? Value, string? ErrorMessage = null);
+

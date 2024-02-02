@@ -26,15 +26,7 @@ internal sealed class AdventureSwitchSubCommand() : SubCommandBase("switch", "Se
 
         var dataService = serviceProvider.GetRequiredService<DataService>();
         var updatedGuild = await dataService.EditGuildAsync(
-            guild =>
-            {
-                var adventure = guild.Adventures.FirstOrDefault(o => o.Name == name);
-                if (adventure is null) return new EditResult<Guild>(null); // no such adventure
-
-                guild.CurrentAdventureName = name;
-                return new EditResult<Guild>(guild);
-            },
-            guildId, cancellationToken);
+            new EditOperation(name), guildId, cancellationToken);
 
         if (updatedGuild?.CurrentAdventure is null)
         {
@@ -44,5 +36,17 @@ internal sealed class AdventureSwitchSubCommand() : SubCommandBase("switch", "Se
 
         var discordService = serviceProvider.GetRequiredService<DiscordService>();
         await discordService.RespondWithAdventureSummaryAsync(command, updatedGuild, updatedGuild.CurrentAdventure, name);
+    }
+
+    private sealed class EditOperation(string name) : SyncEditOperation<Guild, Guild, EditResult<Guild>>
+    {
+        public override EditResult<Guild> DoEdit(Guild guild)
+        {
+            var adventure = guild.Adventures.FirstOrDefault(o => o.Name == name);
+            if (adventure is null) return new EditResult<Guild>(null); // no such adventure
+
+            guild.CurrentAdventureName = name;
+            return new EditResult<Guild>(guild);
+        }
     }
 }

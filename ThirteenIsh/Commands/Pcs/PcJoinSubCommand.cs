@@ -33,41 +33,51 @@ internal sealed class PcJoinSubCommand() : SubCommandBase("join", "Joins the cur
         }
 
         var (updatedAdventure, errorMessage) = await dataService.EditGuildAsync(
-            guild =>
-            {
-                if (guild.CurrentAdventure is not { } currentAdventure)
-                    return new MessageEditResult<Adventure>(null, "There is no current adventure in this guild.");
-
-                if (!currentAdventure.Adventurers.TryGetValue(command.User.Id, out var adventurer))
-                {
-                    currentAdventure.Adventurers.Add(command.User.Id, new Adventurer
-                    {
-                        Name = characterName,
-                        Sheet = character.Sheet
-                    });
-
-                    return new MessageEditResult<Adventure>(currentAdventure);
-                }
-                else if (adventurer.Name == characterName)
-                {
-                    return new MessageEditResult<Adventure>(null, "This character is already joined to the current adventure.");
-                }
-                else
-                {
-                    return new MessageEditResult<Adventure>(null,
-                        "You have already joined this adventure with a different character.");
-                }
-            }, guildId, cancellationToken);
+            new EditOperation(command, character), guildId, cancellationToken);
 
         if (errorMessage is not null)
         {
             await command.RespondAsync(errorMessage, ephemeral: true);
+            return;
         }
+
+        if (updatedAdventure is null) throw new InvalidOperationException("updatedAdventure was null after update");
 
         EmbedBuilder embedBuilder = new();
         embedBuilder.WithAuthor(command.User);
         embedBuilder.WithTitle($"Joined {updatedAdventure.Name} as {characterName}");
 
         await command.RespondAsync(embed: embedBuilder.Build());
+    }
+
+    private sealed class EditOperation(SocketSlashCommand command, Entities.Character character)
+        : SyncEditOperation<ResultOrMessage<Adventure>, Guild, MessageEditResult<Adventure>>
+    {
+        public override MessageEditResult<Adventure> DoEdit(Guild guild)
+        {
+            if (guild.CurrentAdventure is not { } currentAdventure)
+                return new MessageEditResult<Adventure>(null, "There is no current adventure in this guild.");
+
+            if (!currentAdventure.Adventurers.TryGetValue(command.User.Id, out var adventurer))
+            {
+                currentAdventure.Adventurers.Add(command.User.Id, new Adventurer
+                {
+                    Name = character.Name,
+                    LastUpdated = DateTimeOffset.Now,
+                    Sheet = character.Sheet
+                });
+
+                return new MessageEditResult<Adventure>(currentAdventure);
+            }
+            else if (adventurer.Name == character.Name)
+            {
+                return new MessageEditResult<Adventure>(null, "This character is already joined to the current adventure.");
+            }
+            else
+            {
+                return new MessageEditResult<Adventure>(null,
+                    "You have already joined this adventure with a different character.");
+            }
+        }
     }
 }

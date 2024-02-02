@@ -32,15 +32,7 @@ internal sealed class AdventureAddSubCommand() : SubCommandBase("add", "Adds a n
         // This will also make it the current adventure
         var dataService = serviceProvider.GetRequiredService<DataService>();
         var updatedGuild = await dataService.EditGuildAsync(
-            guild =>
-            {
-                if (guild.Adventures.Any(o => o.Name == name)) return new EditResult<Guild>(null); // adventure already exists
-
-                guild.Adventures.Add(new Adventure { Name = name, Description = description });
-                guild.CurrentAdventureName = name;
-
-                return new EditResult<Guild>(guild);
-            }, guildId, cancellationToken);
+            new EditOperation(name, description), guildId, cancellationToken);
 
         if (updatedGuild?.CurrentAdventure is null)
         {
@@ -52,5 +44,19 @@ internal sealed class AdventureAddSubCommand() : SubCommandBase("add", "Adds a n
         var discordService = serviceProvider.GetRequiredService<DiscordService>();
         await discordService.RespondWithAdventureSummaryAsync(command, updatedGuild, updatedGuild.CurrentAdventure,
             $"Created adventure: {name}");
+    }
+
+    private sealed class EditOperation(string name, string description)
+        : SyncEditOperation<Guild, Guild, EditResult<Guild>>
+    {
+        public override EditResult<Guild> DoEdit(Guild guild)
+        {
+            if (guild.Adventures.Any(o => o.Name == name)) return new EditResult<Guild>(null); // adventure already exists
+
+            guild.Adventures.Add(new Adventure { Name = name, Description = description });
+            guild.CurrentAdventureName = name;
+
+            return new EditResult<Guild>(guild);
+        }
     }
 }

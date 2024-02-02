@@ -30,15 +30,7 @@ internal sealed class AdventureEditSubCommand() : SubCommandBase("edit", "Edits 
 
         var dataService = serviceProvider.GetRequiredService<DataService>();
         var updatedGuild = await dataService.EditGuildAsync(
-            guild =>
-            {
-                var index = guild.Adventures.FindIndex(o => o.Name == name);
-                if (index < 0) return new EditResult<Guild>(null);
-
-                guild.Adventures[index].Description = description;
-                return new EditResult<Guild>(guild);
-            },
-            guildId, cancellationToken);
+            new EditOperation(name, description), guildId, cancellationToken);
 
         if (updatedGuild?.Adventures.FirstOrDefault(o => o.Name == name) is not { } adventure)
         {
@@ -49,5 +41,17 @@ internal sealed class AdventureEditSubCommand() : SubCommandBase("edit", "Edits 
 
         var discordService = serviceProvider.GetRequiredService<DiscordService>();
         await discordService.RespondWithAdventureSummaryAsync(command, updatedGuild, adventure, adventure.Name);
+    }
+
+    private sealed class EditOperation(string name, string description) : SyncEditOperation<Guild, Guild, EditResult<Guild>>
+    {
+        public override EditResult<Guild> DoEdit(Guild guild)
+        {
+            var index = guild.Adventures.FindIndex(o => o.Name == name);
+            if (index < 0) return new EditResult<Guild>(null);
+
+            guild.Adventures[index].Description = description;
+            return new EditResult<Guild>(guild);
+        }
     }
 }

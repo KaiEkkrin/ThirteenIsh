@@ -34,6 +34,21 @@ internal static class CommandUtil
         await command.RespondAsync(embed: embedBuilder.Build());
     }
 
+    public static Task RespondWithAdventurerSummaryAsync(
+        SocketSlashCommand command,
+        Adventurer adventurer,
+        string title)
+    {
+        EmbedBuilder embedBuilder = new();
+        embedBuilder.WithAuthor(command.User);
+        embedBuilder.WithTitle(title);
+        embedBuilder.WithDescription(@$"Level {adventurer.Sheet.Level} {adventurer.Sheet.Class}
+Last updated on {adventurer.LastUpdated:F}");
+
+        AddCharacterSheetFields(embedBuilder, adventurer.Sheet);
+        return command.RespondAsync(embed: embedBuilder.Build());
+    }
+
     public static Task RespondWithCharacterSheetAsync(
         SocketSlashCommand command,
         CharacterSheet sheet,
@@ -44,14 +59,7 @@ internal static class CommandUtil
         embedBuilder.WithTitle(title);
         embedBuilder.WithDescription($"Level {sheet.Level} {sheet.Class}");
 
-        foreach (var (abilityName, abilityScore) in sheet.AbilityScores)
-        {
-            embedBuilder.AddField(new EmbedFieldBuilder()
-                .WithIsInline(true)
-                .WithName(abilityName)
-                .WithValue(abilityScore));
-        }
-
+        AddCharacterSheetFields(embedBuilder, sheet);
         return command.RespondAsync(embed: embedBuilder.Build());
     }
 
@@ -173,5 +181,16 @@ internal static class CommandUtil
 
         adventure = null;
         return false;
+    }
+
+    private static void AddCharacterSheetFields(EmbedBuilder embedBuilder, CharacterSheet sheet)
+    {
+        foreach (var (abilityName, abilityScore) in sheet.AbilityScores)
+        {
+            embedBuilder.AddField(new EmbedFieldBuilder()
+                .WithIsInline(true)
+                .WithName(abilityName)
+                .WithValue(abilityScore));
+        }
     }
 }

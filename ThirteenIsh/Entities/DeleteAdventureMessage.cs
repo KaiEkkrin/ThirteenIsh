@@ -25,14 +25,7 @@ public class DeleteAdventureMessage : MessageBase
     {
         var dataService = serviceProvider.GetRequiredService<DataService>();
         var updatedGuild = await dataService.EditGuildAsync(
-            guild =>
-            {
-                if (!guild.Adventures.Any(o => o.Name == Name)) return new EditResult<Guild>(null); // adventure does not exist
-
-                guild.Adventures.RemoveAll(o => o.Name == Name);
-                if (guild.CurrentAdventureName == Name) guild.CurrentAdventureName = string.Empty;
-                return new EditResult<Guild>(guild);
-            }, NativeGuildId, cancellationToken);
+            new EditOperation(Name), NativeGuildId, cancellationToken);
 
         if (updatedGuild is null)
         {
@@ -47,5 +40,18 @@ public class DeleteAdventureMessage : MessageBase
         embedBuilder.WithTitle($"Deleted adventure: {Name}");
 
         await component.RespondAsync(embed: embedBuilder.Build());
+    }
+
+    private sealed class EditOperation(string adventureName) : SyncEditOperation<Guild, Guild, EditResult<Guild>>
+    {
+        public override EditResult<Guild> DoEdit(Guild guild)
+        {
+            if (!guild.Adventures.Any(o => o.Name == adventureName))
+                return new EditResult<Guild>(null); // adventure does not exist
+
+            guild.Adventures.RemoveAll(o => o.Name == adventureName);
+            if (guild.CurrentAdventureName == adventureName) guild.CurrentAdventureName = string.Empty;
+            return new EditResult<Guild>(guild);
+        }
     }
 }

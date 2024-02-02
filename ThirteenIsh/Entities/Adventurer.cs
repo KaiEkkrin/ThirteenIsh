@@ -8,5 +8,7 @@ public class Adventurer
 {
     public string Name { get; set; } = string.Empty;
 
+    public DateTimeOffset LastUpdated { get; set; } = DateTimeOffset.Now;
+
     public CharacterSheet Sheet { get; set; } = new();
 }
