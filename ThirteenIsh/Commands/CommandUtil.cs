@@ -24,7 +24,7 @@ internal static class CommandUtil
 
         foreach (var (userId, adventurer) in adventure.Adventurers.OrderBy(kv => kv.Value.Name))
         {
-            var guildUser = await discordService.GetGuildUserAsync(guild.NativeGuildId, userId);
+            var guildUser = await discordService.GetGuildUserAsync(guild.GuildId.Value, userId);
             embedBuilder.AddField(new EmbedFieldBuilder()
                 .WithIsInline(true)
                 .WithName($"{adventurer.Name} [{guildUser.DisplayName}]")

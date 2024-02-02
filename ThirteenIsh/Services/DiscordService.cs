@@ -130,7 +130,7 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
         {
             var dataService = scope.ServiceProvider.GetRequiredService<DataService>();
             var message = await dataService.GetMessageAsync(arg.Data.CustomId, cancellationSource.Token);
-            if (message is null || message.NativeUserId != arg.User.Id) return;
+            if (message is null || message.UserId.Value != arg.User.Id) return;
 
             await message.HandleAsync(arg, scope.ServiceProvider, cancellationSource.Token);
             await dataService.DeleteMessageAsync(arg.Data.CustomId, cancellationSource.Token);

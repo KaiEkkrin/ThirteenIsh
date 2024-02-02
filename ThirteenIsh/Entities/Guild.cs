@@ -18,12 +18,8 @@ public class Guild
 
     /// <summary>
     /// The guild's Discord ID.
-    /// Like Character.UserId -- use conversions to and from `ulong`
     /// </summary>
-    public long GuildId { get; set; }
-
-    [BsonIgnore]
-    public ulong NativeGuildId => (ulong)GuildId;
+    public DiscordId GuildId { get; set; } = new();
 
     /// <summary>
     /// This guild's list of adventures.
@@ -45,6 +41,4 @@ public class Guild
     /// </summary>
     [BsonIgnore]
     public Adventure? CurrentAdventure => Adventures.FirstOrDefault(o => o.Name == CurrentAdventureName);
-
-    public static long ToDatabaseGuildId(ulong guildId) => (long)guildId;
 }

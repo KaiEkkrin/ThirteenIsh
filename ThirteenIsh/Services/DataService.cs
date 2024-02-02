@@ -68,7 +68,7 @@ public sealed class DataService : IDisposable
         {
             Name = name,
             Sheet = sheet,
-            UserId = UserEntityBase.ToDatabaseUserId(userId),
+            UserId = new DiscordId(userId),
             Version = 1
         };
 
@@ -91,9 +91,9 @@ public sealed class DataService : IDisposable
         DeleteAdventureMessage message = new()
         {
             Id = ObjectId.GenerateNewId(),
-            GuildId = Guild.ToDatabaseGuildId(guildId),
+            GuildId = new DiscordId(guildId),
             Name = name,
-            UserId = UserEntityBase.ToDatabaseUserId(userId)
+            UserId = new DiscordId(userId)
         };
 
         var collection = await GetMessagesCollectionAsync(cancellationToken);
@@ -108,7 +108,7 @@ public sealed class DataService : IDisposable
         {
             Id = ObjectId.GenerateNewId(),
             Name = name,
-            UserId = UserEntityBase.ToDatabaseUserId(userId)
+            UserId = new DiscordId(userId)
         };
 
         var collection = await GetMessagesCollectionAsync(cancellationToken);
@@ -122,9 +122,9 @@ public sealed class DataService : IDisposable
         LeaveAdventureMessage message = new()
         {
             Id = ObjectId.GenerateNewId(),
-            GuildId = Guild.ToDatabaseGuildId(guildId),
+            GuildId = new DiscordId(guildId),
             Name = name,
-            UserId = UserEntityBase.ToDatabaseUserId(userId)
+            UserId = new DiscordId(userId)
         };
 
         var collection = await GetMessagesCollectionAsync(cancellationToken);
@@ -199,7 +199,7 @@ public sealed class DataService : IDisposable
         var collection = await GetGuildsCollectionAsync(cancellationToken);
         var guild = await collection.FindOneAndUpdateAsync(
             GetGuildFilter(guildId, null),
-            Builders<Guild>.Update.SetOnInsert(o => o.GuildId, Guild.ToDatabaseGuildId(guildId))
+            Builders<Guild>.Update.SetOnInsert(nameof(Guild.GuildId), guildId)
                 .SetOnInsert(o => o.Version, 1L),
             new FindOneAndUpdateOptions<Guild> { IsUpsert = true, ReturnDocument = ReturnDocument.After },
             cancellationToken);
@@ -276,7 +276,7 @@ public sealed class DataService : IDisposable
         var collection = await GetGuildsCollectionAsync(cancellationToken);
         await collection.UpdateOneAsync(
             Builders<Guild>.Filter.And(
-                Builders<Guild>.Filter.Eq(o => o.GuildId, Guild.ToDatabaseGuildId(guildId)),
+                Builders<Guild>.Filter.Eq(nameof(Guild.GuildId), guildId),
                 Builders<Guild>.Filter.Lt(o => o.CommandVersion, commandVersion)),
             Builders<Guild>.Update.Set(o => o.CommandVersion, commandVersion)
                 .Inc(o => o.Version, 1L),
@@ -295,7 +295,7 @@ public sealed class DataService : IDisposable
 
         if (userId.HasValue)
         {
-            conditions.Add(Builders<Character>.Filter.Eq(o => o.UserId, UserEntityBase.ToDatabaseUserId(userId.Value)));
+            conditions.Add(Builders<Character>.Filter.Eq(nameof(UserEntityBase.UserId), userId.Value));
         }
 
         if (version.HasValue)
@@ -316,7 +316,7 @@ public sealed class DataService : IDisposable
         List<FilterDefinition<Guild>> conditions = [];
         if (guildId.HasValue)
         {
-            conditions.Add(Builders<Guild>.Filter.Eq(o => o.GuildId, Guild.ToDatabaseGuildId(guildId.Value)));
+            conditions.Add(Builders<Guild>.Filter.Eq(nameof(Guild.GuildId), guildId.Value));
         }
 
         if (version.HasValue)

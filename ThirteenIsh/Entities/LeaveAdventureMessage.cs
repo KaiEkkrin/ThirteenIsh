@@ -10,10 +10,7 @@ public class LeaveAdventureMessage : MessageBase
     /// <summary>
     /// The guild ID.
     /// </summary>
-    public long GuildId { get; set; }
-
-    [BsonIgnore]
-    public ulong NativeGuildId => (ulong)GuildId;
+    public DiscordId GuildId { get; set; } = new();
 
     /// <summary>
     /// The adventure name to leave.
@@ -25,7 +22,7 @@ public class LeaveAdventureMessage : MessageBase
     {
         var dataService = serviceProvider.GetRequiredService<DataService>();
         var (output, message) = await dataService.EditGuildAsync(
-            new EditOperation(Name, NativeUserId), NativeGuildId, cancellationToken);
+            new EditOperation(Name, UserId.Value), GuildId.Value, cancellationToken);
 
         if (!string.IsNullOrEmpty(message))
         {

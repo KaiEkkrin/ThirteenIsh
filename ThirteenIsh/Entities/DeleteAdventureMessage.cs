@@ -10,10 +10,7 @@ public class DeleteAdventureMessage : MessageBase
     /// <summary>
     /// The guild ID.
     /// </summary>
-    public long GuildId { get; set; }
-
-    [BsonIgnore]
-    public ulong NativeGuildId => (ulong)GuildId;
+    public DiscordId GuildId { get; set; } = new();
 
     /// <summary>
     /// The adventure name to delete.
@@ -25,7 +22,7 @@ public class DeleteAdventureMessage : MessageBase
     {
         var dataService = serviceProvider.GetRequiredService<DataService>();
         var updatedGuild = await dataService.EditGuildAsync(
-            new EditOperation(Name), NativeGuildId, cancellationToken);
+            new EditOperation(Name), GuildId.Value, cancellationToken);
 
         if (updatedGuild is null)
         {

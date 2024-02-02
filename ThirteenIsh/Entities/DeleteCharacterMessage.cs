@@ -15,7 +15,7 @@ public class DeleteCharacterMessage : MessageBase
         CancellationToken cancellationToken = default)
     {
         var dataService = serviceProvider.GetRequiredService<DataService>();
-        var deleted = await dataService.DeleteCharacterAsync(Name, NativeUserId, cancellationToken);
+        var deleted = await dataService.DeleteCharacterAsync(Name, UserId.Value, cancellationToken);
         if (!deleted)
         {
             await component.RespondAsync(
