@@ -116,6 +116,22 @@ public sealed class DataService : IDisposable
         return message;
     }
 
+    public async Task<LeaveAdventureMessage> CreateLeaveAdventureMessageAsync(string name, ulong guildId, ulong userId,
+        CancellationToken cancellationToken = default)
+    {
+        LeaveAdventureMessage message = new()
+        {
+            Id = ObjectId.GenerateNewId(),
+            GuildId = Guild.ToDatabaseGuildId(guildId),
+            Name = name,
+            UserId = UserEntityBase.ToDatabaseUserId(userId)
+        };
+
+        var collection = await GetMessagesCollectionAsync(cancellationToken);
+        await collection.InsertOneAsync(message, cancellationToken: cancellationToken);
+        return message;
+    }
+
     public async Task<bool> DeleteCharacterAsync(string name, ulong userId, CancellationToken cancellationToken = default)
     {
         var collection = await GetCharactersCollectionAsync(cancellationToken);

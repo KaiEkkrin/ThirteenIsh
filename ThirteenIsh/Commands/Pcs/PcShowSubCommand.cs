@@ -9,11 +9,6 @@ internal sealed class PcShowSubCommand() : SubCommandBase("show", "Shows your pl
         IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
         if (command.GuildId is not { } guildId) return;
-        if (!CommandUtil.TryGetCanonicalizedMultiPartOption(option, "character", out var characterName))
-        {
-            await command.RespondAsync("Character not found", ephemeral: true);
-            return;
-        }
 
         var dataService = serviceProvider.GetRequiredService<DataService>();
         var guild = await dataService.EnsureGuildAsync(guildId, cancellationToken);

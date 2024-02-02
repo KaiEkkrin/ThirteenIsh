@@ -12,7 +12,7 @@ internal static class CommandUtil
 {
     public static async Task RespondWithAdventureSummaryAsync(
         this DiscordService discordService,
-        SocketSlashCommand command,
+        IDiscordInteraction command,
         Guild guild,
         Adventure adventure,
         string title)
@@ -35,7 +35,7 @@ internal static class CommandUtil
     }
 
     public static Task RespondWithAdventurerSummaryAsync(
-        SocketSlashCommand command,
+        IDiscordInteraction command,
         Adventurer adventurer,
         string title)
     {
@@ -50,7 +50,7 @@ Last updated on {adventurer.LastUpdated:F}");
     }
 
     public static Task RespondWithCharacterSheetAsync(
-        SocketSlashCommand command,
+        IDiscordInteraction command,
         CharacterSheet sheet,
         string title)
     {
