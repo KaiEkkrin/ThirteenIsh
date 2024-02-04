@@ -1,15 +1,11 @@
-﻿using FakeItEasy;
-using Shouldly;
+﻿using Shouldly;
 using ThirteenIsh.Parsing;
+using ThirteenIsh.Tests.Mocks;
 
 namespace ThirteenIsh.Tests;
 
-// TODO maybe mock the dice roller itself and verify that too?
-// For now just checking the rest of the expression stuff
 public class ParsingTests
 {
-    private readonly IRandomWrapper _random = A.Fake<IRandomWrapper>();
-
     public static readonly TheoryData<string, int> AboveMaxDepthExpressions = new()
     {
         { string.Join(" + ", Enumerable.Repeat("1", ParserBase.MaxDepth / 4)), ParserBase.MaxDepth / 4 }
@@ -38,16 +34,18 @@ public class ParsingTests
     [MemberData(nameof(AboveMaxDepthExpressions))]
     public void ExpressionIsEvaluatedCorrectly(string expression, int expectedResult)
     {
+        MockRandomWrapper random = new();
+
         var parseTree = Parser.Parse(expression);
         parseTree.Error.ShouldBeNullOrEmpty(expression);
-        var result = parseTree.Evaluate(_random, out var working);
+        var result = parseTree.Evaluate(random, out var working);
         result.ShouldBe(expectedResult);
 
         // The working should also be a valid expression with the same result:
         // (This only holds for expressions without dice or named integers)
         var workingParseTree = Parser.Parse(working);
         workingParseTree.Error.ShouldBeNullOrEmpty(working);
-        var workingResult = workingParseTree.Evaluate(_random, out _);
+        var workingResult = workingParseTree.Evaluate(random, out _);
         workingResult.ShouldBe(expectedResult);
     }
 
@@ -57,5 +55,67 @@ public class ParsingTests
     {
         var parseTree = Parser.Parse(expression);
         parseTree.Error.ShouldNotBeNullOrEmpty(expression);
+    }
+
+    [Theory]
+    [InlineData("1d20", 4, 20, 4)]
+    [InlineData("1d20", 7, 20, 7)]
+    [InlineData("4d20 - 2d6", 32,
+        20, 3,
+        20, 6,
+        20, 18,
+        20, 12,
+        6, 5,
+        6, 2)]
+    [InlineData("4d20k1", 18,
+        20, 1, 20, 4, 20, 9, 20, 18)]
+    [InlineData("4d20k1", 18,
+        20, 18, 20, 9, 20, 4, 20, 1)]
+    [InlineData("4d20k1", 18,
+        20, 18, 20, 4, 20, 4, 20, 18)]
+    [InlineData("4d20k1", 18,
+        20, 18, 20, 16, 20, 18, 20, 18)]
+    [InlineData("4d20k1", 18,
+        20, 18, 20, 4, 20, 4, 20, 4)]
+    [InlineData("4d20l1", 1,
+        20, 1, 20, 4, 20, 9, 20, 18)]
+    [InlineData("4d20l1", 1,
+        20, 18, 20, 9, 20, 4, 20, 1)]
+    [InlineData("4d20l1", 4,
+        20, 18, 20, 4, 20, 4, 20, 18)]
+    [InlineData("4d20l1", 16,
+        20, 18, 20, 16, 20, 18, 20, 18)]
+    [InlineData("4d20l1", 4,
+        20, 18, 20, 4, 20, 4, 20, 4)]
+    [InlineData("4d20k2", 27,
+        20, 1, 20, 4, 20, 9, 20, 18)]
+    [InlineData("4d20k2", 27,
+        20, 18, 20, 9, 20, 4, 20, 1)]
+    [InlineData("4d20k2", 36,
+        20, 18, 20, 4, 20, 4, 20, 18)]
+    [InlineData("4d20k2", 36,
+        20, 18, 20, 16, 20, 18, 20, 18)]
+    [InlineData("4d20k2", 22,
+        20, 18, 20, 4, 20, 4, 20, 4)]
+    [InlineData("4d20l2", 5,
+        20, 1, 20, 4, 20, 9, 20, 18)]
+    [InlineData("4d20l2", 5,
+        20, 18, 20, 9, 20, 4, 20, 1)]
+    [InlineData("4d20l2", 8,
+        20, 18, 20, 4, 20, 4, 20, 18)]
+    [InlineData("4d20l2", 34,
+        20, 18, 20, 16, 20, 18, 20, 18)]
+    [InlineData("4d20l2", 8,
+        20, 18, 20, 4, 20, 4, 20, 4)]
+    public void DiceAreRolledAsExpected(string expression, int expectedResult, params int[] randomExpectations)
+    {
+        MockRandomWrapper random = new(randomExpectations);
+
+        var parseTree = Parser.Parse(expression);
+        parseTree.Error.ShouldBeNullOrEmpty(expression);
+        var result = parseTree.Evaluate(random, out _);
+        result.ShouldBe(expectedResult);
+
+        random.AssertCompleted();
     }
 }
