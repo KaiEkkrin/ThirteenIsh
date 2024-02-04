@@ -118,4 +118,47 @@ public class ParsingTests
 
         random.AssertCompleted();
     }
+
+    // This should work and not take outrageously long
+    [Fact]
+    public void LargeDiceRollIsOkay()
+    {
+        const string expression = "100d10000k99";
+        MockRandomWrapper random = new(EnumerateRandomExpectations().ToArray());
+
+        var parseTree = Parser.Parse(expression);
+        parseTree.Error.ShouldBeNullOrEmpty(expression);
+
+        var result = parseTree.Evaluate(random, out _);
+        result.ShouldBe(Enumerable.Range(2, 99).Select(i => i * 17).Sum());
+
+        IEnumerable<int> EnumerateRandomExpectations()
+        {
+            for (var i = 1; i <= 100; ++i)
+            {
+                yield return 10000; // die size
+                yield return i * 17; // result of roll
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData("101d100")]
+    [InlineData("99d10001")]
+    [InlineData("99d99k100")]
+    [InlineData("99d99l100")]
+    [InlineData("0d10")]
+    [InlineData("42d0")]
+    [InlineData("-5d-4")]
+    [InlineData("2d10k0")]
+    [InlineData("2d10l0")]
+    public void OverLargeDiceRollsDoNotParseSuccessfully(string expression)
+    {
+        var parseTree = Parser.Parse(expression);
+        parseTree.Error.ShouldNotBeNullOrEmpty();
+
+        // check with a valid prefix and suffix too :)
+        var parseTree2 = Parser.Parse($"10 + {expression} + 4d8");
+        parseTree2.Error.ShouldNotBeNullOrEmpty();
+    }
 }

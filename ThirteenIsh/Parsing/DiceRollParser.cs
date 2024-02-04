@@ -19,9 +19,11 @@ internal sealed class DiceRollParser : ParserBase
 
         // Parse the dice count
         var diceCount = IntegerParser.Instance.Parse(input, offset, depth);
-        if (!string.IsNullOrEmpty(diceCount.Error) || diceCount.LiteralValue > MaxDiceCount ||
-            diceCount.LiteralValue < 1)
+        if (!string.IsNullOrEmpty(diceCount.Error))
             return diceCount;
+
+        if (diceCount.LiteralValue < 1 || diceCount.LiteralValue > MaxDiceCount)
+            return new ErrorParseTree(offset, $"Invalid dice count: {diceCount.LiteralValue}");
 
         // Parse the "d"
         var d = DParser.Parse(input, diceCount.Offset, depth);
@@ -29,22 +31,26 @@ internal sealed class DiceRollParser : ParserBase
 
         // Parse the dice size
         var diceSize = IntegerParser.Instance.Parse(input, d.Offset, depth);
-        if (!string.IsNullOrEmpty(diceSize.Error) || diceSize.LiteralValue > MaxDiceSize ||
-            diceSize.LiteralValue < 1)
+        if (!string.IsNullOrEmpty(diceSize.Error))
             return diceSize;
 
+        if (diceSize.LiteralValue < 1 || diceSize.LiteralValue > MaxDiceSize)
+            return new ErrorParseTree(d.Offset, $"Invalid dice size: {diceSize.LiteralValue}");
+
         // Parse an optional `k<count>` or `l<count>`
-        ParseTreeBase? keepValue = null;
+        ParseTreeBase? keepValue;
         var keep = KeepParser.Parse(input, diceSize.Offset, depth);
         var lastOffset = diceSize.Offset;
         int? keepHighest = null, keepLowest = null;
         if (string.IsNullOrEmpty(keep.Error))
         {
             keepValue = IntegerParser.Instance.Parse(input, keep.Offset, depth);
-            if (!string.IsNullOrEmpty(keepValue.Error) ||
-                keepValue.LiteralValue > diceCount.LiteralValue ||
-                keepValue.LiteralValue < 1)
+            if (!string.IsNullOrEmpty(keepValue.Error))
                 return keepValue;
+
+            if (keepValue.LiteralValue < 1 || keepValue.LiteralValue > diceCount.LiteralValue)
+                return new ErrorParseTree(keep.Offset,
+                    $"Invalid keep count {keepValue.LiteralValue} for dice count {diceCount.LiteralValue}");
 
             lastOffset = keepValue.Offset;
             switch (keep.Operator)

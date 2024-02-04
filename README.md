@@ -35,9 +35,9 @@ Configure these via command line, environment variables or user secrets.
 ### Dice roller improvements
 
 * `-<number>` as a literal negative [DONE]
-* `k<number>` and `l<number>` for boon and bane e.g. `2d20k1` -- roll two d20 and keep the highest; `3d20l2` -- roll three d20 and keep the lowest; `4d8k2` -- roll 4d8 and add together the two highest; etc.
+* `k<number>` and `l<number>` for boon and bane e.g. `2d20k1` -- roll two d20 and keep the highest; `3d20l2` -- roll three d20 and keep the lowest; `4d8k2` -- roll 4d8 and add together the two highest; etc. [DONE]
 * named numbers written into the working (so that you can see that +2 was from your Strength bonus, for example.) [DONE]
-* unit test that dice stuff a bit, abstract the RNG in case I want to twiddle it (re-create it every so often?)
+* unit test that dice stuff a bit, abstract the RNG in case I want to twiddle it (re-create it every so often?) [DONE]
 * don't allow rolling more than 100 dice at a time, because that's silly
 
 ### Character commands re-design
