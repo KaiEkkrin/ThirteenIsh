@@ -7,7 +7,7 @@ internal sealed class IntegerParseTree(int offset, int value, string? name = nul
 {
     public override int LiteralValue => value;
     
-    public override int Evaluate(out string working)
+    public override int Evaluate(IRandomWrapper random, out string working)
     {
         working = string.IsNullOrEmpty(name)
             ? $"{value}"

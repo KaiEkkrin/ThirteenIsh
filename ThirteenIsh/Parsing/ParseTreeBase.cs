@@ -29,7 +29,7 @@ internal abstract class ParseTreeBase(int offset)
     /// Evaluates the parse tree and returns the result. Fills the out parameter with
     /// a description of how the result was calculated.
     /// </summary>
-    public virtual int Evaluate(out string working)
+    public virtual int Evaluate(IRandomWrapper random, out string working)
     {
         throw new InvalidOperationException($"Cannot evaluate: {Error}");
     }

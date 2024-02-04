@@ -1,4 +1,5 @@
-﻿using Shouldly;
+﻿using FakeItEasy;
+using Shouldly;
 using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Tests;
@@ -7,6 +8,8 @@ namespace ThirteenIsh.Tests;
 // For now just checking the rest of the expression stuff
 public class ParsingTests
 {
+    private readonly IRandomWrapper _random = A.Fake<IRandomWrapper>();
+
     public static readonly TheoryData<string, int> AboveMaxDepthExpressions = new()
     {
         { string.Join(" + ", Enumerable.Repeat("1", ParserBase.MaxDepth / 4)), ParserBase.MaxDepth / 4 }
@@ -37,13 +40,14 @@ public class ParsingTests
     {
         var parseTree = Parser.Parse(expression);
         parseTree.Error.ShouldBeNullOrEmpty(expression);
-        var result = parseTree.Evaluate(out var working);
+        var result = parseTree.Evaluate(_random, out var working);
         result.ShouldBe(expectedResult);
 
         // The working should also be a valid expression with the same result:
+        // (This only holds for expressions without dice or named integers)
         var workingParseTree = Parser.Parse(working);
         workingParseTree.Error.ShouldBeNullOrEmpty(working);
-        var workingResult = workingParseTree.Evaluate(out _);
+        var workingResult = workingParseTree.Evaluate(_random, out _);
         workingResult.ShouldBe(expectedResult);
     }
 

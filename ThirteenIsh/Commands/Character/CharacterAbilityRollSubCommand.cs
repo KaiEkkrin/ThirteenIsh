@@ -68,7 +68,8 @@ internal sealed class CharacterAbilityRollSubCommand() : SubCommandBase("roll", 
             parseTree = new BinaryOperationParseTree(0, parseTree, bonusParseTree, '+');
         }
 
-        var value = parseTree.Evaluate(out var working);
+        var random = serviceProvider.GetRequiredService<IRandomWrapper>();
+        var value = parseTree.Evaluate(random, out var working);
 
         EmbedBuilder embedBuilder = new();
         embedBuilder.WithAuthor(command.User);

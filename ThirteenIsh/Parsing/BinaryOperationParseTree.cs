@@ -10,10 +10,10 @@ internal sealed class BinaryOperationParseTree(int offset, ParseTreeBase lhs, Pa
     public ParseTreeBase Rhs => rhs;
     public char Op => op;
 
-    public override int Evaluate(out string working)
+    public override int Evaluate(IRandomWrapper random, out string working)
     {
-        var left = lhs.Evaluate(out var lhsWorking);
-        var right = rhs.Evaluate(out var rhsWorking);
+        var left = lhs.Evaluate(random, out var lhsWorking);
+        var right = rhs.Evaluate(random, out var rhsWorking);
         working = $"{lhsWorking} {op} {rhsWorking}";
         return op switch
         {

@@ -11,9 +11,9 @@ internal sealed class ParenthesisedExpressionParseTree(int offset, ParseTreeBase
 {
     public ParseTreeBase Inner => inner;
 
-    public override int Evaluate(out string working)
+    public override int Evaluate(IRandomWrapper random, out string working)
     {
-        var result = inner.Evaluate(out var innerWorking);
+        var result = inner.Evaluate(random, out var innerWorking);
         working = $"({innerWorking})";
         return result;
     }

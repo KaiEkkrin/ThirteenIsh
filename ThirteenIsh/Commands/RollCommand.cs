@@ -32,7 +32,8 @@ internal sealed class RollCommand : CommandBase
         if (parseTree.Offset < diceString.Length)
             return command.RespondAsync($"Unrecognised input at end of string: '{diceString[parseTree.Offset..]}'");
 
-        var value = parseTree.Evaluate(out var working);
+        var random = serviceProvider.GetRequiredService<IRandomWrapper>();
+        var value = parseTree.Evaluate(random, out var working);
 
         EmbedBuilder embedBuilder = new();
         embedBuilder.WithAuthor(command.User);
