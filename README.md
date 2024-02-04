@@ -30,3 +30,43 @@ Configure these via command line, environment variables or user secrets.
 * "BotToken": the Discord bot token.
 * "MongoConnectionString": the MongoDB connection string.
 
+## TO DO
+
+### Dice roller improvements
+
+* `-<number>` as a literal negative
+* `k<number>` and `l<number>` for boon and bane e.g. `2d20k1` -- roll two d20 and keep the highest; `3d20l2` -- roll three d20 and keep the lowest; `4d8k2` -- roll 4d8 and add together the two highest; etc.
+* named numbers written into the working (so that you can see that +2 was from your Strength bonus, for example.)
+* unit test that dice stuff a bit, abstract the RNG in case I want to twiddle it (re-create it every so often?)
+* don't allow rolling more than 100 dice at a time, because that's silly
+
+### Character commands re-design
+
+I don't like the sub-command group thing or the individual settings for different abilities. Also, more of the character sheet needs to be customised per game system and I do want to do the basics of both 13th Age and Dragonbane (and whatever else happens to come along.)
+
+* `character-add` -- add a new character -- select a game system from a drop-down, then receive a form to fill in with the non-custom bits.
+* `character-edit` -- select a character, get the same form to edit.
+* `character-list` -- list all characters
+* `character-remove` -- remove a character
+* `character-roll` -- rolls based on the selected stat and the character's game system
+* `character-show` -- show a character's sheet
+* `character-counter-add` or `counter-add` -- add a custom counter with a reset value
+* `character-counter-edit` or `counter-edit` -- edit a custom counter with its reset value
+* `character-counter-list` or `counter-list` -- list all counters for a character
+* `character-counter-remove` or `counter-remove` -- remove a counter from a character
+
+### Player character commands
+
+Should I have `pc-roll` to roll taking into account some variables known by the game system? Other convenience things e.g. attacking and auto-applying variable changes to target(s)? (luxury!)
+
+* `pc-rest` -- applies a level of "rest" to the adventurer's variables taking into account game system and custom counters
+* `pc-var` -- alters a counter variable
+
+### Combat commands basic design
+
+* `combat-add` -- add a monster to the combat (game system-specific config...)
+* `combat-begin` -- GM command only -- starts combat in the current game system
+* `combat-end` -- GM command only -- ends combat in the current game system
+* `combat-join` -- adds current adventurer to the combat
+* `combat-leave` -- leaves combat with the current adventurer
+* `combat-remove` -- remove a monster from the combat

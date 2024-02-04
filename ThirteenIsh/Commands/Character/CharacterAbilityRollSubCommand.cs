@@ -47,7 +47,7 @@ internal sealed class CharacterAbilityRollSubCommand() : SubCommandBase("roll", 
         var modifier = character.Sheet.GetAbilityModifier(name);
         BinaryOperationParseTree parseTree = new(0,
             new DiceRollParseTree(0, 1, 20),
-            new IntegerParseTree(0, modifier), // TODO make it clear in the working that this is the ability modifier
+            new IntegerParseTree(0, modifier, name),
             '+');
 
         // TODO support a negative bonus here
