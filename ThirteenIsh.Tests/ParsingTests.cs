@@ -19,8 +19,13 @@ public class ParsingTests
 
     [Theory]
     [InlineData("11", 11)]
+    [InlineData("-11", -11)]
     [InlineData("3+4+5", 12)]
     [InlineData("13-4-5", 4)]
+    [InlineData("13-4--5", 14)]
+    [InlineData("13--4-5", 12)]
+    [InlineData("13--4--5", 22)]
+    [InlineData("-13-4-5", -22)]
     [InlineData("3*4*5", 60)]
     [InlineData("120/4/3", 10)]
     [InlineData("120/4/3/3", 3)]

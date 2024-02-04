@@ -50,7 +50,6 @@ internal sealed class CharacterAbilityRollSubCommand() : SubCommandBase("roll", 
             new IntegerParseTree(0, modifier, name),
             '+');
 
-        // TODO support a negative bonus here
         if (CommandUtil.TryGetOption<string>(option, "bonus", out var bonusString))
         {
             var bonusParseTree = Parser.Parse(bonusString);
