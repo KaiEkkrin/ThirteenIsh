@@ -7,7 +7,8 @@ namespace ThirteenIsh.Game;
 /// with an adventurer variable.
 /// The corresponding entities are a CharacterCounter and an AdventurerVariable.
 /// </summary>
-internal class GameCounter(string name, string? alias = null)
+internal class GameCounter(string name, string? alias = null, int minValue = 0, int? maxValue = null,
+    bool hasVariable = false)
 {
     public string Name => name;
 
@@ -22,18 +23,23 @@ internal class GameCounter(string name, string? alias = null)
     /// <summary>
     /// The minimum value for this counter.
     /// </summary>
-    public int? MinValue { get; init; }
+    public int MinValue => minValue;
 
     /// <summary>
-    /// The maximum value for this counter.
+    /// The maximum value for this counter, if there is one.
     /// </summary>
-    public int? MaxValue { get; init; }
+    public int? MaxValue => maxValue;
+
+    public bool HasVariable => hasVariable;
 
     /// <summary>
-    /// If this counter has a variable associated with it, the starting/reset value
-    /// of the variable.
+    /// Gets the starting value of this counter's variable from the character sheet
+    /// (only relevant if it has an associated variable.)
     /// </summary>
-    public int? StartingValue { get; init; }
+    public virtual int GetStartingValue(CharacterSheet characterSheet)
+    {
+        return GetValue(characterSheet);
+    }
 
     /// <summary>
     /// Gets this counter's value from the character sheet.

@@ -32,13 +32,13 @@ internal sealed class ThirteenthAgeSystem : GameSystemBase
             classProperty
         };
 
-        GameCounter levelCounter = new(Level) { MinValue = 1, MaxValue = 10 };
-        GameAbilityCounter strengthCounter = new(Strength) { MinValue = 1, MaxValue = 30 };
-        GameAbilityCounter dexterityCounter = new(Dexterity) { MinValue = 1, MaxValue = 30 };
-        GameAbilityCounter constitutionCounter = new(Constitution) { MinValue = 1, MaxValue = 30 };
-        GameAbilityCounter intelligenceCounter = new(Intelligence) { MinValue = 1, MaxValue = 30 };
-        GameAbilityCounter wisdomCounter = new(Wisdom) { MinValue = 1, MaxValue = 30 };
-        GameAbilityCounter charismaCounter = new(Charisma) { MinValue = 1, MaxValue = 30 };
+        GameCounter levelCounter = new(Level);
+        GameAbilityCounter strengthCounter = new(Strength);
+        GameAbilityCounter dexterityCounter = new(Dexterity);
+        GameAbilityCounter constitutionCounter = new(Constitution);
+        GameAbilityCounter intelligenceCounter = new(Intelligence);
+        GameAbilityCounter wisdomCounter = new(Wisdom);
+        GameAbilityCounter charismaCounter = new(Charisma);
 
         AbilityBonusCounter strengthBonusCounter = new(strengthCounter);
         AbilityBonusCounter dexterityBonusCounter = new(dexterityCounter);

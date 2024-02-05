@@ -6,7 +6,7 @@ internal class HitPointsCounter(
     GameProperty classProperty,
     GameCounter levelCounter,
     AbilityBonusCounter constitutionBonusCounter)
-    : GameCounter("Hit Points", "HP")
+    : GameCounter("Hit Points", "HP", hasVariable: true)
 {
     public override bool CanStore => false;
 

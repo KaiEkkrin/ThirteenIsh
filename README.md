@@ -143,8 +143,6 @@ Should I allow for ad hoc modifier counters for all of these? To account for mag
 * Points for the magical secondary skills.
 * ArmorRating (configured as a single number rather than selecting armor types, which would be messy.)
 
-TO DO: Figure out how to configure skills in a convenient way. Since gaining experience in this system results in extra skill bonuses over-and-above a *skill level* that is determined by your attribute-based Base Chance, doubled if marked as *trained*. I'll rely on the players to choose the right number of trained skills and apply the right bonuses, just like I'll rely on them to not have 20 in every ability! Perhaps 1 point should mean "trained", and every point thereafter mean "add 1 to skill level, max 18", as described in "Experience" on page 29?
-
 #### Derived counters
 
 * Movement (page 27.)
