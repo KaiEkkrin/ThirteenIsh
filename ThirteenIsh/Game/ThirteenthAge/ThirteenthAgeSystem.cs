@@ -32,7 +32,7 @@ internal sealed class ThirteenthAgeSystem : GameSystemBase
             classProperty
         };
 
-        GameCounter levelCounter = new(Level);
+        GameCounter levelCounter = new(Level, defaultValue: 1, minValue: 1, maxValue: 10);
         GameAbilityCounter strengthCounter = new(Strength);
         GameAbilityCounter dexterityCounter = new(Dexterity);
         GameAbilityCounter constitutionCounter = new(Constitution);

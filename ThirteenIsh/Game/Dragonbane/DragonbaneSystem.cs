@@ -33,18 +33,26 @@ internal sealed class DragonbaneSystem : GameSystemBase
         GameProperty professionProperty = new("Profession", Artisan, Bard, Fighter, Hunter, Knight,
             Mage, Mariner, Merchant, Scholar, Thief);
 
-        GameAbilityCounter strengthCounter = new(Strength, 3, 18);
-        GameAbilityCounter constitutionCounter = new(Constitution, 3, 18);
-        GameAbilityCounter agilityCounter = new(Agility, 3, 18);
-        GameAbilityCounter intelligenceCounter = new(Intelligence, 3, 18);
-        GameAbilityCounter willpowerCounter = new(Willpower, 3, 18);
-        GameAbilityCounter charismaCounter = new(Charisma, 3, 18);
+        GameAbilityCounter strengthCounter = new(Strength, maxValue: 18);
+        GameAbilityCounter constitutionCounter = new(Constitution, maxValue: 18);
+        GameAbilityCounter agilityCounter = new(Agility, maxValue: 18);
+        GameAbilityCounter intelligenceCounter = new(Intelligence, maxValue: 18);
+        GameAbilityCounter willpowerCounter = new(Willpower, maxValue: 18);
+        GameAbilityCounter charismaCounter = new(Charisma, maxValue: 18);
 
         Properties = new[]
         {
             kinProperty,
             professionProperty
         };
+
+        // Derived counters
+        MovementCounter movementCounter = new(kinProperty, agilityCounter);
+        PointsCounter hitPointsCounter = new("Hit Points", "HP", constitutionCounter);
+        PointsCounter willpowerPointsCounter = new("Willpower Points", "WP", willpowerCounter);
+
+        DamageBonusCounter strengthDamageBonusCounter = new("Strength Damage Bonus", strengthCounter);
+        DamageBonusCounter agilityDamageBonusCounter = new("Agility Damage Bonus", agilityCounter);
 
         var counters = new List<GameCounter>
         {
@@ -54,6 +62,13 @@ internal sealed class DragonbaneSystem : GameSystemBase
             intelligenceCounter,
             willpowerCounter,
             charismaCounter,
+
+            movementCounter,
+            hitPointsCounter,
+            willpowerPointsCounter,
+
+            strengthDamageBonusCounter,
+            agilityDamageBonusCounter
         };
 
         List<GameCounter> skillCounters = [];

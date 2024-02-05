@@ -7,8 +7,8 @@ namespace ThirteenIsh.Game;
 /// with an adventurer variable.
 /// The corresponding entities are a CharacterCounter and an AdventurerVariable.
 /// </summary>
-internal class GameCounter(string name, string? alias = null, int minValue = 0, int? maxValue = null,
-    bool hasVariable = false)
+internal class GameCounter(string name, string? alias = null, int defaultValue = 0, int minValue = 0,
+    int? maxValue = null, bool hasVariable = false)
 {
     public string Name => name;
 
@@ -19,6 +19,11 @@ internal class GameCounter(string name, string? alias = null, int minValue = 0, 
     /// should not be, but instead should be calculated out of other values.
     /// </summary>
     public virtual bool CanStore => true;
+
+    /// <summary>
+    /// The default value for this counter.
+    /// </summary>
+    public int DefaultValue => defaultValue;
 
     /// <summary>
     /// The minimum value for this counter.
@@ -46,8 +51,8 @@ internal class GameCounter(string name, string? alias = null, int minValue = 0, 
     /// </summary>
     public virtual int GetValue(CharacterSheet characterSheet)
     {
-        var counter = characterSheet.Counters.First(o => o.Name == name);
-        return counter.Value;
+        var counter = characterSheet.Counters.FirstOrDefault(o => o.Name == name);
+        return counter != null ? counter.Value : defaultValue;
     }
 }
 

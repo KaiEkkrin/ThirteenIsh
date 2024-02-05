@@ -7,7 +7,7 @@ namespace ThirteenIsh.Game.Dragonbane;
 /// (or equal to) in order to succeed at a skill check for it.
 /// </summary>
 internal class SkillLevelCounter(GameAbilityCounter attribute, GameCounter skill, bool secondary = false)
-    : GameCounter($"{skill.Name} Level")
+    : GameCounter($"{skill.Name} Level", maxValue: 15)
 {
     /// <summary>
     /// The attribute associated with this skill.
