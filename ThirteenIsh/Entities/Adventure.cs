@@ -11,7 +11,15 @@ public class Adventure
 {
     public string Name { get; set; } = string.Empty;
 
+    /// <summary>
+    /// A long description of the adventure.
+    /// </summary>
     public string Description { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The game system this adventure uses.
+    /// </summary>
+    public string GameSystem { get; set; } = string.Empty;
 
     /// <summary>
     /// Maps each user ID to their Adventurer.

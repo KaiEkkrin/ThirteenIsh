@@ -8,6 +8,11 @@ public class Character : UserEntityBase
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
+    /// The game system this character uses.
+    /// </summary>
+    public string GameSystem { get; set; } = string.Empty;
+
+    /// <summary>
     /// The character sheet.
     /// </summary>
     public CharacterSheet Sheet { get; set; } = new();
