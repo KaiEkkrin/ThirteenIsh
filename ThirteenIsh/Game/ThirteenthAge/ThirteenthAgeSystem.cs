@@ -33,12 +33,12 @@ internal sealed class ThirteenthAgeSystem : GameSystemBase
         };
 
         GameCounter levelCounter = new(Level) { MinValue = 1, MaxValue = 10 };
-        GameCounter strengthCounter = new(Strength) { MinValue = 1, MaxValue = 30 };
-        GameCounter dexterityCounter = new(Dexterity) { MinValue = 1, MaxValue = 30 };
-        GameCounter constitutionCounter = new(Constitution) { MinValue = 1, MaxValue = 30 };
-        GameCounter intelligenceCounter = new(Intelligence) { MinValue = 1, MaxValue = 30 };
-        GameCounter wisdomCounter = new(Wisdom) { MinValue = 1, MaxValue = 30 };
-        GameCounter charismaCounter = new(Charisma) { MinValue = 1, MaxValue = 30 };
+        GameAbilityCounter strengthCounter = new(Strength) { MinValue = 1, MaxValue = 30 };
+        GameAbilityCounter dexterityCounter = new(Dexterity) { MinValue = 1, MaxValue = 30 };
+        GameAbilityCounter constitutionCounter = new(Constitution) { MinValue = 1, MaxValue = 30 };
+        GameAbilityCounter intelligenceCounter = new(Intelligence) { MinValue = 1, MaxValue = 30 };
+        GameAbilityCounter wisdomCounter = new(Wisdom) { MinValue = 1, MaxValue = 30 };
+        GameAbilityCounter charismaCounter = new(Charisma) { MinValue = 1, MaxValue = 30 };
 
         AbilityBonusCounter strengthBonusCounter = new(strengthCounter);
         AbilityBonusCounter dexterityBonusCounter = new(dexterityCounter);
@@ -85,12 +85,11 @@ internal sealed class ThirteenthAgeSystem : GameSystemBase
             recoveriesCounter,
             recoveryDieCounter
         };
+
+        Validate();
     }
 
     public override IReadOnlyList<GameProperty> Properties { get; }
 
     public override IReadOnlyList<GameCounter> Counters { get; }
-
-    public static bool IsAbilityScoreName(string name) =>
-        name is Strength or Dexterity or Constitution or Intelligence or Wisdom or Charisma;
 }

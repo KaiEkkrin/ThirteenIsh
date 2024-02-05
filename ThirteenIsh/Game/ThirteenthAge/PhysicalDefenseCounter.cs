@@ -8,7 +8,7 @@ internal class PhysicalDefenseCounter(
     AbilityBonusCounter strengthBonusCounter,
     AbilityBonusCounter constitutionBonusCounter,
     AbilityBonusCounter dexterityBonusCounter)
-    : GameCounter("Physical Defense")
+    : GameCounter("Physical Defense", "PD")
 {
     public override bool CanStore => false;
 

@@ -7,9 +7,11 @@ namespace ThirteenIsh.Game;
 /// with an adventurer variable.
 /// The corresponding entities are a CharacterCounter and an AdventurerVariable.
 /// </summary>
-internal class GameCounter(string name)
+internal class GameCounter(string name, string? alias = null)
 {
     public string Name => name;
+
+    public string? Alias => alias;
 
     /// <summary>
     /// True if this counter's value should be stored in the character sheet; false if it

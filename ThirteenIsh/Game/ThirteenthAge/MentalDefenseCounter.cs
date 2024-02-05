@@ -8,7 +8,7 @@ internal class MentalDefenseCounter(
     AbilityBonusCounter intelligenceBonusCounter,
     AbilityBonusCounter wisdomBonusCounter,
     AbilityBonusCounter charismaBonusCounter)
-    : GameCounter("Mental Defense")
+    : GameCounter("Mental Defense", "MD")
 {
     public override bool CanStore => false;
 

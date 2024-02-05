@@ -2,7 +2,8 @@
 
 namespace ThirteenIsh.Game.ThirteenthAge;
 
-internal class AbilityBonusCounter(GameCounter scoreCounter) : GameCounter($"{scoreCounter.Name} {Suffix}")
+internal class AbilityBonusCounter(GameCounter scoreCounter)
+    : GameCounter($"{scoreCounter.Alias ?? throw new InvalidOperationException("Base counter needs an alias")} {Suffix}")
 {
     public const string Suffix = "Bonus";
 

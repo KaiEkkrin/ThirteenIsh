@@ -8,7 +8,7 @@ internal class ArmorClassCounter(
     AbilityBonusCounter constitutionBonusCounter,
     AbilityBonusCounter dexterityBonusCounter,
     AbilityBonusCounter wisdomBonusCounter)
-    : GameCounter("Armor Class")
+    : GameCounter("Armor Class", "AC")
 {
     public override bool CanStore => false;
 
