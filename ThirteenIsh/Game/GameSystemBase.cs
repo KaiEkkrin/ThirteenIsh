@@ -1,11 +1,21 @@
-﻿namespace ThirteenIsh.Game;
+﻿using Discord;
+using System.Reflection;
+using ThirteenIsh.Entities;
+
+namespace ThirteenIsh.Game;
 
 /// <summary>
 /// Describes a game system, providing game-specific ways of interacting with it.
-/// Game systems are singletons registered in GameSystemRegistration.
+/// Game system instances should be immutable singletons and not part of the dependency
+/// injection subsystem.
 /// </summary>
 internal abstract class GameSystemBase(string name)
 {
+    /// <summary>
+    /// Access this to enumerate all game systems.
+    /// </summary>
+    public static readonly IReadOnlyCollection<GameSystemBase> AllGameSystems = BuildAllGameSystemsList();
+
     public string Name => name;
 
     /// <summary>
@@ -17,6 +27,39 @@ internal abstract class GameSystemBase(string name)
     /// Enumerates this game's character counters in the order they should appear.
     /// </summary>
     public abstract IReadOnlyList<GameCounter> Counters { get; }
+
+    public MessageComponent BuildCharacterEditor(string customId, CharacterSheet? sheet)
+    {
+        ComponentBuilder builder = new();
+        var row = 0;
+        foreach (var property in Properties)
+        {
+            property.AddCharacterEditorComponent(builder, customId, sheet, ref row);
+        }
+
+        foreach (var counter in Counters)
+        {
+            counter.AddCharacterEditorComponent(builder, customId, sheet, ref row);
+        }
+
+        return builder.Build();
+    }
+
+    public static SlashCommandOptionBuilder BuildGameSystemChoiceOption(string name)
+    {
+        var builder = new SlashCommandOptionBuilder()
+            .WithName(name)
+            .WithDescription("The game system.")
+            .WithRequired(true)
+            .WithType(ApplicationCommandOptionType.String);
+
+        foreach (var gameSystem in AllGameSystems)
+        {
+            builder.AddChoice(gameSystem.Name, gameSystem.Name);
+        }
+
+        return builder;
+    }
 
     /// <summary>
     /// Call at the end of the concrete class's constructor.
@@ -43,5 +86,20 @@ internal abstract class GameSystemBase(string name)
                 !aliases.Add(counter.Alias))
                 throw new InvalidOperationException($"{name}: Found two counters aliased {counter.Alias}");
         }
+    }
+
+    private static List<GameSystemBase> BuildAllGameSystemsList()
+    {
+        List<GameSystemBase> list = [];
+        foreach (var ty in Assembly.GetExecutingAssembly().GetTypes())
+        {
+            if (!ty.IsClass || ty.IsAbstract || !ty.IsAssignableTo(typeof(GameSystemBase))) continue;
+            if (Activator.CreateInstance(ty) is not GameSystemBase gameSystem)
+                throw new InvalidOperationException($"Error instantiating {ty}");
+
+            list.Add(gameSystem);
+        }
+
+        return list;
     }
 }

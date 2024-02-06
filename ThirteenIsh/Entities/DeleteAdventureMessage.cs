@@ -1,6 +1,5 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using MongoDB.Bson.Serialization.Attributes;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Entities;

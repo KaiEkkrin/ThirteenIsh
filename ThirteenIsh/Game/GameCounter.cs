@@ -1,4 +1,5 @@
-﻿using ThirteenIsh.Entities;
+﻿using Discord;
+using ThirteenIsh.Entities;
 
 namespace ThirteenIsh.Game;
 
@@ -36,6 +37,39 @@ internal class GameCounter(string name, string? alias = null, int defaultValue =
     public int? MaxValue => maxValue;
 
     public bool HasVariable => hasVariable;
+
+    /// <summary>
+    /// Adds a component that would edit this counter's value to the component builder.
+    /// </summary>
+    public ComponentBuilder AddCharacterEditorComponent(ComponentBuilder componentBuilder,
+        string customId, CharacterSheet? sheet, ref int row)
+    {
+        if (!CanStore) return componentBuilder; // no editing for this one
+        var currentValue = sheet != null ? (int?)GetValue(sheet) : null;
+        if (maxValue.HasValue && (maxValue - minValue) <= 20)
+        {
+            // Represent this as a menu. It helps, since Discord doesn't have number
+            // input validation
+            var menuBuilder = new SelectMenuBuilder()
+                .WithCustomId($"{customId}:{name}")
+                .WithMinValues(1)
+                .WithMaxValues(1)
+                .WithPlaceholder($"Select a {name} value");
+
+            for (var i = minValue; i <= maxValue.Value; ++i)
+            {
+                menuBuilder.AddOption($"{i}", $"{i}", isDefault: i == currentValue);
+            }
+
+            return componentBuilder.WithSelectMenu(menuBuilder, row++);
+        }
+        else
+        {
+            // Sadly this requires a modal instead and would be a massive pain in the butt. :(
+            // (Also, discord.net doesn't let me add select menus to modals!)
+            throw new NotSupportedException(name);
+        }
+    }
 
     /// <summary>
     /// Gets the starting value of this counter's variable from the character sheet

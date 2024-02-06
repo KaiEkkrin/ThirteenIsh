@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using ThirteenIsh.Entities;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Pcs;
@@ -20,8 +21,14 @@ internal sealed class PcLeaveSubCommand() : SubCommandBase("leave", "Leaves the 
         }
 
         // Supply a confirm button
-        var message = await dataService.CreateLeaveAdventureMessageAsync(guild.CurrentAdventure.Name, guildId,
-            command.User.Id, cancellationToken);
+        LeaveAdventureMessage message = new()
+        {
+            GuildId = new DiscordId(guildId),
+            Name = guild.CurrentAdventure.Name,
+            UserId = new DiscordId(command.User.Id)
+        };
+
+        await dataService.AddMessageAsync(message, cancellationToken);
 
         ComponentBuilder builder = new();
         builder.WithButton("Leave", message.MessageId, ButtonStyle.Danger);

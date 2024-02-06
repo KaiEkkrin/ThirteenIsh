@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using ThirteenIsh.Entities;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Adventures;
@@ -32,7 +33,13 @@ internal sealed class AdventureRemoveSubCommand() : SubCommandBase("remove", "De
         }
 
         // I'm not going to delete this right away but instead give the user a confirm button
-        var message = await dataService.CreateDeleteAdventureMessageAsync(name, guildId, command.User.Id, cancellationToken);
+        DeleteAdventureMessage message = new()
+        {
+            GuildId = new DiscordId(guildId),
+            Name = name,
+            UserId = new DiscordId(command.User.Id)
+        };
+        await dataService.AddMessageAsync(message, cancellationToken);
 
         ComponentBuilder builder = new();
         builder.WithButton("Delete", message.MessageId, ButtonStyle.Danger);

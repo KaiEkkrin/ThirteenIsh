@@ -17,6 +17,7 @@ public class MessageBase : UserEntityBase
     /// <summary>
     /// Use this as the Custom ID for Discord.
     /// </summary>
+    [BsonIgnore]
     public string MessageId => Id.ToString();
 
     /// <summary>

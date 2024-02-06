@@ -61,6 +61,13 @@ public sealed class DataService : IDisposable
         _retryPolicy = Policy.Handle<WriteConflictException>().WaitAndRetryAsync(Delays);
     }
 
+    public async Task AddMessageAsync(MessageBase message, CancellationToken cancellationToken = default)
+    {
+        message.Id = ObjectId.GenerateNewId();
+        var collection = await GetMessagesCollectionAsync(cancellationToken);
+        await collection.InsertOneAsync(message, cancellationToken: cancellationToken);
+    }
+
     public async Task<Character?> CreateCharacterAsync(string name, CharacterSheet sheet, ulong userId,
         CancellationToken cancellationToken = default)
     {
@@ -83,53 +90,6 @@ public sealed class DataService : IDisposable
             // This means that character already exists
             return null;
         }
-    }
-
-    public async Task<DeleteAdventureMessage> CreateDeleteAdventureMessageAsync(string name, ulong guildId, ulong userId,
-        CancellationToken cancellationToken = default)
-    {
-        DeleteAdventureMessage message = new()
-        {
-            Id = ObjectId.GenerateNewId(),
-            GuildId = new DiscordId(guildId),
-            Name = name,
-            UserId = new DiscordId(userId)
-        };
-
-        var collection = await GetMessagesCollectionAsync(cancellationToken);
-        await collection.InsertOneAsync(message, cancellationToken: cancellationToken);
-        return message;
-    }
-
-    public async Task<DeleteCharacterMessage> CreateDeleteCharacterMessageAsync(string name, ulong userId,
-        CancellationToken cancellationToken = default)
-    {
-        DeleteCharacterMessage message = new()
-        {
-            Id = ObjectId.GenerateNewId(),
-            Name = name,
-            UserId = new DiscordId(userId)
-        };
-
-        var collection = await GetMessagesCollectionAsync(cancellationToken);
-        await collection.InsertOneAsync(message, cancellationToken: cancellationToken);
-        return message;
-    }
-
-    public async Task<LeaveAdventureMessage> CreateLeaveAdventureMessageAsync(string name, ulong guildId, ulong userId,
-        CancellationToken cancellationToken = default)
-    {
-        LeaveAdventureMessage message = new()
-        {
-            Id = ObjectId.GenerateNewId(),
-            GuildId = new DiscordId(guildId),
-            Name = name,
-            UserId = new DiscordId(userId)
-        };
-
-        var collection = await GetMessagesCollectionAsync(cancellationToken);
-        await collection.InsertOneAsync(message, cancellationToken: cancellationToken);
-        return message;
     }
 
     public async Task<bool> DeleteCharacterAsync(string name, ulong userId, CancellationToken cancellationToken = default)
