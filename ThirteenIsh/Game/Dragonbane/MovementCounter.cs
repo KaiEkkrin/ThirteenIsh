@@ -3,13 +3,13 @@
 namespace ThirteenIsh.Game.Dragonbane;
 
 internal class MovementCounter(GameProperty kinProperty, GameAbilityCounter agilityCounter)
-    : GameCounter("Movement")
+    : GameCounter("Movement", category: DragonbaneSystem.General)
 {
     public override bool CanStore => false;
 
-    public override int GetValue(CharacterSheet characterSheet)
+    public override int? GetValue(CharacterSheet characterSheet)
     {
-        var baseMovement = kinProperty.GetValue(characterSheet) switch
+        int? baseMovement = kinProperty.GetValue(characterSheet) switch
         {
             DragonbaneSystem.Human => 10,
             DragonbaneSystem.Halfling => 8,
@@ -17,17 +17,18 @@ internal class MovementCounter(GameProperty kinProperty, GameAbilityCounter agil
             DragonbaneSystem.Elf => 10,
             DragonbaneSystem.Mallard => 8,
             DragonbaneSystem.Wolfkin => 12,
-            var k => throw new InvalidOperationException($"Unrecognised kin: {k}")
+            _ => null
         };
 
-        var modifier = agilityCounter.GetValue(characterSheet) switch
+        if (!baseMovement.HasValue) return null;
+        int? modifier = agilityCounter.GetValue(characterSheet) switch
         {
             >= 1 and <= 6 => -4,
             >= 7 and <= 9 => -2,
             >= 10 and <= 12 => 0,
             >= 13 and <= 15 => 2,
             >= 16 and <= 18 => 4,
-            var v => throw new InvalidOperationException($"Invalid value for {agilityCounter.Name} : {v}")
+            _ => null
         };
 
         return baseMovement + modifier;

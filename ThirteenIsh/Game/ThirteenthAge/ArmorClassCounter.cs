@@ -8,13 +8,13 @@ internal class ArmorClassCounter(
     AbilityBonusCounter constitutionBonusCounter,
     AbilityBonusCounter dexterityBonusCounter,
     AbilityBonusCounter wisdomBonusCounter)
-    : GameCounter("Armor Class", "AC")
+    : GameCounter("Armor Class", "AC", ThirteenthAgeSystem.General)
 {
     public override bool CanStore => false;
 
-    public override int GetValue(CharacterSheet characterSheet)
+    public override int? GetValue(CharacterSheet characterSheet)
     {
-        var baseAC = classProperty.GetValue(characterSheet) switch
+        int? baseAC = classProperty.GetValue(characterSheet) switch
         {
             ThirteenthAgeSystem.Barbarian => 12,
             ThirteenthAgeSystem.Bard => 12,
@@ -25,10 +25,11 @@ internal class ArmorClassCounter(
             ThirteenthAgeSystem.Rogue => 12,
             ThirteenthAgeSystem.Sorcerer => 10,
             ThirteenthAgeSystem.Wizard => 10,
-            var c => throw new InvalidOperationException($"Unrecognised class: {c}")
+            _ => null
         };
 
-        var bonuses = new List<int>
+        if (!baseAC.HasValue) return null;
+        var bonuses = new List<int?>
         {
             constitutionBonusCounter.GetValue(characterSheet),
             dexterityBonusCounter.GetValue(characterSheet),

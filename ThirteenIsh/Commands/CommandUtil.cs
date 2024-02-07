@@ -47,22 +47,23 @@ internal static class CommandUtil
 //        embedBuilder.WithDescription(@$"Level {adventurer.Sheet.Level} {adventurer.Sheet.Class}
 //Last updated on {adventurer.LastUpdated:F}");
 
-        AddCharacterSheetFields(embedBuilder, adventurer.Sheet);
+        // TODO get game system, etc (this should be configured in the adventure.)
+        // AddCharacterSheetFields(embedBuilder, adventurer.Sheet);
         return command.RespondAsync(embed: embedBuilder.Build());
     }
 
     public static Task RespondWithCharacterSheetAsync(
         IDiscordInteraction command,
-        CharacterSheet sheet,
+        Entities.Character character,
         string title)
     {
         // TODO new-style character summaries
         EmbedBuilder embedBuilder = new();
         embedBuilder.WithAuthor(command.User);
         embedBuilder.WithTitle(title);
-        //embedBuilder.WithDescription($"Level {sheet.Level} {sheet.Class}");
 
-        AddCharacterSheetFields(embedBuilder, sheet);
+        var gameSystem = GameSystemBase.Get(character.GameSystem);
+        embedBuilder = gameSystem.AddCharacterSheetFields(embedBuilder, character.Sheet);
         return command.RespondAsync(embed: embedBuilder.Build());
     }
 
@@ -184,17 +185,5 @@ internal static class CommandUtil
 
         adventure = null;
         return false;
-    }
-
-    private static void AddCharacterSheetFields(EmbedBuilder embedBuilder, CharacterSheet sheet)
-    {
-        // TODO new-style character stuff
-        //foreach (var (abilityName, abilityScore) in sheet.AbilityScores)
-        //{
-        //    embedBuilder.AddField(new EmbedFieldBuilder()
-        //        .WithIsInline(true)
-        //        .WithName(abilityName)
-        //        .WithValue(abilityScore));
-        //}
     }
 }

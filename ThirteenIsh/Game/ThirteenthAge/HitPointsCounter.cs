@@ -6,18 +6,18 @@ internal class HitPointsCounter(
     GameProperty classProperty,
     GameCounter levelCounter,
     AbilityBonusCounter constitutionBonusCounter)
-    : GameCounter("Hit Points", "HP", hasVariable: true)
+    : GameCounter("Hit Points", "HP", ThirteenthAgeSystem.General, hasVariable: true)
 {
     public override bool CanStore => false;
 
-    public override int GetValue(CharacterSheet characterSheet)
+    public override int? GetValue(CharacterSheet characterSheet)
     {
         // See page 31, 76 and onwards. Why is this so baroque?!
         var conBonus = constitutionBonusCounter.GetValue(characterSheet);
         var classValue = classProperty.GetValue(characterSheet);
         var level = levelCounter.GetValue(characterSheet);
 
-        var baseValue = conBonus + classValue switch
+        int? baseValue = conBonus + classValue switch
         {
             ThirteenthAgeSystem.Barbarian => 7,
             ThirteenthAgeSystem.Bard => 7,
@@ -28,10 +28,11 @@ internal class HitPointsCounter(
             ThirteenthAgeSystem.Rogue => 6,
             ThirteenthAgeSystem.Sorcerer => 6,
             ThirteenthAgeSystem.Wizard => 6,
-            _ => throw new InvalidOperationException($"Unrecognised class: {classValue}")
+            _ => null
         };
 
-        var value = level switch
+        if (!baseValue.HasValue) return null;
+        int? value = level switch
         {
             1 => baseValue * 3,
             2 => baseValue * 4,
@@ -43,7 +44,7 @@ internal class HitPointsCounter(
             8 => baseValue * 16,
             9 => baseValue * 20,
             10 => baseValue * 24,
-            _ => throw new InvalidOperationException($"Unrecognised level: {level}")
+            _ => null
         };
 
         return value;

@@ -8,12 +8,14 @@ namespace ThirteenIsh.Game;
 /// with an adventurer variable.
 /// The corresponding entities are a CharacterCounter and an AdventurerVariable.
 /// </summary>
-internal class GameCounter(string name, string? alias = null, int defaultValue = 0, int minValue = 0,
-    int? maxValue = null, bool hasVariable = false)
+internal class GameCounter(string name, string? alias = null, string? category = null, int defaultValue = 0, int minValue = 0,
+    int? maxValue = null, bool hasVariable = false, bool isHidden = false)
 {
     public string Name => name;
 
     public string? Alias => alias;
+
+    public string? Category => category;
 
     /// <summary>
     /// True if this counter's value should be stored in the character sheet; false if it
@@ -37,6 +39,8 @@ internal class GameCounter(string name, string? alias = null, int defaultValue =
     public int? MaxValue => maxValue;
 
     public bool HasVariable => hasVariable;
+
+    public bool IsHidden => isHidden;
 
     /// <summary>
     /// Adds a component that would edit this counter's value to the component builder.
@@ -75,7 +79,7 @@ internal class GameCounter(string name, string? alias = null, int defaultValue =
     /// Gets the starting value of this counter's variable from the character sheet
     /// (only relevant if it has an associated variable.)
     /// </summary>
-    public virtual int GetStartingValue(CharacterSheet characterSheet)
+    public virtual int? GetStartingValue(CharacterSheet characterSheet)
     {
         return GetValue(characterSheet);
     }
@@ -83,10 +87,9 @@ internal class GameCounter(string name, string? alias = null, int defaultValue =
     /// <summary>
     /// Gets this counter's value from the character sheet.
     /// </summary>
-    public virtual int GetValue(CharacterSheet characterSheet)
+    public virtual int? GetValue(CharacterSheet characterSheet)
     {
-        var counter = characterSheet.Counters.FirstOrDefault(o => o.Name == name);
-        return counter != null ? counter.Value : defaultValue;
+        return characterSheet.Counters.TryGetValue(name, out var value) ? value : defaultValue;
     }
 }
 

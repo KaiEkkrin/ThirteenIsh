@@ -7,11 +7,11 @@ namespace ThirteenIsh.Game.Dragonbane;
 /// matching ability counter.
 /// </summary>
 internal class DamageBonusCounter(string name, GameAbilityCounter abilityCounter)
-    : GameCounter(name)
+    : GameCounter(name, category: DragonbaneSystem.General)
 {
     public override bool CanStore => false;
 
-    public override int GetValue(CharacterSheet characterSheet)
+    public override int? GetValue(CharacterSheet characterSheet)
     {
         return abilityCounter.GetValue(characterSheet) switch
         {

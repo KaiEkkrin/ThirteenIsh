@@ -6,11 +6,11 @@ namespace ThirteenIsh.Game.Dragonbane;
 /// This is used for hit points and willpower points. TODO support ad-hoc bonus?
 /// </summary>
 internal class PointsCounter(string name, string alias, GameAbilityCounter abilityCounter)
-    : GameCounter(name, alias, hasVariable: true)
+    : GameCounter(name, alias, category: DragonbaneSystem.General, hasVariable: true)
 {
     public override bool CanStore => false;
 
-    public override int GetValue(CharacterSheet characterSheet)
+    public override int? GetValue(CharacterSheet characterSheet)
     {
         return abilityCounter.GetValue(characterSheet);
     }

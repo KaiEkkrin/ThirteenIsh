@@ -8,13 +8,13 @@ internal class PhysicalDefenseCounter(
     AbilityBonusCounter strengthBonusCounter,
     AbilityBonusCounter constitutionBonusCounter,
     AbilityBonusCounter dexterityBonusCounter)
-    : GameCounter("Physical Defense", "PD")
+    : GameCounter("Physical Defense", "PD", ThirteenthAgeSystem.General)
 {
     public override bool CanStore => false;
 
-    public override int GetValue(CharacterSheet characterSheet)
+    public override int? GetValue(CharacterSheet characterSheet)
     {
-        var basePD = classProperty.GetValue(characterSheet) switch
+        int? basePD = classProperty.GetValue(characterSheet) switch
         {
             ThirteenthAgeSystem.Barbarian => 11,
             ThirteenthAgeSystem.Bard => 10,
@@ -25,10 +25,11 @@ internal class PhysicalDefenseCounter(
             ThirteenthAgeSystem.Rogue => 12,
             ThirteenthAgeSystem.Sorcerer => 11,
             ThirteenthAgeSystem.Wizard => 10,
-            var c => throw new InvalidOperationException($"Unrecognised class: {c}")
+            _ => null
         };
 
-        var bonuses = new List<int>
+        if (!basePD.HasValue) return null;
+        var bonuses = new List<int?>
         {
             strengthBonusCounter.GetValue(characterSheet),
             constitutionBonusCounter.GetValue(characterSheet),

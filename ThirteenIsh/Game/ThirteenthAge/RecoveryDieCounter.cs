@@ -2,11 +2,11 @@
 
 namespace ThirteenIsh.Game.ThirteenthAge;
 
-internal class RecoveryDieCounter(GameProperty classProperty) : GameCounter("Recovery Die")
+internal class RecoveryDieCounter(GameProperty classProperty) : GameCounter("Recovery Die", category: ThirteenthAgeSystem.General)
 {
     public override bool CanStore => false;
 
-    public override int GetValue(CharacterSheet characterSheet)
+    public override int? GetValue(CharacterSheet characterSheet)
     {
         return classProperty.GetValue(characterSheet) switch
         {
@@ -19,7 +19,7 @@ internal class RecoveryDieCounter(GameProperty classProperty) : GameCounter("Rec
             ThirteenthAgeSystem.Rogue => 8,
             ThirteenthAgeSystem.Sorcerer => 6,
             ThirteenthAgeSystem.Wizard => 6,
-            var c => throw new InvalidOperationException($"Unrecognised class: {c}")
+            _ => null
         };
     }
 }

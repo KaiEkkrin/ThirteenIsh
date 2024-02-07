@@ -5,6 +5,9 @@
 /// </summary>
 internal sealed class ThirteenthAgeSystem : GameSystemBase
 {
+    public const string Basics = "Basics";
+    public const string General = "General";
+
     private const string Level = "Level";
 
     private const string Strength = "Strength";
@@ -26,19 +29,20 @@ internal sealed class ThirteenthAgeSystem : GameSystemBase
 
     public ThirteenthAgeSystem() : base("13th Age")
     {
-        GameProperty classProperty = new("Class", Barbarian, Bard, Cleric, Fighter, Paladin, Ranger, Rogue, Sorcerer, Wizard);
+        GameProperty classProperty = new("Class",
+            [Barbarian, Bard, Cleric, Fighter, Paladin, Ranger, Rogue, Sorcerer, Wizard], Basics);
         Properties = new GameProperty[]
         {
             classProperty
         };
 
-        GameCounter levelCounter = new(Level, defaultValue: 1, minValue: 1, maxValue: 10);
-        GameAbilityCounter strengthCounter = new(Strength);
-        GameAbilityCounter dexterityCounter = new(Dexterity);
-        GameAbilityCounter constitutionCounter = new(Constitution);
-        GameAbilityCounter intelligenceCounter = new(Intelligence);
-        GameAbilityCounter wisdomCounter = new(Wisdom);
-        GameAbilityCounter charismaCounter = new(Charisma);
+        GameCounter levelCounter = new(Level, category: Basics, defaultValue: 1, minValue: 1, maxValue: 10);
+        GameAbilityCounter strengthCounter = new(Strength, category: Basics);
+        GameAbilityCounter dexterityCounter = new(Dexterity, category: Basics);
+        GameAbilityCounter constitutionCounter = new(Constitution, category: Basics);
+        GameAbilityCounter intelligenceCounter = new(Intelligence, category: Basics);
+        GameAbilityCounter wisdomCounter = new(Wisdom, category: Basics);
+        GameAbilityCounter charismaCounter = new(Charisma, category: Basics);
 
         AbilityBonusCounter strengthBonusCounter = new(strengthCounter);
         AbilityBonusCounter dexterityBonusCounter = new(dexterityCounter);

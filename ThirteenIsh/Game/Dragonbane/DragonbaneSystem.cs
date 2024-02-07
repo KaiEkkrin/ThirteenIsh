@@ -2,6 +2,12 @@
 
 internal sealed class DragonbaneSystem : GameSystemBase
 {
+    public const string Basics = "Basics";
+    public const string General = "General";
+    public const string CoreSkills = "Core Skills";
+    public const string SecondarySkills = "Secondary Skills";
+    public const string Equipment = "Equipment";
+
     public const string Human = "Human";
     public const string Halfling = "Halfling";
     public const string Dwarf = "Dwarf";
@@ -29,16 +35,16 @@ internal sealed class DragonbaneSystem : GameSystemBase
 
     public DragonbaneSystem() : base("Dragonbane")
     {
-        GameProperty kinProperty = new("Kin", Human, Halfling, Dwarf, Elf, Mallard, Wolfkin);
-        GameProperty professionProperty = new("Profession", Artisan, Bard, Fighter, Hunter, Knight,
-            Mage, Mariner, Merchant, Scholar, Thief);
+        GameProperty kinProperty = new("Kin", [Human, Halfling, Dwarf, Elf, Mallard, Wolfkin], Basics);
+        GameProperty professionProperty = new("Profession", [Artisan, Bard, Fighter, Hunter, Knight,
+            Mage, Mariner, Merchant, Scholar, Thief], Basics);
 
-        GameAbilityCounter strengthCounter = new(Strength, maxValue: 18);
-        GameAbilityCounter constitutionCounter = new(Constitution, maxValue: 18);
-        GameAbilityCounter agilityCounter = new(Agility, maxValue: 18);
-        GameAbilityCounter intelligenceCounter = new(Intelligence, maxValue: 18);
-        GameAbilityCounter willpowerCounter = new(Willpower, maxValue: 18);
-        GameAbilityCounter charismaCounter = new(Charisma, maxValue: 18);
+        GameAbilityCounter strengthCounter = new(Strength, category: Basics, maxValue: 18);
+        GameAbilityCounter constitutionCounter = new(Constitution, category: Basics, maxValue: 18);
+        GameAbilityCounter agilityCounter = new(Agility, category: Basics, maxValue: 18);
+        GameAbilityCounter intelligenceCounter = new(Intelligence, category: Basics, maxValue: 18);
+        GameAbilityCounter willpowerCounter = new(Willpower, category: Basics, maxValue: 18);
+        GameAbilityCounter charismaCounter = new(Charisma, category: Basics, maxValue: 18);
 
         Properties = new[]
         {
@@ -113,8 +119,8 @@ internal sealed class DragonbaneSystem : GameSystemBase
 
         // The variables to these track durability.
         // Players will need to make a custom counter for weapon durability ;)
-        GameCounter armorCounter = new("Armor", hasVariable: true);
-        GameCounter helmetCounter = new("Helmet", hasVariable: true);
+        GameCounter armorCounter = new("Armor", category: Equipment, hasVariable: true);
+        GameCounter helmetCounter = new("Helmet", category: Equipment, hasVariable: true);
 
         equipmentCounters.Add(armorCounter);
         equipmentCounters.Add(helmetCounter);

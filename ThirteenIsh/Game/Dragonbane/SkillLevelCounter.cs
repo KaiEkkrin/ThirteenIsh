@@ -7,7 +7,8 @@ namespace ThirteenIsh.Game.Dragonbane;
 /// (or equal to) in order to succeed at a skill check for it.
 /// </summary>
 internal class SkillLevelCounter(GameAbilityCounter attribute, GameCounter skill, bool secondary = false)
-    : GameCounter($"{skill.Name} Level", maxValue: 15)
+    : GameCounter($"{skill.Name} Level", maxValue: 15,
+        category: secondary ? DragonbaneSystem.CoreSkills : DragonbaneSystem.SecondarySkills, isHidden: true)
 {
     /// <summary>
     /// The attribute associated with this skill.
@@ -26,22 +27,23 @@ internal class SkillLevelCounter(GameAbilityCounter attribute, GameCounter skill
 
     public override bool CanStore => false;
 
-    public override int GetValue(CharacterSheet characterSheet)
+    public override int? GetValue(CharacterSheet characterSheet)
     {
         var attributeValue = attribute.GetValue(characterSheet);
-        var baseChance = attributeValue switch
+        int? baseChance = attributeValue switch
         {
             >= 1 and <= 5 => 3,
             >= 6 and <= 8 => 4,
             >= 9 and <= 12 => 5,
             >= 13 and <= 15 => 6,
             >= 16 and <= 18 => 7,
-            _ => throw new InvalidOperationException($"Invalid value for {attribute.Name} : {attributeValue}")
+            _ => null
         };
 
         var skillValue = skill.GetValue(characterSheet);
+        if (!baseChance.HasValue || !skillValue.HasValue) return null;
         return skillValue >= 1
-            ? Math.Max(18, baseChance * 2 + skillValue - 1)
+            ? Math.Max(18, baseChance.Value * 2 + skillValue.Value - 1)
             : secondary
             ? 0
             : baseChance;

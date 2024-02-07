@@ -8,13 +8,13 @@ internal class MentalDefenseCounter(
     AbilityBonusCounter intelligenceBonusCounter,
     AbilityBonusCounter wisdomBonusCounter,
     AbilityBonusCounter charismaBonusCounter)
-    : GameCounter("Mental Defense", "MD")
+    : GameCounter("Mental Defense", "MD", ThirteenthAgeSystem.General)
 {
     public override bool CanStore => false;
 
-    public override int GetValue(CharacterSheet characterSheet)
+    public override int? GetValue(CharacterSheet characterSheet)
     {
-        var baseMD = classProperty.GetValue(characterSheet) switch
+        int? baseMD = classProperty.GetValue(characterSheet) switch
         {
             ThirteenthAgeSystem.Barbarian => 10,
             ThirteenthAgeSystem.Bard => 11,
@@ -25,10 +25,11 @@ internal class MentalDefenseCounter(
             ThirteenthAgeSystem.Rogue => 10,
             ThirteenthAgeSystem.Sorcerer => 10,
             ThirteenthAgeSystem.Wizard => 12,
-            var c => throw new InvalidOperationException($"Unrecognised class: {c}")
+            _ => null
         };
 
-        var bonuses = new List<int>
+        if (!baseMD.HasValue) return null;
+        var bonuses = new List<int?>
         {
             intelligenceBonusCounter.GetValue(characterSheet),
             wisdomBonusCounter.GetValue(characterSheet),

@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using ThirteenIsh.Game;
+using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Character;
 
@@ -30,9 +31,15 @@ internal sealed class CharacterAddCommand() : SubCommandBase("add", "Adds a new 
             return;
         }
 
-        // Respond with a character creation message
-        // TODO work out how the responses come in, how to save etc
-        var components = gameSystem.BuildCharacterEditor("TODO-CUSTOM-ID", null);
-        await command.RespondAsync($"Creating character: {name}", ephemeral: true, components: components);
+        var dataService = serviceProvider.GetRequiredService<DataService>();
+        var character = await dataService.CreateCharacterAsync(name, gameSystemName, command.User.Id, cancellationToken);
+        if (character is null)
+        {
+            await command.RespondAsync($"Error creating character '{name}'. Perhaps a character with that name already exists.",
+                ephemeral: true);
+            return;
+        }
+
+        await CommandUtil.RespondWithCharacterSheetAsync(command, character, $"Created character: {name}");
     }
 }

@@ -8,9 +8,10 @@ namespace ThirteenIsh.Game;
 /// exist in the context of a particular game system. E.g. class or profession.
 /// The corresponding entity is a CharacterProperty, stored in a CharacterSheet.
 /// </summary>
-internal class GameProperty(string name, params string[] possibleValues)
+internal class GameProperty(string name, string[] possibleValues, string? category = null)
 {
     public string Name => name;
+    public string? Category => category;
     public IReadOnlyList<string> PossibleValues => possibleValues;
 
     /// <summary>
@@ -40,7 +41,7 @@ internal class GameProperty(string name, params string[] possibleValues)
     /// </summary>
     public string GetValue(CharacterSheet characterSheet)
     {
-        return characterSheet.Properties.First(o => o.Name == name).Value;
+        return characterSheet.Properties.TryGetValue(name, out var value) ? value : string.Empty;
     }
 }
 

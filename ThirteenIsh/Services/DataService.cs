@@ -68,13 +68,14 @@ public sealed class DataService : IDisposable
         await collection.InsertOneAsync(message, cancellationToken: cancellationToken);
     }
 
-    public async Task<Character?> CreateCharacterAsync(string name, CharacterSheet sheet, ulong userId,
+    public async Task<Character?> CreateCharacterAsync(string name, string gameSystem, ulong userId,
         CancellationToken cancellationToken = default)
     {
         Character character = new()
         {
             Name = name,
-            Sheet = sheet,
+            GameSystem = gameSystem,
+            Sheet = new CharacterSheet(),
             UserId = (long)userId,
             Version = 1
         };
