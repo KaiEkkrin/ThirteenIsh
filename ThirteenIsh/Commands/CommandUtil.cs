@@ -22,14 +22,15 @@ internal static class CommandUtil
         embedBuilder.WithTitle(adventure.Name == guild.CurrentAdventureName ? $"{title} [Current]" : title);
         embedBuilder.WithDescription(adventure.Description);
 
-        foreach (var (userId, adventurer) in adventure.Adventurers.OrderBy(kv => kv.Value.Name))
-        {
-            var guildUser = await discordService.GetGuildUserAsync(guild.GuildId.Value, userId);
-            embedBuilder.AddField(new EmbedFieldBuilder()
-                .WithIsInline(true)
-                .WithName($"{adventurer.Name} [{guildUser.DisplayName}]")
-                .WithValue($"Level {adventurer.Sheet.Level} {adventurer.Sheet.Class}"));
-        }
+        // TODO new-style adventurer summaries
+        //foreach (var (userId, adventurer) in adventure.Adventurers.OrderBy(kv => kv.Value.Name))
+        //{
+        //    var guildUser = await discordService.GetGuildUserAsync(guild.GuildId.Value, userId);
+        //    embedBuilder.AddField(new EmbedFieldBuilder()
+        //        .WithIsInline(true)
+        //        .WithName($"{adventurer.Name} [{guildUser.DisplayName}]")
+        //        .WithValue($"Level {adventurer.Sheet.Level} {adventurer.Sheet.Class}"));
+        //}
 
         await command.RespondAsync(embed: embedBuilder.Build());
     }
@@ -39,11 +40,12 @@ internal static class CommandUtil
         Adventurer adventurer,
         string title)
     {
+        // TODO new-style adventurer summaries
         EmbedBuilder embedBuilder = new();
         embedBuilder.WithAuthor(command.User);
         embedBuilder.WithTitle(title);
-        embedBuilder.WithDescription(@$"Level {adventurer.Sheet.Level} {adventurer.Sheet.Class}
-Last updated on {adventurer.LastUpdated:F}");
+//        embedBuilder.WithDescription(@$"Level {adventurer.Sheet.Level} {adventurer.Sheet.Class}
+//Last updated on {adventurer.LastUpdated:F}");
 
         AddCharacterSheetFields(embedBuilder, adventurer.Sheet);
         return command.RespondAsync(embed: embedBuilder.Build());
@@ -54,10 +56,11 @@ Last updated on {adventurer.LastUpdated:F}");
         CharacterSheet sheet,
         string title)
     {
+        // TODO new-style character summaries
         EmbedBuilder embedBuilder = new();
         embedBuilder.WithAuthor(command.User);
         embedBuilder.WithTitle(title);
-        embedBuilder.WithDescription($"Level {sheet.Level} {sheet.Class}");
+        //embedBuilder.WithDescription($"Level {sheet.Level} {sheet.Class}");
 
         AddCharacterSheetFields(embedBuilder, sheet);
         return command.RespondAsync(embed: embedBuilder.Build());
@@ -185,12 +188,13 @@ Last updated on {adventurer.LastUpdated:F}");
 
     private static void AddCharacterSheetFields(EmbedBuilder embedBuilder, CharacterSheet sheet)
     {
-        foreach (var (abilityName, abilityScore) in sheet.AbilityScores)
-        {
-            embedBuilder.AddField(new EmbedFieldBuilder()
-                .WithIsInline(true)
-                .WithName(abilityName)
-                .WithValue(abilityScore));
-        }
+        // TODO new-style character stuff
+        //foreach (var (abilityName, abilityScore) in sheet.AbilityScores)
+        //{
+        //    embedBuilder.AddField(new EmbedFieldBuilder()
+        //        .WithIsInline(true)
+        //        .WithName(abilityName)
+        //        .WithValue(abilityScore));
+        //}
     }
 }
