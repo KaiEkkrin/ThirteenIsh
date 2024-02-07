@@ -79,10 +79,11 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
         _logger = logger;
         _serviceProvider = serviceProvider;
 
-        _client.ButtonExecuted += OnButtonExecuted;
+        _client.ButtonExecuted += OnMessageAsync;
         _client.JoinedGuild += OnJoinedGuildAsync;
         _client.Log += OnLogAsync;
         _client.Ready += OnReadyAsync;
+        _client.SelectMenuExecuted += OnMessageAsync;
         _client.SlashCommandExecuted += OnSlashCommandExecutedAsync;
         _serviceProvider = serviceProvider;
 
@@ -121,27 +122,6 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
 
     public Task StopAsync() => _client.StopAsync();
 
-    private async Task OnButtonExecuted(SocketMessageComponent arg)
-    {
-        await using var scope = _serviceProvider.CreateAsyncScope();
-        using CancellationTokenSource cancellationSource = new(SlashCommandTimeout);
-
-        try
-        {
-            var dataService = scope.ServiceProvider.GetRequiredService<DataService>();
-            var message = await dataService.GetMessageAsync(arg.Data.CustomId, cancellationSource.Token);
-            if (message is null || message.UserId.Value != arg.User.Id) return;
-
-            await message.HandleAsync(arg, scope.ServiceProvider, cancellationSource.Token);
-            await dataService.DeleteMessageAsync(arg.Data.CustomId, cancellationSource.Token);
-        }
-        catch (OperationCanceledException ex)
-        {
-            SlashCommandTimeoutMessage(_logger, arg.Data.CustomId, SlashCommandTimeout, ex.Message, ex);
-            await arg.RespondAsync($"Message timed out after {SlashCommandTimeout}: {arg.Data.CustomId}");
-        }
-    }
-
     private Task OnJoinedGuildAsync(SocketGuild arg)
     {
         if (_isDisposed) return Task.CompletedTask;
@@ -174,6 +154,27 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
         }
 
         return Task.CompletedTask;
+    }
+
+    private async Task OnMessageAsync(SocketMessageComponent arg)
+    {
+        await using var scope = _serviceProvider.CreateAsyncScope();
+        using CancellationTokenSource cancellationSource = new(SlashCommandTimeout);
+
+        try
+        {
+            var dataService = scope.ServiceProvider.GetRequiredService<DataService>();
+            var message = await dataService.GetMessageAsync(arg.Data.CustomId, cancellationSource.Token);
+            if (message is null || message.NativeUserId != arg.User.Id) return;
+
+            await message.HandleAsync(arg, scope.ServiceProvider, cancellationSource.Token);
+            await dataService.DeleteMessageAsync(arg.Data.CustomId, cancellationSource.Token);
+        }
+        catch (OperationCanceledException ex)
+        {
+            SlashCommandTimeoutMessage(_logger, arg.Data.CustomId, SlashCommandTimeout, ex.Message, ex);
+            await arg.RespondAsync($"Message timed out after {SlashCommandTimeout}: {arg.Data.CustomId}");
+        }
     }
 
     private Task OnReadyAsync()

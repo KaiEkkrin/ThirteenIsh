@@ -11,7 +11,7 @@ internal sealed class CharacterAddCommand() : SubCommandBase("add", "Adds a new 
         return base.CreateBuilder()
             .AddOption("name", ApplicationCommandOptionType.String, "The character name.",
                 isRequired: true)
-            .AddOption(GameSystemBase.BuildGameSystemChoiceOption("gameSystem"));
+            .AddOption(GameSystemBase.BuildGameSystemChoiceOption("game-system"));
     }
 
     public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
@@ -23,7 +23,7 @@ internal sealed class CharacterAddCommand() : SubCommandBase("add", "Adds a new 
             return;
         }
 
-        if (!CommandUtil.TryGetOption<string>(option, "gameSystem", out var gameSystemName) ||
+        if (!CommandUtil.TryGetOption<string>(option, "game-system", out var gameSystemName) ||
             GameSystemBase.AllGameSystems.FirstOrDefault(o => o.Name == gameSystemName) is not { } gameSystem)
         {
             await command.RespondAsync("Must choose a recognised game system", ephemeral: true);
@@ -32,8 +32,7 @@ internal sealed class CharacterAddCommand() : SubCommandBase("add", "Adds a new 
 
         // Respond with a character creation message
         // TODO work out how the responses come in, how to save etc
-        await command.RespondAsync($"Creating character: {name}",
-            ephemeral: true,
-            components: gameSystem.BuildCharacterEditor("TODO-CUSTOM-ID", null));
+        var components = gameSystem.BuildCharacterEditor("TODO-CUSTOM-ID", null);
+        await command.RespondAsync($"Creating character: {name}", ephemeral: true, components: components);
     }
 }

@@ -31,16 +31,18 @@ internal abstract class GameSystemBase(string name)
     public MessageComponent BuildCharacterEditor(string customId, CharacterSheet? sheet)
     {
         ComponentBuilder builder = new();
-        var row = 0;
         foreach (var property in Properties)
         {
-            property.AddCharacterEditorComponent(builder, customId, sheet, ref row);
+            property.AddCharacterEditorComponent(builder, customId, sheet);
         }
 
-        foreach (var counter in Counters)
-        {
-            counter.AddCharacterEditorComponent(builder, customId, sheet, ref row);
-        }
+        // TODO looks like I can't have a counters editor here sadly -- too big!
+        // Going to have to do it in separate commands instead
+        // (`character counter set` etc...)
+        //foreach (var counter in Counters)
+        //{
+        //    counter.AddCharacterEditorComponent(builder, customId, sheet);
+        //}
 
         return builder.Build();
     }

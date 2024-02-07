@@ -42,11 +42,11 @@ internal class GameCounter(string name, string? alias = null, int defaultValue =
     /// Adds a component that would edit this counter's value to the component builder.
     /// </summary>
     public ComponentBuilder AddCharacterEditorComponent(ComponentBuilder componentBuilder,
-        string customId, CharacterSheet? sheet, ref int row)
+        string customId, CharacterSheet? sheet)
     {
         if (!CanStore) return componentBuilder; // no editing for this one
         var currentValue = sheet != null ? (int?)GetValue(sheet) : null;
-        if (maxValue.HasValue && (maxValue - minValue) <= 20)
+        if (maxValue.HasValue && (maxValue - minValue) <= 25)
         {
             // Represent this as a menu. It helps, since Discord doesn't have number
             // input validation
@@ -61,7 +61,7 @@ internal class GameCounter(string name, string? alias = null, int defaultValue =
                 menuBuilder.AddOption($"{i}", $"{i}", isDefault: i == currentValue);
             }
 
-            return componentBuilder.WithSelectMenu(menuBuilder, row++);
+            return componentBuilder.WithSelectMenu(menuBuilder);
         }
         else
         {

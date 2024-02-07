@@ -19,7 +19,10 @@ public class Guild
     /// <summary>
     /// The guild's Discord ID.
     /// </summary>
-    public DiscordId GuildId { get; set; } = new();
+    public long GuildId { get; set; }
+
+    [BsonIgnore]
+    public ulong NativeGuildId => (ulong)GuildId;
 
     /// <summary>
     /// This guild's list of adventures.

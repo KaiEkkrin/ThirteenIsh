@@ -11,5 +11,8 @@ public class UserEntityBase
     /// <summary>
     /// The owning user's Discord ID.
     /// </summary>
-    public DiscordId UserId { get; set; } = new();
+    public long UserId { get; set; }
+
+    [BsonIgnore]
+    public ulong NativeUserId => (ulong)UserId;
 }

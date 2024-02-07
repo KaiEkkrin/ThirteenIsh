@@ -35,9 +35,9 @@ internal sealed class AdventureRemoveSubCommand() : SubCommandBase("remove", "De
         // I'm not going to delete this right away but instead give the user a confirm button
         DeleteAdventureMessage message = new()
         {
-            GuildId = new DiscordId(guildId),
+            GuildId = (long)guildId,
             Name = name,
-            UserId = new DiscordId(command.User.Id)
+            UserId = (long)command.User.Id
         };
         await dataService.AddMessageAsync(message, cancellationToken);
 

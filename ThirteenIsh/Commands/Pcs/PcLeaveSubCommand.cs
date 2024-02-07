@@ -23,9 +23,9 @@ internal sealed class PcLeaveSubCommand() : SubCommandBase("leave", "Leaves the 
         // Supply a confirm button
         LeaveAdventureMessage message = new()
         {
-            GuildId = new DiscordId(guildId),
+            GuildId = (long)guildId,
             Name = guild.CurrentAdventure.Name,
-            UserId = new DiscordId(command.User.Id)
+            UserId = (long)command.User.Id
         };
 
         await dataService.AddMessageAsync(message, cancellationToken);

@@ -75,7 +75,7 @@ public sealed class DataService : IDisposable
         {
             Name = name,
             Sheet = sheet,
-            UserId = new DiscordId(userId),
+            UserId = (long)userId,
             Version = 1
         };
 
@@ -159,7 +159,7 @@ public sealed class DataService : IDisposable
         var collection = await GetGuildsCollectionAsync(cancellationToken);
         var guild = await collection.FindOneAndUpdateAsync(
             GetGuildFilter(guildId, null),
-            Builders<Guild>.Update.SetOnInsert(nameof(Guild.GuildId), guildId)
+            Builders<Guild>.Update.SetOnInsert(nameof(Guild.GuildId), (long)guildId)
                 .SetOnInsert(o => o.Version, 1L),
             new FindOneAndUpdateOptions<Guild> { IsUpsert = true, ReturnDocument = ReturnDocument.After },
             cancellationToken);
@@ -236,7 +236,7 @@ public sealed class DataService : IDisposable
         var collection = await GetGuildsCollectionAsync(cancellationToken);
         await collection.UpdateOneAsync(
             Builders<Guild>.Filter.And(
-                Builders<Guild>.Filter.Eq(nameof(Guild.GuildId), guildId),
+                Builders<Guild>.Filter.Eq(o => o.GuildId, (long)guildId),
                 Builders<Guild>.Filter.Lt(o => o.CommandVersion, commandVersion)),
             Builders<Guild>.Update.Set(o => o.CommandVersion, commandVersion)
                 .Inc(o => o.Version, 1L),
@@ -276,7 +276,7 @@ public sealed class DataService : IDisposable
         List<FilterDefinition<Guild>> conditions = [];
         if (guildId.HasValue)
         {
-            conditions.Add(Builders<Guild>.Filter.Eq(nameof(Guild.GuildId), guildId.Value));
+            conditions.Add(Builders<Guild>.Filter.Eq(nameof(Guild.GuildId), (long)guildId.Value));
         }
 
         if (version.HasValue)

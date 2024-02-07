@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using MongoDB.Bson.Serialization.Attributes;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Entities;
@@ -9,7 +10,10 @@ public class DeleteAdventureMessage : MessageBase
     /// <summary>
     /// The guild ID.
     /// </summary>
-    public DiscordId GuildId { get; set; } = new();
+    public long GuildId { get; set; }
+
+    [BsonIgnore]
+    public ulong NativeGuildId => (ulong)GuildId;
 
     /// <summary>
     /// The adventure name to delete.
@@ -21,7 +25,7 @@ public class DeleteAdventureMessage : MessageBase
     {
         var dataService = serviceProvider.GetRequiredService<DataService>();
         var updatedGuild = await dataService.EditGuildAsync(
-            new EditOperation(Name), GuildId.Value, cancellationToken);
+            new EditOperation(Name), NativeGuildId, cancellationToken);
 
         if (updatedGuild is null)
         {

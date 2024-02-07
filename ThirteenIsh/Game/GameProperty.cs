@@ -17,7 +17,7 @@ internal class GameProperty(string name, params string[] possibleValues)
     /// Adds a component that would edit this property to the component builder.
     /// </summary>
     public ComponentBuilder AddCharacterEditorComponent(ComponentBuilder componentBuilder,
-        string customId, CharacterSheet? sheet, ref int row)
+        string customId, CharacterSheet? sheet)
     {
         var currentValue = sheet != null ? GetValue(sheet) : null;
         var menuBuilder = new SelectMenuBuilder()
@@ -32,7 +32,7 @@ internal class GameProperty(string name, params string[] possibleValues)
                 isDefault: possibleValue == currentValue);
         }
 
-        return componentBuilder.WithSelectMenu(menuBuilder, row++);
+        return componentBuilder.WithSelectMenu(menuBuilder);
     }
 
     /// <summary>
