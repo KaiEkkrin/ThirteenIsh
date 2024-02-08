@@ -35,13 +35,13 @@ internal class DiscordUtil
             for (var i = 0; i < columnCount; ++i)
             {
                 // Between-cell padding
-                if (i > 0) builder.Append('.');
+                if (i > 0) builder.Append("..");
 
                 // Value if left justify
                 if (!rightJustify[i]) builder.Append(row[i]);
 
                 // Padding
-                var paddingLength = maxCellSizes[i] - row.Length;
+                var paddingLength = maxCellSizes[i] - row[i].Length;
                 for (var j = 0; j < paddingLength; ++j) builder.Append('.');
 
                 // Value if right justify

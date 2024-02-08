@@ -6,7 +6,8 @@
 internal static class DragonbaneSystem
 {
     public const string Basics = "Basics";
-    public const string General = "General";
+    public const string Attributes = "Attributes";
+    public const string DerivedRatings = "DerivedRatings";
     public const string CoreSkills = "Core Skills";
     public const string SecondarySkills = "Secondary Skills";
     public const string Equipment = "Equipment";
@@ -44,6 +45,10 @@ internal static class DragonbaneSystem
         GameProperty professionProperty = new("Profession", [Artisan, Bard, Fighter, Hunter, Knight,
             Mage, Mariner, Merchant, Scholar, Thief]);
 
+        basicsBuilder.AddProperties(kinProperty, professionProperty);
+
+        GamePropertyGroupBuilder attributesBuilder = new(Attributes);
+
         GameAbilityCounter strengthCounter = new(Strength, maxValue: 18);
         GameAbilityCounter constitutionCounter = new(Constitution, maxValue: 18);
         GameAbilityCounter agilityCounter = new(Agility, maxValue: 18);
@@ -51,7 +56,11 @@ internal static class DragonbaneSystem
         GameAbilityCounter willpowerCounter = new(Willpower, maxValue: 18);
         GameAbilityCounter charismaCounter = new(Charisma, maxValue: 18);
 
-        // Derived counters
+        attributesBuilder.AddProperties(strengthCounter, constitutionCounter, agilityCounter, intelligenceCounter,
+            willpowerCounter, charismaCounter);
+
+        GamePropertyGroupBuilder derivedRatingsBuilder = new(DerivedRatings);
+
         MovementCounter movementCounter = new(kinProperty, agilityCounter);
         PointsCounter hitPointsCounter = new("Hit Points", "HP", constitutionCounter);
         PointsCounter willpowerPointsCounter = new("Willpower Points", "WP", willpowerCounter);
@@ -59,8 +68,7 @@ internal static class DragonbaneSystem
         DamageBonusCounter strengthDamageBonusCounter = new("Strength Damage Bonus", strengthCounter);
         DamageBonusCounter agilityDamageBonusCounter = new("Agility Damage Bonus", agilityCounter);
 
-        basicsBuilder.AddProperties(kinProperty, professionProperty, strengthCounter, constitutionCounter,
-            agilityCounter, intelligenceCounter, willpowerCounter, charismaCounter, movementCounter,
+        derivedRatingsBuilder.AddProperties(movementCounter,
             hitPointsCounter, willpowerPointsCounter, strengthDamageBonusCounter, agilityDamageBonusCounter);
 
         GamePropertyGroupBuilder coreSkillsBuilder = new(CoreSkills);
@@ -110,6 +118,8 @@ internal static class DragonbaneSystem
 
         return new GameSystemBuilder("Dragonbane")
             .AddPropertyGroup(basicsBuilder)
+            .AddPropertyGroup(attributesBuilder)
+            .AddPropertyGroup(derivedRatingsBuilder)
             .AddPropertyGroup(coreSkillsBuilder)
             .AddPropertyGroup(secondarySkillsBuilder)
             .AddPropertyGroup(equipmentBuilder)

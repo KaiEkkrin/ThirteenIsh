@@ -6,6 +6,7 @@
 internal static class ThirteenthAgeSystem
 {
     public const string Basics = "Basics";
+    public const string AbilityScores = "Ability Scores";
     public const string General = "General";
 
     private const string Level = "Level";
@@ -37,12 +38,14 @@ internal static class ThirteenthAgeSystem
         var basicsBuilder = new GamePropertyGroupBuilder(Basics)
             .AddProperties(classProperty, levelCounter);
 
-        var strengthBonusCounter = BuildAbility(basicsBuilder, Strength);
-        var dexterityBonusCounter = BuildAbility(basicsBuilder, Dexterity);
-        var constitutionBonusCounter = BuildAbility(basicsBuilder, Constitution);
-        var intelligenceBonusCounter = BuildAbility(basicsBuilder, Intelligence);
-        var wisdomBonusCounter = BuildAbility(basicsBuilder, Wisdom);
-        var charismaBonusCounter = BuildAbility(basicsBuilder, Charisma);
+        GamePropertyGroupBuilder abilityScoresBuilder = new(AbilityScores);
+
+        var strengthBonusCounter = BuildAbility(abilityScoresBuilder, Strength);
+        var dexterityBonusCounter = BuildAbility(abilityScoresBuilder, Dexterity);
+        var constitutionBonusCounter = BuildAbility(abilityScoresBuilder, Constitution);
+        var intelligenceBonusCounter = BuildAbility(abilityScoresBuilder, Intelligence);
+        var wisdomBonusCounter = BuildAbility(abilityScoresBuilder, Wisdom);
+        var charismaBonusCounter = BuildAbility(abilityScoresBuilder, Charisma);
 
         var generalBuilder = new GamePropertyGroupBuilder(General)
             .AddProperty(new HitPointsCounter(classProperty, levelCounter, constitutionBonusCounter))
@@ -57,6 +60,7 @@ internal static class ThirteenthAgeSystem
 
         return new GameSystemBuilder("13th Age")
             .AddPropertyGroup(basicsBuilder)
+            .AddPropertyGroup(abilityScoresBuilder)
             .AddPropertyGroup(generalBuilder)
             .Build();
     }
