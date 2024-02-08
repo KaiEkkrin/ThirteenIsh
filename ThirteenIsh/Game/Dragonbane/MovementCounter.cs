@@ -3,7 +3,7 @@
 namespace ThirteenIsh.Game.Dragonbane;
 
 internal class MovementCounter(GameProperty kinProperty, GameAbilityCounter agilityCounter)
-    : GameCounter("Movement", category: DragonbaneSystem.General)
+    : GameCounter("Movement")
 {
     public override bool CanStore => false;
 

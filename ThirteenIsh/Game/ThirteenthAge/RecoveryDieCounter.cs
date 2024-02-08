@@ -2,7 +2,7 @@
 
 namespace ThirteenIsh.Game.ThirteenthAge;
 
-internal class RecoveryDieCounter(GameProperty classProperty) : GameCounter("Recovery Die", category: ThirteenthAgeSystem.General)
+internal class RecoveryDieCounter(GameProperty classProperty) : GameCounter("Recovery Die")
 {
     public override bool CanStore => false;
 

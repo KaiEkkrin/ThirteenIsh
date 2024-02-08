@@ -5,7 +5,7 @@ namespace ThirteenIsh.Game.ThirteenthAge;
 internal class InitiativeCounter(
     GameCounter levelCounter,
     AbilityBonusCounter dexterityBonusCounter)
-    : GameCounter("Initiative", "Init", ThirteenthAgeSystem.General)
+    : GameCounter("Initiative", "Init")
 {
     public override bool CanStore => false;
 

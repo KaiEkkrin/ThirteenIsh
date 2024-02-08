@@ -4,6 +4,7 @@
 /// Character-related command.
 /// </summary>
 internal sealed class CharacterCommand() : CommandBase("character", "Manage characters.",
-    new CharacterAddCommand())
+    new CharacterAddCommand(),
+    new CharacterGetCommand())
 {
 }

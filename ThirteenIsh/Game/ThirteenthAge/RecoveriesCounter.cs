@@ -2,7 +2,7 @@
 
 namespace ThirteenIsh.Game.ThirteenthAge;
 
-internal class RecoveriesCounter() : GameCounter("Recoveries", category: ThirteenthAgeSystem.General, hasVariable: true)
+internal class RecoveriesCounter() : GameCounter("Recoveries", hasVariable: true)
 {
     public override bool CanStore => false;
 

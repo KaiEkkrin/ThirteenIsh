@@ -8,15 +8,9 @@ namespace ThirteenIsh.Game;
 /// with an adventurer variable.
 /// The corresponding entities are a CharacterCounter and an AdventurerVariable.
 /// </summary>
-internal class GameCounter(string name, string? alias = null, string? category = null, int defaultValue = 0, int minValue = 0,
-    int? maxValue = null, bool hasVariable = false, bool isHidden = false)
+internal class GameCounter(string name, string? alias = null, int defaultValue = 0, int minValue = 0,
+    int? maxValue = null, bool hasVariable = false, bool isHidden = false) : GamePropertyBase(name, alias, isHidden)
 {
-    public string Name => name;
-
-    public string? Alias => alias;
-
-    public string? Category => category;
-
     /// <summary>
     /// True if this counter's value should be stored in the character sheet; false if it
     /// should not be, but instead should be calculated out of other values.
@@ -40,8 +34,6 @@ internal class GameCounter(string name, string? alias = null, string? category =
 
     public bool HasVariable => hasVariable;
 
-    public bool IsHidden => isHidden;
-
     /// <summary>
     /// Adds a component that would edit this counter's value to the component builder.
     /// </summary>
@@ -55,10 +47,10 @@ internal class GameCounter(string name, string? alias = null, string? category =
             // Represent this as a menu. It helps, since Discord doesn't have number
             // input validation
             var menuBuilder = new SelectMenuBuilder()
-                .WithCustomId($"{customId}:{name}")
+                .WithCustomId($"{customId}:{Name}")
                 .WithMinValues(1)
                 .WithMaxValues(1)
-                .WithPlaceholder($"Select a {name} value");
+                .WithPlaceholder($"Select a {Name} value");
 
             for (var i = minValue; i <= maxValue.Value; ++i)
             {
@@ -71,8 +63,13 @@ internal class GameCounter(string name, string? alias = null, string? category =
         {
             // Sadly this requires a modal instead and would be a massive pain in the butt. :(
             // (Also, discord.net doesn't let me add select menus to modals!)
-            throw new NotSupportedException(name);
+            throw new NotSupportedException(Name);
         }
+    }
+
+    public override string GetDisplayValue(CharacterSheet sheet)
+    {
+        return GetValue(sheet) is { } value ? $"{value}" : Unset;
     }
 
     /// <summary>
@@ -89,7 +86,7 @@ internal class GameCounter(string name, string? alias = null, string? category =
     /// </summary>
     public virtual int? GetValue(CharacterSheet characterSheet)
     {
-        return characterSheet.Counters.TryGetValue(name, out var value) ? value : defaultValue;
+        return characterSheet.Counters.TryGetValue(Name, out var value) ? value : defaultValue;
     }
 }
 

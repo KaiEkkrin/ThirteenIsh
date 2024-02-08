@@ -3,7 +3,7 @@
 /// <summary>
 /// Describes the 13th Age game system.
 /// </summary>
-internal sealed class ThirteenthAgeSystem : GameSystemBase
+internal static class ThirteenthAgeSystem
 {
     public const string Basics = "Basics";
     public const string General = "General";
@@ -27,73 +27,45 @@ internal sealed class ThirteenthAgeSystem : GameSystemBase
     public const string Sorcerer = "Sorcerer";
     public const string Wizard = "Wizard";
 
-    public ThirteenthAgeSystem() : base("13th Age")
+    public static GameSystem Build()
     {
         GameProperty classProperty = new("Class",
-            [Barbarian, Bard, Cleric, Fighter, Paladin, Ranger, Rogue, Sorcerer, Wizard], Basics);
-        Properties = new GameProperty[]
-        {
-            classProperty
-        };
+                [Barbarian, Bard, Cleric, Fighter, Paladin, Ranger, Rogue, Sorcerer, Wizard]);
 
-        GameCounter levelCounter = new(Level, category: Basics, defaultValue: 1, minValue: 1, maxValue: 10);
-        GameAbilityCounter strengthCounter = new(Strength, category: Basics);
-        GameAbilityCounter dexterityCounter = new(Dexterity, category: Basics);
-        GameAbilityCounter constitutionCounter = new(Constitution, category: Basics);
-        GameAbilityCounter intelligenceCounter = new(Intelligence, category: Basics);
-        GameAbilityCounter wisdomCounter = new(Wisdom, category: Basics);
-        GameAbilityCounter charismaCounter = new(Charisma, category: Basics);
+        GameCounter levelCounter = new(Level, defaultValue: 1, minValue: 1, maxValue: 10);
 
-        AbilityBonusCounter strengthBonusCounter = new(strengthCounter);
-        AbilityBonusCounter dexterityBonusCounter = new(dexterityCounter);
-        AbilityBonusCounter constitutionBonusCounter = new(constitutionCounter);
-        AbilityBonusCounter intelligenceBonusCounter = new(intelligenceCounter);
-        AbilityBonusCounter wisdomBonusCounter = new(wisdomCounter);
-        AbilityBonusCounter charismaBonusCounter = new(charismaCounter);
+        var basicsBuilder = new GamePropertyGroupBuilder(Basics)
+            .AddProperties(classProperty, levelCounter);
 
-        HitPointsCounter hitPointsCounter = new(classProperty, levelCounter, constitutionBonusCounter);
-        ArmorClassCounter armorClassCounter = new(classProperty, levelCounter,
-            constitutionBonusCounter, dexterityBonusCounter, wisdomBonusCounter);
+        var strengthBonusCounter = BuildAbility(basicsBuilder, Strength);
+        var dexterityBonusCounter = BuildAbility(basicsBuilder, Dexterity);
+        var constitutionBonusCounter = BuildAbility(basicsBuilder, Constitution);
+        var intelligenceBonusCounter = BuildAbility(basicsBuilder, Intelligence);
+        var wisdomBonusCounter = BuildAbility(basicsBuilder, Wisdom);
+        var charismaBonusCounter = BuildAbility(basicsBuilder, Charisma);
 
-        PhysicalDefenseCounter physicalDefenseCounter = new(classProperty, levelCounter,
-            strengthBonusCounter, dexterityBonusCounter, constitutionBonusCounter);
+        var generalBuilder = new GamePropertyGroupBuilder(General)
+            .AddProperty(new HitPointsCounter(classProperty, levelCounter, constitutionBonusCounter))
+            .AddProperty(new ArmorClassCounter(classProperty, levelCounter, constitutionBonusCounter, dexterityBonusCounter,
+                wisdomBonusCounter))
+            .AddProperty(new PhysicalDefenseCounter(classProperty, levelCounter, strengthBonusCounter, dexterityBonusCounter,
+                constitutionBonusCounter))
+            .AddProperty(new MentalDefenseCounter(classProperty, levelCounter, intelligenceBonusCounter, wisdomBonusCounter,
+                charismaBonusCounter))
+            .AddProperty(new RecoveriesCounter())
+            .AddProperty(new RecoveryDieCounter(classProperty));
 
-        MentalDefenseCounter mentalDefenseCounter = new(classProperty, levelCounter,
-            intelligenceBonusCounter, wisdomBonusCounter, charismaBonusCounter);
-
-        RecoveriesCounter recoveriesCounter = new();
-        RecoveryDieCounter recoveryDieCounter = new(classProperty);
-
-        // TODO allow for ad hoc bonuses for all the derived counters here?
-        Counters = new GameCounter[]
-        {
-            levelCounter,
-            strengthCounter,
-            dexterityCounter,
-            constitutionCounter,
-            intelligenceCounter,
-            wisdomCounter,
-            charismaCounter,
-
-            strengthBonusCounter,
-            dexterityBonusCounter,
-            constitutionBonusCounter,
-            intelligenceBonusCounter,
-            wisdomBonusCounter,
-            charismaBonusCounter,
-
-            hitPointsCounter,
-            armorClassCounter,
-            physicalDefenseCounter,
-            mentalDefenseCounter,
-            recoveriesCounter,
-            recoveryDieCounter
-        };
-
-        Validate();
+        return new GameSystemBuilder("13th Age")
+            .AddPropertyGroup(basicsBuilder)
+            .AddPropertyGroup(generalBuilder)
+            .Build();
     }
 
-    public override IReadOnlyList<GameProperty> Properties { get; }
-
-    public override IReadOnlyList<GameCounter> Counters { get; }
+    private static AbilityBonusCounter BuildAbility(GamePropertyGroupBuilder builder, string abilityName)
+    {
+        GameAbilityCounter counter = new(abilityName);
+        AbilityBonusCounter bonusCounter = new(counter);
+        builder.AddProperty(counter).AddProperty(bonusCounter);
+        return bonusCounter;
+    }
 }

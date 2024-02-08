@@ -8,10 +8,8 @@ namespace ThirteenIsh.Game;
 /// exist in the context of a particular game system. E.g. class or profession.
 /// The corresponding entity is a CharacterProperty, stored in a CharacterSheet.
 /// </summary>
-internal class GameProperty(string name, string[] possibleValues, string? category = null)
+internal class GameProperty(string name, string[] possibleValues) : GamePropertyBase(name)
 {
-    public string Name => name;
-    public string? Category => category;
     public IReadOnlyList<string> PossibleValues => possibleValues;
 
     /// <summary>
@@ -22,10 +20,10 @@ internal class GameProperty(string name, string[] possibleValues, string? catego
     {
         var currentValue = sheet != null ? GetValue(sheet) : null;
         var menuBuilder = new SelectMenuBuilder()
-            .WithCustomId($"{customId}:{name}")
+            .WithCustomId($"{customId}:{Name}")
             .WithMinValues(1)
             .WithMaxValues(1)
-            .WithPlaceholder($"Select a {name}");
+            .WithPlaceholder($"Select a {Name}");
 
         foreach (var possibleValue in possibleValues)
         {
@@ -36,12 +34,17 @@ internal class GameProperty(string name, string[] possibleValues, string? catego
         return componentBuilder.WithSelectMenu(menuBuilder);
     }
 
+    public override string GetDisplayValue(CharacterSheet sheet)
+    {
+        return GetValue(sheet) is { Length: > 0 } value ? value : Unset;
+    }
+
     /// <summary>
     /// Gets this property's value from the character sheet.
     /// </summary>
     public string GetValue(CharacterSheet characterSheet)
     {
-        return characterSheet.Properties.TryGetValue(name, out var value) ? value : string.Empty;
+        return characterSheet.Properties.TryGetValue(Name, out var value) ? value : string.Empty;
     }
 }
 

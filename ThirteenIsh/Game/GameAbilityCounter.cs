@@ -6,9 +6,9 @@ namespace ThirteenIsh.Game;
 /// A convenient way of declaring counters with 3-letter capitalised aliases
 /// commonly used for e.g. ability scores.
 /// </summary>
-internal class GameAbilityCounter(string name, string? category = null, int defaultValue = 10,
+internal class GameAbilityCounter(string name, int defaultValue = 10,
     int minValue = 1, int maxValue = 24)
-    : GameCounter(name, GetAlias(name), category, defaultValue, minValue, maxValue)
+    : GameCounter(name, GetAlias(name), defaultValue, minValue, maxValue)
 {
     private static string GetAlias(string name) => name[..3].ToUpper(CultureInfo.CurrentCulture);
 }

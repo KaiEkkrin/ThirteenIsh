@@ -1,18 +1,16 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ThirteenIsh.Game;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Character;
 
-internal sealed class CharacterAddCommand() : SubCommandBase("add", "Adds a new character.")
+internal sealed class CharacterGetCommand() : SubCommandBase("get", "Gets a character's sheet.")
 {
     public override SlashCommandOptionBuilder CreateBuilder()
     {
         return base.CreateBuilder()
             .AddOption("name", ApplicationCommandOptionType.String, "The character name.",
-                isRequired: true)
-            .AddOption(GameSystem.BuildGameSystemChoiceOption("game-system"));
+                isRequired: true);
     }
 
     public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
@@ -24,22 +22,15 @@ internal sealed class CharacterAddCommand() : SubCommandBase("add", "Adds a new 
             return;
         }
 
-        if (!CommandUtil.TryGetOption<string>(option, "game-system", out var gameSystemName) ||
-            GameSystem.AllGameSystems.FirstOrDefault(o => o.Name == gameSystemName) is not { } gameSystem)
-        {
-            await command.RespondAsync("Must choose a recognised game system", ephemeral: true);
-            return;
-        }
-
         var dataService = serviceProvider.GetRequiredService<DataService>();
-        var character = await dataService.CreateCharacterAsync(name, gameSystemName, command.User.Id, cancellationToken);
+        var character = await dataService.GetCharacterAsync(name, command.User.Id, cancellationToken);
         if (character is null)
         {
-            await command.RespondAsync($"Error creating character '{name}'. Perhaps a character with that name already exists.",
+            await command.RespondAsync($"Error getting character '{name}'. Perhaps they do not exist?",
                 ephemeral: true);
             return;
         }
 
-        await CommandUtil.RespondWithCharacterSheetAsync(command, character, $"Created character: {name}");
+        await CommandUtil.RespondWithCharacterSheetAsync(command, character, name);
     }
 }

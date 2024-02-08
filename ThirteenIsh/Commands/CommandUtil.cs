@@ -62,7 +62,7 @@ internal static class CommandUtil
         embedBuilder.WithAuthor(command.User);
         embedBuilder.WithTitle(title);
 
-        var gameSystem = GameSystemBase.Get(character.GameSystem);
+        var gameSystem = GameSystem.Get(character.GameSystem);
         embedBuilder = gameSystem.AddCharacterSheetFields(embedBuilder, character.Sheet);
         return command.RespondAsync(embed: embedBuilder.Build());
     }

@@ -6,8 +6,7 @@ namespace ThirteenIsh.Game.Dragonbane;
 /// This is the size of the bonus damage die rolled with weapons that use the
 /// matching ability counter.
 /// </summary>
-internal class DamageBonusCounter(string name, GameAbilityCounter abilityCounter)
-    : GameCounter(name, category: DragonbaneSystem.General)
+internal class DamageBonusCounter(string name, GameAbilityCounter abilityCounter) : GameCounter(name)
 {
     public override bool CanStore => false;
 

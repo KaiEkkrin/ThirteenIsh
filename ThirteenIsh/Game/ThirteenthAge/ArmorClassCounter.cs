@@ -8,7 +8,7 @@ internal class ArmorClassCounter(
     AbilityBonusCounter constitutionBonusCounter,
     AbilityBonusCounter dexterityBonusCounter,
     AbilityBonusCounter wisdomBonusCounter)
-    : GameCounter("Armor Class", "AC", ThirteenthAgeSystem.General)
+    : GameCounter("Armor Class", "AC")
 {
     public override bool CanStore => false;
 

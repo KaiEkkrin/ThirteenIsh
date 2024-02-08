@@ -1,6 +1,9 @@
 ﻿namespace ThirteenIsh.Game.Dragonbane;
 
-internal sealed class DragonbaneSystem : GameSystemBase
+/// <summary>
+/// Describes the Dragonbane game system.
+/// </summary>
+internal static class DragonbaneSystem
 {
     public const string Basics = "Basics";
     public const string General = "General";
@@ -33,24 +36,20 @@ internal sealed class DragonbaneSystem : GameSystemBase
     public const string Willpower = "Willpower";
     public const string Charisma = "Charisma";
 
-    public DragonbaneSystem() : base("Dragonbane")
+    public static GameSystem Build()
     {
-        GameProperty kinProperty = new("Kin", [Human, Halfling, Dwarf, Elf, Mallard, Wolfkin], Basics);
+        GamePropertyGroupBuilder basicsBuilder = new(Basics);
+
+        GameProperty kinProperty = new("Kin", [Human, Halfling, Dwarf, Elf, Mallard, Wolfkin]);
         GameProperty professionProperty = new("Profession", [Artisan, Bard, Fighter, Hunter, Knight,
-            Mage, Mariner, Merchant, Scholar, Thief], Basics);
+            Mage, Mariner, Merchant, Scholar, Thief]);
 
-        GameAbilityCounter strengthCounter = new(Strength, category: Basics, maxValue: 18);
-        GameAbilityCounter constitutionCounter = new(Constitution, category: Basics, maxValue: 18);
-        GameAbilityCounter agilityCounter = new(Agility, category: Basics, maxValue: 18);
-        GameAbilityCounter intelligenceCounter = new(Intelligence, category: Basics, maxValue: 18);
-        GameAbilityCounter willpowerCounter = new(Willpower, category: Basics, maxValue: 18);
-        GameAbilityCounter charismaCounter = new(Charisma, category: Basics, maxValue: 18);
-
-        Properties = new[]
-        {
-            kinProperty,
-            professionProperty
-        };
+        GameAbilityCounter strengthCounter = new(Strength, maxValue: 18);
+        GameAbilityCounter constitutionCounter = new(Constitution, maxValue: 18);
+        GameAbilityCounter agilityCounter = new(Agility, maxValue: 18);
+        GameAbilityCounter intelligenceCounter = new(Intelligence, maxValue: 18);
+        GameAbilityCounter willpowerCounter = new(Willpower, maxValue: 18);
+        GameAbilityCounter charismaCounter = new(Charisma, maxValue: 18);
 
         // Derived counters
         MovementCounter movementCounter = new(kinProperty, agilityCounter);
@@ -60,89 +59,68 @@ internal sealed class DragonbaneSystem : GameSystemBase
         DamageBonusCounter strengthDamageBonusCounter = new("Strength Damage Bonus", strengthCounter);
         DamageBonusCounter agilityDamageBonusCounter = new("Agility Damage Bonus", agilityCounter);
 
-        var counters = new List<GameCounter>
-        {
-            strengthCounter,
-            constitutionCounter,
-            agilityCounter,
-            intelligenceCounter,
-            willpowerCounter,
-            charismaCounter,
+        basicsBuilder.AddProperties(kinProperty, professionProperty, strengthCounter, constitutionCounter,
+            agilityCounter, intelligenceCounter, willpowerCounter, charismaCounter, movementCounter,
+            hitPointsCounter, willpowerPointsCounter, strengthDamageBonusCounter, agilityDamageBonusCounter);
 
-            movementCounter,
-            hitPointsCounter,
-            willpowerPointsCounter,
+        GamePropertyGroupBuilder coreSkillsBuilder = new(CoreSkills);
+        GamePropertyGroupBuilder secondarySkillsBuilder = new(SecondarySkills);
 
-            strengthDamageBonusCounter,
-            agilityDamageBonusCounter
-        };
+        BuildSkill(coreSkillsBuilder, "Acrobatics", agilityCounter);
+        BuildSkill(coreSkillsBuilder, "Awareness", intelligenceCounter);
+        BuildSkill(coreSkillsBuilder, "Bartering", charismaCounter);
+        BuildSkill(coreSkillsBuilder, "Beast Lore", intelligenceCounter);
+        BuildSkill(coreSkillsBuilder, "Bluffing", charismaCounter);
+        BuildSkill(coreSkillsBuilder, "Bushcraft", intelligenceCounter);
+        BuildSkill(coreSkillsBuilder, "Crafting", strengthCounter);
+        BuildSkill(coreSkillsBuilder, "Evade", agilityCounter);
+        BuildSkill(coreSkillsBuilder, "Healing", intelligenceCounter);
+        BuildSkill(coreSkillsBuilder, "Hunting & Fishing", agilityCounter);
+        BuildSkill(coreSkillsBuilder, "Languages", intelligenceCounter);
+        BuildSkill(coreSkillsBuilder, "Myths & Legends", intelligenceCounter);
+        BuildSkill(coreSkillsBuilder, "Performance", charismaCounter);
+        BuildSkill(coreSkillsBuilder, "Persuasion", charismaCounter);
+        BuildSkill(coreSkillsBuilder, "Riding", agilityCounter);
+        BuildSkill(coreSkillsBuilder, "Seamanship", intelligenceCounter);
+        BuildSkill(coreSkillsBuilder, "Sleight of Hand", agilityCounter);
+        BuildSkill(coreSkillsBuilder, "Sneaking", agilityCounter);
+        BuildSkill(coreSkillsBuilder, "Spot Hidden", intelligenceCounter);
+        BuildSkill(coreSkillsBuilder, "Swimming", agilityCounter);
 
-        List<GameCounter> skillCounters = [];
-        List<GameCounter> skillLevelCounters = [];
-        List<GameCounter> equipmentCounters = [];
+        BuildSkill(coreSkillsBuilder, "Axes", strengthCounter);
+        BuildSkill(coreSkillsBuilder, "Bows", agilityCounter);
+        BuildSkill(coreSkillsBuilder, "Brawling", strengthCounter);
+        BuildSkill(coreSkillsBuilder, "Crossbows", agilityCounter);
+        BuildSkill(coreSkillsBuilder, "Hammers", strengthCounter);
+        BuildSkill(coreSkillsBuilder, "Knives", agilityCounter);
+        BuildSkill(coreSkillsBuilder, "Slings", agilityCounter);
+        BuildSkill(coreSkillsBuilder, "Spears", strengthCounter);
+        BuildSkill(coreSkillsBuilder, "Staves", agilityCounter);
+        BuildSkill(coreSkillsBuilder, "Swords", strengthCounter);
 
-        BuildSkill("Acrobatics", agilityCounter);
-        BuildSkill("Awareness", intelligenceCounter);
-        BuildSkill("Bartering", charismaCounter);
-        BuildSkill("Beast Lore", intelligenceCounter);
-        BuildSkill("Bluffing", charismaCounter);
-        BuildSkill("Bushcraft", intelligenceCounter);
-        BuildSkill("Crafting", strengthCounter);
-        BuildSkill("Evade", agilityCounter);
-        BuildSkill("Healing", intelligenceCounter);
-        BuildSkill("Hunting & Fishing", agilityCounter);
-        BuildSkill("Languages", intelligenceCounter);
-        BuildSkill("Myths & Legends", intelligenceCounter);
-        BuildSkill("Performance", charismaCounter);
-        BuildSkill("Persuasion", charismaCounter);
-        BuildSkill("Riding", agilityCounter);
-        BuildSkill("Seamanship", intelligenceCounter);
-        BuildSkill("Sleight of Hand", agilityCounter);
-        BuildSkill("Sneaking", agilityCounter);
-        BuildSkill("Spot Hidden", intelligenceCounter);
-        BuildSkill("Swimming", agilityCounter);
-
-        BuildSkill("Axes", strengthCounter);
-        BuildSkill("Bows", agilityCounter);
-        BuildSkill("Brawling", strengthCounter);
-        BuildSkill("Crossbows", agilityCounter);
-        BuildSkill("Hammers", strengthCounter);
-        BuildSkill("Knives", agilityCounter);
-        BuildSkill("Slings", agilityCounter);
-        BuildSkill("Spears", strengthCounter);
-        BuildSkill("Staves", agilityCounter);
-        BuildSkill("Swords", strengthCounter);
-
-        BuildSkill("Animism", intelligenceCounter, true);
-        BuildSkill("Elementalism", intelligenceCounter, true);
-        BuildSkill("Mentalism", intelligenceCounter, true);
+        BuildSkill(secondarySkillsBuilder, "Animism", intelligenceCounter, true);
+        BuildSkill(secondarySkillsBuilder, "Elementalism", intelligenceCounter, true);
+        BuildSkill(secondarySkillsBuilder, "Mentalism", intelligenceCounter, true);
 
         // The variables to these track durability.
         // Players will need to make a custom counter for weapon durability ;)
-        GameCounter armorCounter = new("Armor", category: Equipment, hasVariable: true);
-        GameCounter helmetCounter = new("Helmet", category: Equipment, hasVariable: true);
+        var equipmentBuilder = new GamePropertyGroupBuilder(Equipment)
+            .AddProperty(new GameCounter("Armor", hasVariable: true))
+            .AddProperty(new GameCounter("Helmet", hasVariable: true));
 
-        equipmentCounters.Add(armorCounter);
-        equipmentCounters.Add(helmetCounter);
-
-        counters.AddRange(skillCounters);
-        counters.AddRange(skillLevelCounters);
-        counters.AddRange(equipmentCounters);
-        Counters = counters;
-
-        Validate();
-
-        void BuildSkill(string name, GameAbilityCounter attributeCounter, bool secondary = false)
-        {
-            GameCounter skillCounter = new(name);
-            SkillLevelCounter skillLevelCounter = new(attributeCounter, skillCounter, secondary);
-
-            skillCounters.Add(skillCounter);
-            skillLevelCounters.Add(skillLevelCounter);
-        }
+        return new GameSystemBuilder("Dragonbane")
+            .AddPropertyGroup(basicsBuilder)
+            .AddPropertyGroup(coreSkillsBuilder)
+            .AddPropertyGroup(secondarySkillsBuilder)
+            .AddPropertyGroup(equipmentBuilder)
+            .Build();
     }
 
-    public override IReadOnlyList<GameProperty> Properties { get; }
-
-    public override IReadOnlyList<GameCounter> Counters { get; }
+    private static void BuildSkill(GamePropertyGroupBuilder builder, string name, GameAbilityCounter attributeCounter,
+        bool secondary = false)
+    {
+        GameCounter skillCounter = new(name);
+        SkillLevelCounter skillLevelCounter = new(attributeCounter, skillCounter, secondary);
+        builder.AddProperties(skillCounter, skillLevelCounter);
+    }
 }
