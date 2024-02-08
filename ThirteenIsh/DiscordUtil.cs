@@ -13,6 +13,7 @@ internal class DiscordUtil
             rightJustify[column] = true;
         }
 
+        // Work out how wide each cell will be, and thence the whole table
         List<string[]> dataList = [];
         var maxCellSizes = new int[columnCount];
         foreach (var row in data)
@@ -30,12 +31,49 @@ internal class DiscordUtil
 
         StringBuilder builder = new();
         builder.AppendLine("```");
-        foreach (var row in dataList)
+
+        const string cellPadding = "..";
+        const string tablePadding = "   ";
+        var tableWidth = maxCellSizes.Sum() + (maxCellSizes.Length - 1) * cellPadding.Length;
+        if (tableWidth < 30 - tablePadding.Length)
+        {
+            // Draw the table with two logical rows on each drawn row.
+            var (halfRowsDiv, halfRowsRem) = Math.DivRem(dataList.Count, 2);
+            var height = halfRowsDiv + halfRowsRem;
+            var leftData = dataList[..height];
+            var rightData = dataList[height..];
+
+            for (var j = 0; j < height; ++j)
+            {
+                AppendDataRow(leftData[j]);
+                if (j < rightData.Count)
+                {
+                    builder.Append(tablePadding);
+                    AppendDataRow(rightData[j]);
+                }
+
+                builder.AppendLine();
+            }
+        }
+        else
+        {
+            // Draw the table without rearranging like that.
+            foreach (var row in dataList)
+            {
+                AppendDataRow(row);
+                builder.AppendLine();
+            }
+        }
+
+        builder.AppendLine("```");
+        return builder.ToString();
+
+        void AppendDataRow(string[] row)
         {
             for (var i = 0; i < columnCount; ++i)
             {
                 // Between-cell padding
-                if (i > 0) builder.Append("..");
+                if (i > 0) builder.Append(cellPadding);
 
                 // Value if left justify
                 if (!rightJustify[i]) builder.Append(row[i]);
@@ -47,11 +85,6 @@ internal class DiscordUtil
                 // Value if right justify
                 if (rightJustify[i]) builder.Append(row[i]);
             }
-
-            builder.AppendLine();
         }
-
-        builder.AppendLine("```");
-        return builder.ToString();
     }
 }
