@@ -40,16 +40,13 @@ internal class DiscordUtil
             // Draw the table with two logical rows on each drawn row.
             var (halfRowsDiv, halfRowsRem) = Math.DivRem(dataList.Count, 2);
             var height = halfRowsDiv + halfRowsRem;
-            var leftData = dataList[..height];
-            var rightData = dataList[height..];
-
             for (var j = 0; j < height; ++j)
             {
-                AppendDataRow(leftData[j]);
-                if (j < rightData.Count)
+                AppendDataRow(dataList[j]);
+                if (j + height < dataList.Count)
                 {
                     builder.Append(tablePadding);
-                    AppendDataRow(rightData[j]);
+                    AppendDataRow(dataList[j + height]);
                 }
 
                 builder.AppendLine();

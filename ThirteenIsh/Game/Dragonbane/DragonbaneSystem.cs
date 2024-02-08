@@ -7,7 +7,7 @@ internal static class DragonbaneSystem
 {
     public const string Basics = "Basics";
     public const string Attributes = "Attributes";
-    public const string DerivedRatings = "DerivedRatings";
+    public const string DerivedRatings = "Derived Ratings";
     public const string CoreSkills = "Core Skills";
     public const string SecondarySkills = "Secondary Skills";
     public const string Equipment = "Equipment";
