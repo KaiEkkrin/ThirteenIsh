@@ -9,6 +9,7 @@ internal static class DragonbaneSystem
     public const string Attributes = "Attributes";
     public const string DerivedRatings = "Derived Ratings";
     public const string CoreSkills = "Core Skills";
+    public const string WeaponSkills = "Weapon Skills";
     public const string SecondarySkills = "Secondary Skills";
     public const string Equipment = "Equipment";
 
@@ -72,6 +73,7 @@ internal static class DragonbaneSystem
             hitPointsCounter, willpowerPointsCounter, strengthDamageBonusCounter, agilityDamageBonusCounter);
 
         GamePropertyGroupBuilder coreSkillsBuilder = new(CoreSkills);
+        GamePropertyGroupBuilder weaponSkillsBuilder = new(WeaponSkills);
         GamePropertyGroupBuilder secondarySkillsBuilder = new(SecondarySkills);
 
         BuildSkill(coreSkillsBuilder, "Acrobatics", agilityCounter);
@@ -95,16 +97,16 @@ internal static class DragonbaneSystem
         BuildSkill(coreSkillsBuilder, "Spot Hidden", intelligenceCounter);
         BuildSkill(coreSkillsBuilder, "Swimming", agilityCounter);
 
-        BuildSkill(coreSkillsBuilder, "Axes", strengthCounter);
-        BuildSkill(coreSkillsBuilder, "Bows", agilityCounter);
-        BuildSkill(coreSkillsBuilder, "Brawling", strengthCounter);
-        BuildSkill(coreSkillsBuilder, "Crossbows", agilityCounter);
-        BuildSkill(coreSkillsBuilder, "Hammers", strengthCounter);
-        BuildSkill(coreSkillsBuilder, "Knives", agilityCounter);
-        BuildSkill(coreSkillsBuilder, "Slings", agilityCounter);
-        BuildSkill(coreSkillsBuilder, "Spears", strengthCounter);
-        BuildSkill(coreSkillsBuilder, "Staves", agilityCounter);
-        BuildSkill(coreSkillsBuilder, "Swords", strengthCounter);
+        BuildSkill(weaponSkillsBuilder, "Axes", strengthCounter);
+        BuildSkill(weaponSkillsBuilder, "Bows", agilityCounter);
+        BuildSkill(weaponSkillsBuilder, "Brawling", strengthCounter);
+        BuildSkill(weaponSkillsBuilder, "Crossbows", agilityCounter);
+        BuildSkill(weaponSkillsBuilder, "Hammers", strengthCounter);
+        BuildSkill(weaponSkillsBuilder, "Knives", agilityCounter);
+        BuildSkill(weaponSkillsBuilder, "Slings", agilityCounter);
+        BuildSkill(weaponSkillsBuilder, "Spears", strengthCounter);
+        BuildSkill(weaponSkillsBuilder, "Staves", agilityCounter);
+        BuildSkill(weaponSkillsBuilder, "Swords", strengthCounter);
 
         BuildSkill(secondarySkillsBuilder, "Animism", intelligenceCounter, true);
         BuildSkill(secondarySkillsBuilder, "Elementalism", intelligenceCounter, true);
@@ -121,6 +123,7 @@ internal static class DragonbaneSystem
             .AddPropertyGroup(attributesBuilder)
             .AddPropertyGroup(derivedRatingsBuilder)
             .AddPropertyGroup(coreSkillsBuilder)
+            .AddPropertyGroup(weaponSkillsBuilder)
             .AddPropertyGroup(secondarySkillsBuilder)
             .AddPropertyGroup(equipmentBuilder)
             .Build();
@@ -129,7 +132,7 @@ internal static class DragonbaneSystem
     private static void BuildSkill(GamePropertyGroupBuilder builder, string name, GameAbilityCounter attributeCounter,
         bool secondary = false)
     {
-        GameCounter skillCounter = new(name);
+        GameCounter skillCounter = new(name, maxValue: 13);
         SkillLevelCounter skillLevelCounter = new(attributeCounter, skillCounter, secondary);
         builder.AddProperties(skillCounter, skillLevelCounter);
     }

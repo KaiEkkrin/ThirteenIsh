@@ -117,14 +117,29 @@ internal class GameSystem
         return builder;
     }
 
-    public SelectMenuBuilder BuildPropertyChoiceComponent(string messageId, Func<GamePropertyBase, bool> predicate)
+    public SelectMenuBuilder BuildPropertyChoiceComponent(string messageId, Func<GamePropertyBase, bool> predicate,
+        string? propertyGroupName = null)
     {
         var menuBuilder = new SelectMenuBuilder()
             .WithCustomId(messageId);
 
         foreach (var propertyGroup in PropertyGroups)
         {
+            if (!string.IsNullOrEmpty(propertyGroupName) && propertyGroup.GroupName != propertyGroupName) continue;
             propertyGroup.AddPropertyChoiceOptions(menuBuilder, predicate);
+        }
+
+        return menuBuilder;
+    }
+
+    public SelectMenuBuilder BuildPropertyGroupChoiceComponent(string messageId, Func<GamePropertyBase, bool> predicate)
+    {
+        var menuBuilder = new SelectMenuBuilder()
+            .WithCustomId(messageId);
+
+        foreach (var propertyGroup in PropertyGroups)
+        {
+            propertyGroup.AddPropertyGroupChoiceOptions(menuBuilder, predicate);
         }
 
         return menuBuilder;

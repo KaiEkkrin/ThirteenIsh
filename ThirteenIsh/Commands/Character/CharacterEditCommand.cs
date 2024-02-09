@@ -36,7 +36,7 @@ internal sealed class CharacterEditCommand() : SubCommandBase("edit", "Edits a c
             return;
         }
 
-        // Here I need to respond with a property selection, and do the edit upon accepting that selection:
+        // Here I need to respond with a property group selection, and continue the edit via EditCharacterMessage:
         EditCharacterMessage message = new()
         {
             Name = name,
@@ -46,9 +46,9 @@ internal sealed class CharacterEditCommand() : SubCommandBase("edit", "Edits a c
 
         var gameSystem = GameSystem.Get(character.GameSystem);
         var componentBuilder = new ComponentBuilder()
-            .WithSelectMenu(gameSystem.BuildPropertyChoiceComponent(message.MessageId, property => property.CanStore));
+            .WithSelectMenu(gameSystem.BuildPropertyGroupChoiceComponent(message.MessageId, property => property.CanStore));
 
-        await command.RespondAsync($"Editing '{name}' : Select a property to change", ephemeral: true,
+        await command.RespondAsync($"Editing '{name}' : Select a property group", ephemeral: true,
             components: componentBuilder.Build());
     }
 }

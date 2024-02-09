@@ -14,6 +14,11 @@ public class EditCharacterMessage : MessageBase
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
+    /// The property group name to pick from.
+    /// </summary>
+    public string? PropertyGroupName { get; set; }
+
+    /// <summary>
     /// The property name to edit.
     /// </summary>
     public string? PropertyName { get; set; }
@@ -44,13 +49,37 @@ public class EditCharacterMessage : MessageBase
             return;
         }
 
-        if (PropertyName is null)
+        if (PropertyGroupName is null)
+        {
+            EditCharacterMessage message = new()
+            {
+                Name = Name,
+                PropertyGroupName = selectionValue,
+                UserId = (long)component.User.Id
+            };
+            await dataService.AddMessageAsync(message, cancellationToken);
+
+            var selectMenuBuilder = gameSystem.BuildPropertyChoiceComponent(message.MessageId,
+                property => property.CanStore, selectionValue);
+            if (selectMenuBuilder.Options.Count == 0)
+            {
+                await component.RespondAsync(
+                    $"Cannot find any property selections for '{PropertyGroupName}' in {character.GameSystem}.");
+                return;
+            }
+
+            var componentBuilder = new ComponentBuilder().WithSelectMenu(selectMenuBuilder);
+            await component.RespondAsync($"Editing '{Name}' : Select a property to change", ephemeral: true,
+                components: componentBuilder.Build());
+        }
+        else if (PropertyName is null)
         {
             // Send the user the value select menu
             // TODO also provide a cancel button here
             EditCharacterMessage message = new()
             {
                 Name = Name,
+                PropertyGroupName = PropertyGroupName,
                 PropertyName = selectionValue,
                 UserId = (long)component.User.Id
             };

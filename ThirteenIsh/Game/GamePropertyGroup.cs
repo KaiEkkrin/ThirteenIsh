@@ -36,4 +36,10 @@ internal class GamePropertyGroup(string groupName, ImmutableList<GamePropertyBas
             builder.AddOption(property.Name, property.Name);
         }
     }
+
+    public void AddPropertyGroupChoiceOptions(SelectMenuBuilder builder, Func<GamePropertyBase, bool> predicate)
+    {
+        if (!properties.Any(predicate)) return;
+        builder.AddOption(groupName, groupName);
+    }
 }
