@@ -54,14 +54,15 @@ I don't like the sub-command group thing or the individual settings for differen
 
 * `character-add` -- add a new character -- select a game system from a drop-down, then receive a form to fill in with the non-custom bits.
 * `character-edit` -- select a character, get the same form to edit.
+* `character-get` -- show a character's sheet
 * `character-list` -- list all characters
 * `character-remove` -- remove a character
 * `character-roll` -- rolls based on the selected stat and the character's game system
-* `character-show` -- show a character's sheet
+* `character-set` -- set a specific property to a specific value (avoids the form)
 * `character-counter-add` or `counter-add` -- add a custom counter with a reset value
-* `character-counter-edit` or `counter-edit` -- edit a custom counter with its reset value
 * `character-counter-list` or `counter-list` -- list all counters for a character
 * `character-counter-remove` or `counter-remove` -- remove a counter from a character
+* `character-counter-set` or `counter-set` -- edit a custom counter with its reset value
 
 For now I don't want to try to provide commands to help players level up, track/count bonuses on level up and other fixed things like that -- e.g. ability score boosts, icon relationships, skills in 13th Age. Too messy, and not helpful with character variable tracking across combat and adventures, which is the real point of this bot.
 
