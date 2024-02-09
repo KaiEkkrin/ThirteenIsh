@@ -34,6 +34,23 @@ internal class GameProperty(string name, string[] possibleValues) : GameProperty
         return componentBuilder.WithSelectMenu(menuBuilder);
     }
 
+    public override void AddPropertyValueChoiceOptions(SelectMenuBuilder builder, CharacterSheet sheet)
+    {
+        var currentValue = GetValue(sheet);
+        foreach (var possibleValue in possibleValues)
+        {
+            builder.AddOption(possibleValue, possibleValue, isDefault: possibleValue == currentValue);
+        }
+    }
+
+    public override void EditCharacterProperty(string newValue, CharacterSheet sheet)
+    {
+        if (!possibleValues.Contains(newValue))
+            throw new GamePropertyException($"'{newValue}' is not a possible value for {Name}.");
+
+        sheet.Properties[Name] = newValue;
+    }
+
     public override string GetDisplayValue(CharacterSheet sheet)
     {
         return GetValue(sheet) is { Length: > 0 } value ? value : Unset;

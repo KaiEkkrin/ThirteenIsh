@@ -204,7 +204,7 @@ public sealed class DataService : IDisposable
         }
     }
 
-    public async Task<Character?> UpdateCharacterAsync(
+    public async Task<Character> UpdateCharacterAsync(
         string name, Action<CharacterSheet> updateSheet, ulong userId,
         CancellationToken cancellationToken = default)
     {
@@ -228,7 +228,7 @@ public sealed class DataService : IDisposable
                 cancellationToken);
 
             return character ?? throw new WriteConflictException(nameof(character));
-        });
+        }) ?? throw new WriteConflictException(nameof(UpdateCharacterAsync));
     }
 
     public async Task UpdateGuildCommandVersionAsync(ulong guildId, int commandVersion,

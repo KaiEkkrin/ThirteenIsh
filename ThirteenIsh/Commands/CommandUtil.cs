@@ -55,7 +55,8 @@ internal static class CommandUtil
     public static Task RespondWithCharacterSheetAsync(
         IDiscordInteraction command,
         Entities.Character character,
-        string title)
+        string title,
+        params string[] onlyTheseProperties)
     {
         // TODO new-style character summaries
         EmbedBuilder embedBuilder = new();
@@ -63,7 +64,7 @@ internal static class CommandUtil
         embedBuilder.WithTitle(title);
 
         var gameSystem = GameSystem.Get(character.GameSystem);
-        embedBuilder = gameSystem.AddCharacterSheetFields(embedBuilder, character.Sheet);
+        embedBuilder = gameSystem.AddCharacterSheetFields(embedBuilder, character.Sheet, onlyTheseProperties);
         return command.RespondAsync(embed: embedBuilder.Build());
     }
 

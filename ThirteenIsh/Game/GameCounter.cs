@@ -12,12 +12,6 @@ internal class GameCounter(string name, string? alias = null, int defaultValue =
     int? maxValue = null, bool hasVariable = false, bool isHidden = false) : GamePropertyBase(name, alias, isHidden)
 {
     /// <summary>
-    /// True if this counter's value should be stored in the character sheet; false if it
-    /// should not be, but instead should be calculated out of other values.
-    /// </summary>
-    public virtual bool CanStore => true;
-
-    /// <summary>
     /// The default value for this counter.
     /// </summary>
     public int DefaultValue => defaultValue;
@@ -65,6 +59,38 @@ internal class GameCounter(string name, string? alias = null, int defaultValue =
             // (Also, discord.net doesn't let me add select menus to modals!)
             throw new NotSupportedException(Name);
         }
+    }
+
+    public override void AddPropertyValueChoiceOptions(SelectMenuBuilder builder, CharacterSheet sheet)
+    {
+        if (!maxValue.HasValue || maxValue.Value - minValue > 25)
+            throw new NotSupportedException(
+                $"Cannot build property value choice options for {Name} (min = {minValue}, max = {maxValue})");
+
+        var currentValue = GetValue(sheet);
+        for (var i = minValue; i <= maxValue.Value; ++i)
+        {
+            builder.AddOption($"{i}", $"{i}", isDefault: i == currentValue);
+        }
+    }
+
+    public override void EditCharacterProperty(string newValue, CharacterSheet sheet)
+    {
+        if (!int.TryParse(newValue, out var newValueInt))
+            throw new GamePropertyException($"'{newValue}' is not a possible value for {Name}.");
+
+        if (maxValue.HasValue)
+        {
+            if (newValueInt < minValue || newValueInt > maxValue.Value)
+                throw new GamePropertyException($"{Name} must be between {minValue} and {maxValue}.");
+        }
+        else
+        {
+            if (newValueInt < minValue)
+                throw new GamePropertyException($"{Name} must not be less than {minValue}.");
+        }
+
+        sheet.Counters[Name] = newValueInt;
     }
 
     public override string GetDisplayValue(CharacterSheet sheet)

@@ -1,4 +1,5 @@
 ﻿using Discord;
+using System.Diagnostics.CodeAnalysis;
 using ThirteenIsh.Entities;
 
 namespace ThirteenIsh.Game;
@@ -19,27 +20,16 @@ internal class GameSystem
         Name = name;
         PropertyGroups = propertyGroups;
 
-        Dictionary<string, GameProperty> properties = [];
-        Dictionary<string, GameCounter> counters = [];
+        Dictionary<string, GamePropertyBase> properties = [];
         foreach (var propertyGroup in propertyGroups)
         {
             foreach (var property in propertyGroup.Properties)
             {
-                switch (property)
-                {
-                    case GameCounter counter:
-                        counters.Add(counter.Name, counter);
-                        break;
-
-                    case GameProperty property1:
-                        properties.Add(property1.Name, property1);
-                        break;
-                }
+                properties.Add(property.Name, property);
             }
         }
 
         Properties = properties;
-        Counters = counters;
     }
     
     /// <summary>
@@ -65,28 +55,29 @@ internal class GameSystem
     /// <summary>
     /// This game system's properties indexed by name.
     /// </summary>
-    public IReadOnlyDictionary<string, GameProperty> Properties { get; }
-
-    /// <summary>
-    /// This game system's counters indexed by name.
-    /// </summary>
-    public IReadOnlyDictionary<string, GameCounter> Counters { get; }
+    public IReadOnlyDictionary<string, GamePropertyBase> Properties { get; }
 
     /// <summary>
     /// Adds this character sheet's fields to the embed -- in their well-known
     /// order of declaration
     /// </summary>
-    public EmbedBuilder AddCharacterSheetFields(EmbedBuilder builder, CharacterSheet sheet)
+    public EmbedBuilder AddCharacterSheetFields(EmbedBuilder builder, CharacterSheet sheet,
+        string[] onlyTheseProperties)
     {
         // Discord only allows adding up to 25 fields to an embed, so we group together
         // our categories of counters here, formatting a table for each one.
         foreach (var group in PropertyGroups)
         {
-            builder.AddField(group.BuildEmbedField(sheet));
+            var fieldBuilder = group.BuildEmbedField(sheet, onlyTheseProperties);
+            if (fieldBuilder is null) continue;
+            builder.AddField(fieldBuilder);
         }
 
         var customPropertyGroup = BuildCustomPropertyGroup(sheet);
-        return builder.AddField(customPropertyGroup.BuildEmbedField(sheet));
+        var customFieldBuilder = customPropertyGroup.BuildEmbedField(sheet, onlyTheseProperties);
+        return customFieldBuilder is null
+            ? builder
+            : builder.AddField(customFieldBuilder);
     }
 
     /// <summary>
@@ -103,7 +94,7 @@ internal class GameSystem
 
         foreach (var (name, _) in sheet.Counters)
         {
-            if (Counters.ContainsKey(name)) continue;
+            if (Properties.ContainsKey(name)) continue;
             builder.AddProperty(new GameCounter(name));
         }
 
@@ -126,9 +117,56 @@ internal class GameSystem
         return builder;
     }
 
+    public SelectMenuBuilder BuildPropertyChoiceComponent(string messageId, Func<GamePropertyBase, bool> predicate)
+    {
+        var menuBuilder = new SelectMenuBuilder()
+            .WithCustomId(messageId);
+
+        foreach (var propertyGroup in PropertyGroups)
+        {
+            propertyGroup.AddPropertyChoiceOptions(menuBuilder, predicate);
+        }
+
+        return menuBuilder;
+    }
+
+    /// <summary>
+    /// Edits a character property, writing it to the sheet. Wrap into a closure to pass to
+    /// DataService.UpdateCharacterAsync
+    /// Here I'll throw if there's a validation error because it's unlikely to occur in practice
+    /// (the user should have come through limited select menus etc)
+    /// </summary>
+    public void EditCharacterProperty(string propertyName, string newValue, CharacterSheet sheet)
+    {
+        if (!Properties.TryGetValue(propertyName, out var property))
+        {
+            throw new GamePropertyException($"No property '{propertyName}' found in {Name}.");
+        }
+
+        property.EditCharacterProperty(newValue, sheet);
+    }
+
     /// <summary>
     /// Gets the named game system.
     /// </summary>
     public static GameSystem Get(string name) => AllGameSystems.First(o => o.Name == name);
+
+    public bool TryBuildPropertyValueChoiceComponent(string messageId, string propertyName, CharacterSheet sheet,
+        [MaybeNullWhen(false)] out SelectMenuBuilder? menuBuilder, [MaybeNullWhen(true)] out string? errorMessage)
+    {
+        if (!Properties.TryGetValue(propertyName, out var property))
+        {
+            menuBuilder = null;
+            errorMessage = $"No property '{propertyName}' found in {Name}.";
+            return false;
+        }
+
+        menuBuilder = new SelectMenuBuilder()
+            .WithCustomId(messageId);
+
+        property.AddPropertyValueChoiceOptions(menuBuilder, sheet);
+        errorMessage = null;
+        return true;
+    }
 }
 
