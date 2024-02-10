@@ -11,8 +11,8 @@ public class DeleteCharacterMessage : MessageBase
     /// </summary>
     public string Name { get; set; } = string.Empty;
 
-    public override async Task HandleAsync(SocketMessageComponent component, IServiceProvider serviceProvider,
-        CancellationToken cancellationToken = default)
+    public override async Task<bool> HandleAsync(SocketMessageComponent component, string controlId,
+        IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
     {
         var dataService = serviceProvider.GetRequiredService<DataService>();
         var deleted = await dataService.DeleteCharacterAsync(Name, NativeUserId, cancellationToken);
@@ -21,7 +21,7 @@ public class DeleteCharacterMessage : MessageBase
             await component.RespondAsync(
                 $"Cannot delete a character named '{Name}'. Perhaps they were already deleted?",
                 ephemeral: true);
-            return;
+            return true;
         }
 
         EmbedBuilder embedBuilder = new();
@@ -29,5 +29,6 @@ public class DeleteCharacterMessage : MessageBase
         embedBuilder.WithTitle($"Deleted character: {Name}");
 
         await component.RespondAsync(embed: embedBuilder.Build());
+        return true;
     }
 }

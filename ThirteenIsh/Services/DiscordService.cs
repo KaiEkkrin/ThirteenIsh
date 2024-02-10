@@ -3,6 +3,7 @@ using Discord.WebSocket;
 using System.Collections.Concurrent;
 using System.Reflection;
 using ThirteenIsh.Commands;
+using ThirteenIsh.Entities;
 
 namespace ThirteenIsh.Services;
 
@@ -163,12 +164,14 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
 
         try
         {
+            if (!MessageBase.TryParseMessageId(arg.Data.CustomId, out var entityId, out var controlId)) return;
+
             var dataService = scope.ServiceProvider.GetRequiredService<DataService>();
-            var message = await dataService.GetMessageAsync(arg.Data.CustomId, cancellationSource.Token);
+            var message = await dataService.GetMessageAsync(entityId, cancellationSource.Token);
             if (message is null || message.NativeUserId != arg.User.Id) return;
 
-            await message.HandleAsync(arg, scope.ServiceProvider, cancellationSource.Token);
-            await dataService.DeleteMessageAsync(arg.Data.CustomId, cancellationSource.Token);
+            var completed = await message.HandleAsync(arg, controlId, scope.ServiceProvider, cancellationSource.Token);
+            if (completed) await dataService.DeleteMessageAsync(entityId, cancellationSource.Token);
         }
         catch (OperationCanceledException ex)
         {

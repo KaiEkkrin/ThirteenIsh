@@ -8,6 +8,11 @@ namespace ThirteenIsh.Entities;
 
 public class EditCharacterMessage : MessageBase
 {
+    public const string PropertyGroupControlId = "PropertyGroup";
+    public const string PropertyControlId = "Property";
+    public const string ValueControlId = "Value";
+    public const string CancelControlId = "Cancel";
+
     /// <summary>
     /// The character name to edit.
     /// </summary>
@@ -23,13 +28,19 @@ public class EditCharacterMessage : MessageBase
     /// </summary>
     public string? PropertyName { get; set; }
 
-    public override async Task HandleAsync(SocketMessageComponent component, IServiceProvider serviceProvider,
-        CancellationToken cancellationToken = default)
+    public override async Task<bool> HandleAsync(SocketMessageComponent component, string controlId,
+        IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
     {
+        if (controlId == CancelControlId)
+        {
+            await component.RespondAsync("Edit cancelled.", ephemeral: true);
+            return true;
+        }
+
         if (component.Data.Values.FirstOrDefault() is not { Length: > 0 } selectionValue)
         {
             await component.RespondAsync("No selection provided.", ephemeral: true);
-            return;
+            return true;
         }
 
         var dataService = serviceProvider.GetRequiredService<DataService>();
@@ -38,7 +49,7 @@ public class EditCharacterMessage : MessageBase
         {
             await component.RespondAsync($"Cannot find a character named '{Name}'. Perhaps they were deleted?",
                 ephemeral: true);
-            return;
+            return true;
         }
 
         var gameSystem = GameSystem.Get(character.GameSystem);
@@ -46,7 +57,7 @@ public class EditCharacterMessage : MessageBase
         {
             await component.RespondAsync($"Cannot find a game system named '{character.GameSystem}'.",
                 ephemeral: true);
-            return;
+            return true;
         }
 
         if (PropertyGroupName is null)
@@ -59,18 +70,22 @@ public class EditCharacterMessage : MessageBase
             };
             await dataService.AddMessageAsync(message, cancellationToken);
 
-            var selectMenuBuilder = gameSystem.BuildPropertyChoiceComponent(message.MessageId,
+            var selectMenuBuilder = gameSystem.BuildPropertyChoiceComponent(message.GetMessageId(PropertyControlId),
                 property => property.CanStore, selectionValue);
             if (selectMenuBuilder.Options.Count == 0)
             {
                 await component.RespondAsync(
                     $"Cannot find any property selections for '{PropertyGroupName}' in {character.GameSystem}.");
-                return;
+                return true;
             }
 
-            var componentBuilder = new ComponentBuilder().WithSelectMenu(selectMenuBuilder);
+            var componentBuilder = new ComponentBuilder().WithSelectMenu(selectMenuBuilder)
+                .WithButton("Cancel", message.GetMessageId(CancelControlId));
+
             await component.RespondAsync($"Editing '{Name}' : Select a property to change", ephemeral: true,
                 components: componentBuilder.Build());
+
+            return true;
         }
         else if (PropertyName is null)
         {
@@ -85,16 +100,20 @@ public class EditCharacterMessage : MessageBase
             };
             await dataService.AddMessageAsync(message, cancellationToken);
 
-            if (!gameSystem.TryBuildPropertyValueChoiceComponent(message.MessageId, selectionValue, character.Sheet,
-                out var menuBuilder, out var errorMessage))
+            if (!gameSystem.TryBuildPropertyValueChoiceComponent(message.GetMessageId(ValueControlId),
+                selectionValue, character.Sheet, out var menuBuilder, out var errorMessage))
             {
                 await component.RespondAsync(errorMessage, ephemeral: true);
-                return;
+                return true;
             }
 
-            var componentBuilder = new ComponentBuilder().WithSelectMenu(menuBuilder);
+            var componentBuilder = new ComponentBuilder().WithSelectMenu(menuBuilder)
+                .WithButton("Cancel", message.GetMessageId(CancelControlId));
+
             await component.RespondAsync($"Editing '{Name}' : Select a '{selectionValue}' value", ephemeral: true,
                 components: componentBuilder.Build());
+
+            return true;
         }
         else
         {
@@ -112,6 +131,8 @@ public class EditCharacterMessage : MessageBase
             {
                 await component.RespondAsync(ex.Message, ephemeral: true);
             }
+
+            return true;
         }
     }
 }

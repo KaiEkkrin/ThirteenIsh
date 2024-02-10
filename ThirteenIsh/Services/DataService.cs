@@ -101,10 +101,8 @@ public sealed class DataService : IDisposable
         return result.DeletedCount > 0;
     }
 
-    public async Task DeleteMessageAsync(string messageId, CancellationToken cancellationToken = default)
+    public async Task DeleteMessageAsync(ObjectId id, CancellationToken cancellationToken = default)
     {
-        if (!ObjectId.TryParse(messageId, out var id)) return;
-
         var collection = await GetMessagesCollectionAsync(cancellationToken);
         await collection.DeleteOneAsync(Builders<MessageBase>.Filter.Eq(o => o.Id, id), cancellationToken);
     }
@@ -174,10 +172,8 @@ public sealed class DataService : IDisposable
         return await ListCharactersAsync(name, userId, cancellationToken).FirstOrDefaultAsync(cancellationToken);
     }
 
-    public async Task<MessageBase?> GetMessageAsync(string messageId, CancellationToken cancellationToken = default)
+    public async Task<MessageBase?> GetMessageAsync(ObjectId id, CancellationToken cancellationToken = default)
     {
-        if (!ObjectId.TryParse(messageId, out var id)) return null;
-
         var collection = await GetMessagesCollectionAsync(cancellationToken);
         using var cursor = await collection.FindAsync(
             Builders<MessageBase>.Filter.Eq(o => o.Id, id),

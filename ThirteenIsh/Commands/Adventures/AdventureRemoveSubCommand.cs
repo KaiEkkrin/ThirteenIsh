@@ -42,7 +42,7 @@ internal sealed class AdventureRemoveSubCommand() : SubCommandBase("remove", "De
         await dataService.AddMessageAsync(message, cancellationToken);
 
         ComponentBuilder builder = new();
-        builder.WithButton("Delete", message.MessageId, ButtonStyle.Danger);
+        builder.WithButton("Delete", message.GetMessageId(), ButtonStyle.Danger);
 
         await command.RespondAsync($"Do you really want to delete the adventure named '{name}'? This cannot be undone.",
             ephemeral: true, components: builder.Build());

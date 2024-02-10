@@ -31,7 +31,7 @@ internal sealed class PcLeaveSubCommand() : SubCommandBase("leave", "Leaves the 
         await dataService.AddMessageAsync(message, cancellationToken);
 
         ComponentBuilder builder = new();
-        builder.WithButton("Leave", message.MessageId, ButtonStyle.Danger);
+        builder.WithButton("Leave", message.GetMessageId(), ButtonStyle.Danger);
 
         await command.RespondAsync(
             $"Do you really want to leave the adventure named '{guild.CurrentAdventure.Name}'? This cannot be undone.",

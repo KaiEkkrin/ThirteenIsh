@@ -20,8 +20,8 @@ public class DeleteAdventureMessage : MessageBase
     /// </summary>
     public string Name { get; set; } = string.Empty;
 
-    public override async Task HandleAsync(SocketMessageComponent component, IServiceProvider serviceProvider,
-        CancellationToken cancellationToken = default)
+    public override async Task<bool> HandleAsync(SocketMessageComponent component, string controlId,
+        IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
     {
         var dataService = serviceProvider.GetRequiredService<DataService>();
         var updatedGuild = await dataService.EditGuildAsync(
@@ -32,7 +32,7 @@ public class DeleteAdventureMessage : MessageBase
             await component.RespondAsync(
                 $"Cannot delete an adventure named '{Name}'. Perhaps it was already deleted?",
                 ephemeral: true);
-            return;
+            return true;
         }
 
         EmbedBuilder embedBuilder = new();
@@ -40,6 +40,7 @@ public class DeleteAdventureMessage : MessageBase
         embedBuilder.WithTitle($"Deleted adventure: {Name}");
 
         await component.RespondAsync(embed: embedBuilder.Build());
+        return true;
     }
 
     private sealed class EditOperation(string adventureName) : SyncEditOperation<Guild, Guild, EditResult<Guild>>

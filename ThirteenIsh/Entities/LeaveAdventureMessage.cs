@@ -20,8 +20,8 @@ public class LeaveAdventureMessage : MessageBase
     /// </summary>
     public string Name { get; set; } = string.Empty;
 
-    public override async Task HandleAsync(SocketMessageComponent component, IServiceProvider serviceProvider,
-        CancellationToken cancellationToken = default)
+    public override async Task<bool> HandleAsync(SocketMessageComponent component, string controlId,
+        IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
     {
         var dataService = serviceProvider.GetRequiredService<DataService>();
         var (output, message) = await dataService.EditGuildAsync(
@@ -30,7 +30,7 @@ public class LeaveAdventureMessage : MessageBase
         if (!string.IsNullOrEmpty(message))
         {
             await component.RespondAsync(message, ephemeral: true);
-            return;
+            return true;
         }
 
         if (output is null) throw new InvalidOperationException(nameof(output));
@@ -38,6 +38,8 @@ public class LeaveAdventureMessage : MessageBase
         var discordService = serviceProvider.GetRequiredService<DiscordService>();
         await discordService.RespondWithAdventureSummaryAsync(component, output.Guild, output.Adventure,
             $"Left adventure {Name}");
+
+        return true;
     }
 
     private sealed class EditOperation(string adventureName, ulong userId)
