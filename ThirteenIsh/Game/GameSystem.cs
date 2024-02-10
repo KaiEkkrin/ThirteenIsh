@@ -58,6 +58,13 @@ internal class GameSystem
     public IReadOnlyDictionary<string, GamePropertyBase> Properties { get; }
 
     /// <summary>
+    /// All the properties to show when adding a new character in this game system.
+    /// </summary>
+    public IEnumerable<GamePropertyBase> ShowOnAddProperties => PropertyGroups
+        .SelectMany(group => group.Properties)
+        .Where(property => property.ShowOnAdd);
+
+    /// <summary>
     /// Adds this character sheet's fields to the embed -- in their well-known
     /// order of declaration
     /// </summary>
@@ -89,7 +96,7 @@ internal class GameSystem
         foreach (var (name, _) in sheet.Properties)
         {
             if (Properties.ContainsKey(name)) continue;
-            builder.AddProperty(new GameProperty(name, Array.Empty<string>()));
+            builder.AddProperty(new GameProperty(name, Array.Empty<string>(), false));
         }
 
         foreach (var (name, _) in sheet.Counters)

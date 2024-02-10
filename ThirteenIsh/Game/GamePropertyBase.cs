@@ -23,6 +23,12 @@ internal abstract class GamePropertyBase(string name, string? alias = null, bool
     /// </summary>
     public virtual bool CanStore => true;
 
+    /// <summary>
+    /// If true, offer a dropdown to select this property's value on character creation.
+    /// Only for text properties. Maximum of 3 per game system otherwise Discord will blow up
+    /// </summary>
+    public virtual bool ShowOnAdd => false;
+
     public abstract void AddPropertyValueChoiceOptions(SelectMenuBuilder builder, CharacterSheet sheet);
 
     public abstract void EditCharacterProperty(string newValue, CharacterSheet sheet);

@@ -42,14 +42,31 @@ internal sealed class CharacterAddCommand() : SubCommandBase("add", "Adds a new 
             return;
         }
 
-        // Start the character add wizard, which will help the user give them initial properties
+        // This will prompt the user to select the show-on-add properties
         AddCharacterMessage message = new()
         {
             Name = name,
-            PropertyGroupName = gameSystem.PropertyGroups.First().GroupName,
             UserId = (long)command.User.Id
         };
         await dataService.AddMessageAsync(message, cancellationToken);
-        await message.RespondWithWizardPageAsync(command, character, gameSystem);
+
+        ComponentBuilder componentBuilder = new();
+        foreach (var property in gameSystem.ShowOnAddProperties)
+        {
+            if (!gameSystem.TryBuildPropertyValueChoiceComponent(
+                message.GetMessageId(property.Name), property.Name, character.Sheet, out var menuBuilder, out var errorMessage))
+            {
+                // The rest of the logic assumes this won't happen
+                throw new InvalidOperationException(errorMessage);
+            }
+
+            componentBuilder.WithSelectMenu(menuBuilder);
+        }
+
+        componentBuilder.WithButton("Done", message.GetMessageId(AddCharacterMessage.DoneControlId))
+            .WithButton("Cancel", message.GetMessageId(AddCharacterMessage.CancelControlId), ButtonStyle.Secondary);
+
+        await command.RespondAsync($"Adding '{name}'", ephemeral: true,
+            components: componentBuilder.Build());
     }
 }

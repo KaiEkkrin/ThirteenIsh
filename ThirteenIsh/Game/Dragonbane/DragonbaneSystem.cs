@@ -42,9 +42,9 @@ internal static class DragonbaneSystem
     {
         GamePropertyGroupBuilder basicsBuilder = new(Basics);
 
-        GameProperty kinProperty = new("Kin", [Human, Halfling, Dwarf, Elf, Mallard, Wolfkin]);
+        GameProperty kinProperty = new("Kin", [Human, Halfling, Dwarf, Elf, Mallard, Wolfkin], true);
         GameProperty professionProperty = new("Profession", [Artisan, Bard, Fighter, Hunter, Knight,
-            Mage, Mariner, Merchant, Scholar, Thief]);
+            Mage, Mariner, Merchant, Scholar, Thief], true);
 
         basicsBuilder.AddProperties(kinProperty, professionProperty);
 

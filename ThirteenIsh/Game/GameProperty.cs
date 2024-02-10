@@ -8,9 +8,11 @@ namespace ThirteenIsh.Game;
 /// exist in the context of a particular game system. E.g. class or profession.
 /// The corresponding entity is a CharacterProperty, stored in a CharacterSheet.
 /// </summary>
-internal class GameProperty(string name, string[] possibleValues) : GamePropertyBase(name)
+internal class GameProperty(string name, string[] possibleValues, bool showOnAdd) : GamePropertyBase(name)
 {
     public IReadOnlyList<string> PossibleValues => possibleValues;
+
+    public override bool ShowOnAdd => showOnAdd;
 
     /// <summary>
     /// Adds a component that would edit this property to the component builder.

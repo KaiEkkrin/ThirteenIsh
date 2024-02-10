@@ -31,7 +31,8 @@ internal static class ThirteenthAgeSystem
     public static GameSystem Build()
     {
         GameProperty classProperty = new("Class",
-                [Barbarian, Bard, Cleric, Fighter, Paladin, Ranger, Rogue, Sorcerer, Wizard]);
+                [Barbarian, Bard, Cleric, Fighter, Paladin, Ranger, Rogue, Sorcerer, Wizard],
+                true);
 
         GameCounter levelCounter = new(Level, defaultValue: 1, minValue: 1, maxValue: 10);
 
