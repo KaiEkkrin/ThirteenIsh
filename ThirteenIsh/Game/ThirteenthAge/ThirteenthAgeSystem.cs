@@ -63,7 +63,7 @@ internal static class ThirteenthAgeSystem
             .AddPropertyGroup(basicsBuilder)
             .AddPropertyGroup(abilityScoresBuilder)
             .AddPropertyGroup(generalBuilder)
-            .Build();
+            .Build(new ThirteenthAgeLogic(classProperty, levelCounter));
     }
 
     private static AbilityBonusCounter BuildAbility(GamePropertyGroupBuilder builder, string abilityName)

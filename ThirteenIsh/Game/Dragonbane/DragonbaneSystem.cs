@@ -126,7 +126,7 @@ internal static class DragonbaneSystem
             .AddPropertyGroup(weaponSkillsBuilder)
             .AddPropertyGroup(secondarySkillsBuilder)
             .AddPropertyGroup(equipmentBuilder)
-            .Build();
+            .Build(new DragonbaneLogic(kinProperty, professionProperty));
     }
 
     private static void BuildSkill(GamePropertyGroupBuilder builder, string name, GameAbilityCounter attributeCounter,

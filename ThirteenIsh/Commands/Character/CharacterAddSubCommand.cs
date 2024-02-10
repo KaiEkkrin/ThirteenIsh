@@ -6,7 +6,7 @@ using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Character;
 
-internal sealed class CharacterAddCommand() : SubCommandBase("add", "Adds a new character.")
+internal sealed class CharacterAddSubCommand() : SubCommandBase("add", "Adds a new character.")
 {
     public override SlashCommandOptionBuilder CreateBuilder()
     {

@@ -11,7 +11,7 @@ internal sealed class GameSystemBuilder(string name)
         return this;
     }
 
-    public GameSystem Build()
+    public GameSystem Build(GameSystemLogicBase logic)
     {
         var propertyGroups = _builder.ToImmutable();
 
@@ -31,6 +31,6 @@ internal sealed class GameSystemBuilder(string name)
             }
         }
 
-        return new GameSystem(name, propertyGroups);
+        return new GameSystem(name, logic, propertyGroups);
     }
 }

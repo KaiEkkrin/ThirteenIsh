@@ -194,7 +194,14 @@ public sealed class DataService : IDisposable
     {
         var collection = await GetCharactersCollectionAsync(cancellationToken);
         var filter = GetCharacterFilter(name, userId, null);
-        using var cursor = await collection.FindAsync(filter, cancellationToken: cancellationToken);
+        using var cursor = await collection.FindAsync(
+            filter,
+            new FindOptions<Character, Character>
+            {
+                Sort = Builders<Character>.Sort.Ascending(o => o.Name)
+            },
+            cancellationToken: cancellationToken);
+
         while (await cursor.MoveNextAsync(cancellationToken))
         {
             foreach (var character in cursor.Current) yield return character;
@@ -246,14 +253,14 @@ public sealed class DataService : IDisposable
     private static FilterDefinition<Character> GetCharacterFilter(string? name, ulong? userId, long? version)
     {
         List<FilterDefinition<Character>> conditions = [];
-        if (!string.IsNullOrEmpty(name))
-        {
-            conditions.Add(Builders<Character>.Filter.Eq(o => o.Name, name));
-        }
-
         if (userId.HasValue)
         {
             conditions.Add(Builders<Character>.Filter.Eq(nameof(UserEntityBase.UserId), userId.Value));
+        }
+
+        if (!string.IsNullOrEmpty(name))
+        {
+            conditions.Add(Builders<Character>.Filter.Eq(o => o.Name, name));
         }
 
         if (version.HasValue)

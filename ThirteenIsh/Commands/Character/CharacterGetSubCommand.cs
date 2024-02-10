@@ -4,7 +4,7 @@ using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Character;
 
-internal sealed class CharacterGetCommand() : SubCommandBase("get", "Gets a character's sheet.")
+internal sealed class CharacterGetSubCommand() : SubCommandBase("get", "Gets a character's sheet.")
 {
     public override SlashCommandOptionBuilder CreateBuilder()
     {

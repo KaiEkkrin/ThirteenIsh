@@ -15,9 +15,10 @@ internal class GameSystem
         Dragonbane.DragonbaneSystem.Build()
     };
 
-    public GameSystem(string name, ImmutableList<GamePropertyGroup> propertyGroups)
+    public GameSystem(string name, GameSystemLogicBase logic, ImmutableList<GamePropertyGroup> propertyGroups)
     {
         Name = name;
+        Logic = logic;
         PropertyGroups = propertyGroups;
 
         Dictionary<string, GamePropertyBase> properties = [];
@@ -46,6 +47,11 @@ internal class GameSystem
     /// This game system's name.
     /// </summary>
     public string Name { get; }
+
+    /// <summary>
+    /// The custom logic associated with this game system.
+    /// </summary>
+    public GameSystemLogicBase Logic { get; }
 
     /// <summary>
     /// This game system's properties grouped in display order.
