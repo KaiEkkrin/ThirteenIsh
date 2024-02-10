@@ -7,6 +7,7 @@ internal sealed class CharacterCommand() : CommandBase("character", "Manage char
     new CharacterAddSubCommand(),
     new CharacterGetSubCommand(),
     new CharacterListSubCommand(),
-    new CharacterRemoveSubCommand())
+    new CharacterRemoveSubCommand(),
+    new CharacterSetSubCommand())
 {
 }

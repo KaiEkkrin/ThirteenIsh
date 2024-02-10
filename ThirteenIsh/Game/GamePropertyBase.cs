@@ -1,4 +1,5 @@
 ﻿using Discord;
+using System.Diagnostics.CodeAnalysis;
 using ThirteenIsh.Entities;
 
 namespace ThirteenIsh.Game;
@@ -31,7 +32,8 @@ internal abstract class GamePropertyBase(string name, string? alias = null, bool
 
     public abstract void AddPropertyValueChoiceOptions(SelectMenuBuilder builder, CharacterSheet sheet);
 
-    public abstract void EditCharacterProperty(string newValue, CharacterSheet sheet);
-
     public abstract string GetDisplayValue(CharacterSheet sheet);
+
+    public abstract bool TryEditCharacterProperty(string newValue, CharacterSheet sheet,
+        [MaybeNullWhen(true)] out string errorMessage);
 }

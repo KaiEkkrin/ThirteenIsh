@@ -1,4 +1,5 @@
 ﻿using Discord;
+using System.Diagnostics.CodeAnalysis;
 using ThirteenIsh.Entities;
 
 namespace ThirteenIsh.Game;
@@ -45,14 +46,6 @@ internal class GameProperty(string name, string[] possibleValues, bool showOnAdd
         }
     }
 
-    public override void EditCharacterProperty(string newValue, CharacterSheet sheet)
-    {
-        if (!possibleValues.Contains(newValue))
-            throw new GamePropertyException($"'{newValue}' is not a possible value for {Name}.");
-
-        sheet.Properties[Name] = newValue;
-    }
-
     public override string GetDisplayValue(CharacterSheet sheet)
     {
         return GetValue(sheet) is { Length: > 0 } value ? value : Unset;
@@ -64,6 +57,20 @@ internal class GameProperty(string name, string[] possibleValues, bool showOnAdd
     public string GetValue(CharacterSheet characterSheet)
     {
         return characterSheet.Properties.TryGetValue(Name, out var value) ? value : string.Empty;
+    }
+
+    public override bool TryEditCharacterProperty(string newValue, CharacterSheet sheet,
+        [MaybeNullWhen(true)] out string errorMessage)
+    {
+        if (!possibleValues.Contains(newValue))
+        {
+            errorMessage = $"'{newValue}' is not a possible value for {Name}.";
+            return false;
+        }
+
+        sheet.Properties[Name] = newValue;
+        errorMessage = null;
+        return true;
     }
 }
 

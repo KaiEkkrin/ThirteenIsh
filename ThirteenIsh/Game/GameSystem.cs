@@ -159,25 +159,31 @@ internal class GameSystem
     }
 
     /// <summary>
-    /// Edits a character property, writing it to the sheet. Wrap into a closure to pass to
-    /// DataService.UpdateCharacterAsync
-    /// Here I'll throw if there's a validation error because it's unlikely to occur in practice
-    /// (the user should have come through limited select menus etc)
+    /// Finds a property by unambiguous prefix match.
     /// </summary>
-    public void EditCharacterProperty(string propertyName, string newValue, CharacterSheet sheet)
+    public GamePropertyBase? FindStorableProperty(string namePart)
     {
-        if (!Properties.TryGetValue(propertyName, out var property))
-        {
-            throw new GamePropertyException($"No property '{propertyName}' found in {Name}.");
-        }
+        var matchingProperties = Properties
+            .Where(pair => pair.Value is { CanStore: true, IsHidden: false } &&
+                pair.Key.StartsWith(namePart, StringComparison.OrdinalIgnoreCase))
+            .ToList();
 
-        property.EditCharacterProperty(newValue, sheet);
+        return matchingProperties.Count == 1 ? matchingProperties[0].Value : null;
     }
 
     /// <summary>
     /// Gets the named game system.
     /// </summary>
     public static GameSystem Get(string name) => AllGameSystems.First(o => o.Name == name);
+
+    /// <summary>
+    /// Gets a property by exact name match.
+    /// </summary>
+    public GamePropertyBase? GetProperty(string name)
+    {
+        if (!Properties.TryGetValue(name, out var property)) return null;
+        return property;
+    }
 
     public bool TryBuildPropertyValueChoiceComponent(string messageId, string propertyName, CharacterSheet sheet,
         [MaybeNullWhen(false)] out SelectMenuBuilder? menuBuilder, [MaybeNullWhen(true)] out string? errorMessage)

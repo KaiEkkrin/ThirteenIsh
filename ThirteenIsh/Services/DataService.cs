@@ -136,6 +136,37 @@ public sealed class DataService : IDisposable
         }
     }
 
+    public async Task<T?> EditCharacterAsync<T, TResult>(
+        string name, EditOperation<T, Character, TResult> operation, ulong userId,
+        CancellationToken cancellationToken = default)
+        where TResult : EditResult<T>
+    {
+        var collection = await GetCharactersCollectionAsync(cancellationToken);
+        return await _retryPolicy.ExecuteAsync(async () =>
+        {
+            var character = await GetCharacterAsync(name, userId, cancellationToken);
+            if (character is null) return operation.CreateError($"Character '{name}' not found.").Value;
+
+            var editResult = await operation.DoEditAsync(character, cancellationToken);
+            if (!editResult.Success) return editResult.Value;
+
+            var beforeVersion = character.Version++;
+
+            // Edit this exact character record only if nothing else has changed it in the meantime
+            var filter = Builders<Character>.Filter.And(
+                Builders<Character>.Filter.Eq(o => o.Id, character.Id),
+                Builders<Character>.Filter.Eq(o => o.Version, beforeVersion));
+
+            var replaceResult = await collection.ReplaceOneAsync(
+                filter,
+                character,
+                cancellationToken: cancellationToken);
+
+            if (replaceResult.ModifiedCount < 1) throw new WriteConflictException(nameof(character));
+            return editResult.Value;
+        });
+    }
+
     public async Task<T?> EditGuildAsync<T, TResult>(EditOperation<T, Guild, TResult> operation, ulong guildId,
         CancellationToken cancellationToken = default)
         where TResult : EditResult<T>
@@ -213,37 +244,6 @@ public sealed class DataService : IDisposable
         {
             foreach (var character in cursor.Current) yield return character;
         }
-    }
-
-    public async Task<Character?> UpdateCharacterAsync(
-        string name, Action<CharacterSheet> updateSheet, ulong userId,
-        CancellationToken cancellationToken = default)
-    {
-        var collection = await GetCharactersCollectionAsync(cancellationToken);
-        return await _retryPolicy.ExecuteAsync(async () =>
-        {
-            var character = await GetCharacterAsync(name, userId, cancellationToken);
-            if (character is null) return null;
-
-            updateSheet(character.Sheet);
-            var beforeVersion = character.Version++;
-
-            // Edit this exact character record only if nothing else has changed it in the meantime
-            var filter = Builders<Character>.Filter.And(
-                Builders<Character>.Filter.Eq(o => o.Id, character.Id),
-                Builders<Character>.Filter.Eq(o => o.Version, beforeVersion));
-
-            character = await collection.FindOneAndReplaceAsync(
-                filter,
-                character,
-                new FindOneAndReplaceOptions<Character>
-                {
-                    ReturnDocument = ReturnDocument.After
-                },
-                cancellationToken);
-
-            return character ?? throw new WriteConflictException(nameof(character));
-        });
     }
 
     public async Task UpdateGuildCommandVersionAsync(ulong guildId, int commandVersion,

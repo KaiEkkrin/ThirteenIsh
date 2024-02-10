@@ -7,8 +7,6 @@ namespace ThirteenIsh.Commands;
 /// Implement slash commands by extending this -- all concrete implementations will be
 /// instantiated and registered at runtime.
 /// Each class will only be instantiated once, as a singleton.
-/// TODO I already have unmanageably many commands -- make `character-*`, `adventure-*` etc into
-/// sub-commands.
 /// </summary>
 internal abstract class CommandBase(string name, string description, params CommandOptionBase[] subOptions)
 {
@@ -17,7 +15,7 @@ internal abstract class CommandBase(string name, string description, params Comm
     /// this -- this will cause us to re-register commands with guilds. Otherwise, we won't
     /// (it's time consuming and I suspect Discord would eventually throttle us.)
     /// </summary>
-    public const int Version = 17;
+    public const int Version = 18;
 
     public string Name => $"13-{name}";
 

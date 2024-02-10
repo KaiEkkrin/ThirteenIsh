@@ -1,4 +1,5 @@
 ﻿using Discord;
+using System.Diagnostics.CodeAnalysis;
 using ThirteenIsh.Entities;
 
 namespace ThirteenIsh.Game;
@@ -74,25 +75,6 @@ internal class GameCounter(string name, string? alias = null, int defaultValue =
         }
     }
 
-    public override void EditCharacterProperty(string newValue, CharacterSheet sheet)
-    {
-        if (!int.TryParse(newValue, out var newValueInt))
-            throw new GamePropertyException($"'{newValue}' is not a possible value for {Name}.");
-
-        if (maxValue.HasValue)
-        {
-            if (newValueInt < minValue || newValueInt > maxValue.Value)
-                throw new GamePropertyException($"{Name} must be between {minValue} and {maxValue}.");
-        }
-        else
-        {
-            if (newValueInt < minValue)
-                throw new GamePropertyException($"{Name} must not be less than {minValue}.");
-        }
-
-        sheet.Counters[Name] = newValueInt;
-    }
-
     public override string GetDisplayValue(CharacterSheet sheet)
     {
         return GetValue(sheet) is { } value ? $"{value}" : Unset;
@@ -113,6 +95,37 @@ internal class GameCounter(string name, string? alias = null, int defaultValue =
     public virtual int? GetValue(CharacterSheet characterSheet)
     {
         return characterSheet.Counters.TryGetValue(Name, out var value) ? value : defaultValue;
+    }
+
+    public override bool TryEditCharacterProperty(string newValue, CharacterSheet sheet,
+        [MaybeNullWhen(true)] out string errorMessage)
+    {
+        if (!int.TryParse(newValue, out var newValueInt))
+        {
+            errorMessage = $"'{newValue}' is not a possible value for {Name}.";
+            return false;
+        }
+
+        if (maxValue.HasValue)
+        {
+            if (newValueInt < minValue || newValueInt > maxValue.Value)
+            {
+                errorMessage = $"{Name} must be between {minValue} and {maxValue}.";
+                return false;
+            }
+        }
+        else
+        {
+            if (newValueInt < minValue)
+            {
+                errorMessage = $"{Name} must not be less than {minValue}.";
+                return false;
+            }
+        }
+
+        sheet.Counters[Name] = newValueInt;
+        errorMessage = null;
+        return true;
     }
 }
 

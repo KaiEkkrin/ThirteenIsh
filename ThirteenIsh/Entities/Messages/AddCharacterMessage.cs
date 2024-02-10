@@ -1,5 +1,7 @@
 ﻿using Discord.WebSocket;
+using MongoDB.Driver.Core.Misc;
 using ThirteenIsh.Commands;
+using ThirteenIsh.EditOperations;
 using ThirteenIsh.Game;
 using ThirteenIsh.Services;
 
@@ -54,34 +56,26 @@ public class AddCharacterMessage : MessageBase
             return true;
         }
 
-        return await EditPropertyAsync(component, dataService, gameSystem, controlId, cancellationToken);
-    }
-
-    private async Task<bool> EditPropertyAsync(
-        SocketMessageComponent component,
-        DataService dataService,
-        GameSystem gameSystem,
-        string propertyName,
-        CancellationToken cancellationToken)
-    {
-        var newValue = component.Data.Values.FirstOrDefault();
-        if (newValue is null) return false;
-
-        try
+        // If we got here, we're setting a property value
+        var property = gameSystem.GetProperty(controlId);
+        if (property is null)
         {
-            await dataService.UpdateCharacterAsync(
-                Name,
-                sheet => gameSystem.EditCharacterProperty(propertyName, newValue, sheet),
-                component.User.Id,
-                cancellationToken);
-
-            await component.DeferAsync(true);
-            return false; // keep this message around, the user might make more selections
-        }
-        catch (GamePropertyException ex)
-        {
-            await component.RespondAsync(ex.Message, ephemeral: true);
+            await component.RespondAsync($"Cannot find a character property '{controlId}'.",
+                ephemeral: true);
             return true;
         }
+
+        var newValue = component.Data.Values.SingleOrDefault() ?? string.Empty;
+        var (_, errorMessage) = await dataService.EditCharacterAsync(
+            Name, new SetCharacterPropertyOperation(property, newValue), component.User.Id, cancellationToken);
+
+        if (errorMessage is not null)
+        {
+            await component.RespondAsync(errorMessage, ephemeral: true);
+            return true;
+        }
+
+        await component.DeferAsync(true);
+        return false; // keep this message around, the user might make more selections
     }
 }
