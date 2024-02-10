@@ -94,12 +94,18 @@ public sealed class DataService : IDisposable
         }
     }
 
-    public async Task<bool> DeleteCharacterAsync(string name, ulong userId, CancellationToken cancellationToken = default)
+    public async Task<Character?> DeleteCharacterAsync(string name, ulong userId,
+        CancellationToken cancellationToken = default)
     {
+        var character = await GetCharacterAsync(name, userId, cancellationToken);
+        if (character is null) return null;
+
         var collection = await GetCharactersCollectionAsync(cancellationToken);
-        var filter = GetCharacterFilter(name, userId, null);
-        var result = await collection.DeleteOneAsync(filter, cancellationToken);
-        return result.DeletedCount > 0;
+        var deletedCharacter = await collection.FindOneAndDeleteAsync(
+            Builders<Character>.Filter.Eq(o => o.Id, character.Id),
+            cancellationToken: cancellationToken);
+
+        return deletedCharacter;
     }
 
     public async Task DeleteMessageAsync(ObjectId id, CancellationToken cancellationToken = default)
@@ -167,10 +173,12 @@ public sealed class DataService : IDisposable
         return guild ?? throw new InvalidOperationException($"Failed to create guild record for {guildId}");
     }
 
-    public async Task<Character?> GetCharacterAsync(string name, ulong? userId = null,
+    public async Task<Character?> GetCharacterAsync(string name, ulong userId,
         CancellationToken cancellationToken = default)
     {
-        return await ListCharactersAsync(name, userId, cancellationToken).FirstOrDefaultAsync(cancellationToken);
+        // Only accept an exact match
+        var characters = await ListCharactersAsync(name, userId, cancellationToken).ToListAsync(cancellationToken);
+        return characters.Count == 1 ? characters[0] : null;
     }
 
     public async Task<MessageBase?> GetMessageAsync(ObjectId id, CancellationToken cancellationToken = default)
@@ -188,17 +196,16 @@ public sealed class DataService : IDisposable
     }
 
     public async IAsyncEnumerable<Character> ListCharactersAsync(
-        string? name = null,
-        ulong? userId = null,
+        string? name, ulong userId,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var collection = await GetCharactersCollectionAsync(cancellationToken);
-        var filter = GetCharacterFilter(name, userId, null);
+        var filter = GetCharacterFilter(name, userId);
         using var cursor = await collection.FindAsync(
             filter,
             new FindOptions<Character, Character>
             {
-                Sort = Builders<Character>.Sort.Ascending(o => o.Name)
+                Sort = Builders<Character>.Sort.Ascending(o => o.NameUpper)
             },
             cancellationToken: cancellationToken);
 
@@ -208,20 +215,24 @@ public sealed class DataService : IDisposable
         }
     }
 
-    public async Task<Character> UpdateCharacterAsync(
+    public async Task<Character?> UpdateCharacterAsync(
         string name, Action<CharacterSheet> updateSheet, ulong userId,
         CancellationToken cancellationToken = default)
     {
         var collection = await GetCharactersCollectionAsync(cancellationToken);
         return await _retryPolicy.ExecuteAsync(async () =>
         {
-            var character = await ListCharactersAsync(name, userId, cancellationToken).FirstOrDefaultAsync(cancellationToken);
+            var character = await GetCharacterAsync(name, userId, cancellationToken);
             if (character is null) return null;
 
             updateSheet(character.Sheet);
             var beforeVersion = character.Version++;
 
-            var filter = GetCharacterFilter(name, userId, beforeVersion);
+            // Edit this exact character record only if nothing else has changed it in the meantime
+            var filter = Builders<Character>.Filter.And(
+                Builders<Character>.Filter.Eq(o => o.Id, character.Id),
+                Builders<Character>.Filter.Eq(o => o.Version, beforeVersion));
+
             character = await collection.FindOneAndReplaceAsync(
                 filter,
                 character,
@@ -232,7 +243,7 @@ public sealed class DataService : IDisposable
                 cancellationToken);
 
             return character ?? throw new WriteConflictException(nameof(character));
-        }) ?? throw new WriteConflictException(nameof(UpdateCharacterAsync));
+        });
     }
 
     public async Task UpdateGuildCommandVersionAsync(ulong guildId, int commandVersion,
@@ -250,22 +261,16 @@ public sealed class DataService : IDisposable
 
     public void Dispose() => _indexCreationSemaphore.Dispose();
 
-    private static FilterDefinition<Character> GetCharacterFilter(string? name, ulong? userId, long? version)
+    private static FilterDefinition<Character> GetCharacterFilter(string? name, ulong userId)
     {
         List<FilterDefinition<Character>> conditions = [];
-        if (userId.HasValue)
-        {
-            conditions.Add(Builders<Character>.Filter.Eq(nameof(UserEntityBase.UserId), userId.Value));
-        }
+        conditions.Add(Builders<Character>.Filter.Eq(nameof(UserEntityBase.UserId), userId));
 
         if (!string.IsNullOrEmpty(name))
         {
-            conditions.Add(Builders<Character>.Filter.Eq(o => o.Name, name));
-        }
-
-        if (version.HasValue)
-        {
-            conditions.Add(Builders<Character>.Filter.Eq(o => o.Version, version.Value));
+#pragma warning disable CA1862
+            conditions.Add(Builders<Character>.Filter.Where(o => o.NameUpper.StartsWith(name.ToUpperInvariant())));
+#pragma warning restore CA1862
         }
 
         return conditions.Count switch
@@ -310,27 +315,17 @@ public sealed class DataService : IDisposable
 
             try
             {
+                // For searching for characters case insensitively
+                // TODO do I need an index on (UserId, Name) as well...?
                 await _characters.Indexes.CreateOneAsync(
                     new CreateIndexModel<Character>(
-                        Builders<Character>.IndexKeys.Ascending(o => o.UserId).Ascending(o => o.Name),
+                        Builders<Character>.IndexKeys.Ascending(o => o.UserId).Ascending(o => o.NameUpper),
                         new CreateIndexOptions { Unique = true }),
                     cancellationToken: cancellationToken);
             }
             catch (MongoException ex)
             {
-                ErrorCreatingIndex(_logger, "UserId, Name", ex.Message, ex);
-            }
-
-            try
-            {
-                await _characters.Indexes.CreateOneAsync(
-                    new CreateIndexModel<Character>(
-                        Builders<Character>.IndexKeys.Ascending(o => o.Name)),
-                    cancellationToken: cancellationToken);
-            }
-            catch (MongoException ex)
-            {
-                ErrorCreatingIndex(_logger, "Name", ex.Message, ex);
+                ErrorCreatingIndex(_logger, "UserId, NameUpper", ex.Message, ex);
             }
 
             return _characters;

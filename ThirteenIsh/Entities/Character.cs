@@ -1,4 +1,6 @@
-﻿namespace ThirteenIsh.Entities;
+﻿using MongoDB.Bson.Serialization.Attributes;
+
+namespace ThirteenIsh.Entities;
 
 /// <summary>
 /// This entity type describes a character, which is owned by a user.
@@ -6,6 +8,13 @@
 public class Character : UserEntityBase
 {
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// For searching for characters case insensitively.
+    /// This one, rather than Name, is indexed.
+    /// </summary>
+    [BsonElement]
+    public string NameUpper => Name.ToUpperInvariant();
 
     /// <summary>
     /// The game system this character uses.

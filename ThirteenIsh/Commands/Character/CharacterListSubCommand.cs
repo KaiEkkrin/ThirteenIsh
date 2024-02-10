@@ -15,8 +15,7 @@ internal sealed class CharacterListSubCommand() : SubCommandBase("list", "Lists 
         var embedBuilder = new EmbedBuilder()
             .WithTitle("Characters");
 
-        await foreach (var character in dataService.ListCharactersAsync(
-            userId: command.User.Id, cancellationToken: cancellationToken))
+        await foreach (var character in dataService.ListCharactersAsync(null, command.User.Id, cancellationToken))
         {
             var gameSystem = GameSystem.Get(character.GameSystem);
             var summary = gameSystem.Logic.GetCharacterSummary(character.Sheet);

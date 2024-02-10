@@ -26,11 +26,11 @@ internal sealed class CharacterGetSubCommand() : SubCommandBase("get", "Gets a c
         var character = await dataService.GetCharacterAsync(name, command.User.Id, cancellationToken);
         if (character is null)
         {
-            await command.RespondAsync($"Error getting character '{name}'. Perhaps they do not exist?",
+            await command.RespondAsync($"Error getting character '{name}'. Perhaps they do not exist, or there is more than one character matching that name?",
                 ephemeral: true);
             return;
         }
 
-        await CommandUtil.RespondWithCharacterSheetAsync(command, character, name);
+        await CommandUtil.RespondWithCharacterSheetAsync(command, character, character.Name);
     }
 }
