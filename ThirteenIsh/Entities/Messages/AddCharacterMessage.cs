@@ -134,6 +134,11 @@ public class AddCharacterMessage : MessageBase
         // Try to expand the wizard to paginate through each property group 4-at-a-time. I expect I'll need to
         // create a separate class PropertyWizard containing the relevant things. Use 4 rows for select menus (one
         // per row) and a fifth row for the Done and Cancel buttons (rename Done to Next?)
+        // Or, can I squeeze in 8 per page by having two select menus on each row?
+        // Or perhaps instead, since I can have *only* the select menu and no title and it'll be really un-obvious when
+        // skill values are already selected to edit e.g. which is which, I should in fact have only one property per
+        // page except for groups that consist entirely of multi-select properties (which are distinctive)?
+        // Blegh.
         ComponentBuilder componentBuilder = new();
         foreach (var property in propertyGroup.GetProperties(property => property.CanStore))
         {

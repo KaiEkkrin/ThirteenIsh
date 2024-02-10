@@ -49,7 +49,7 @@ internal sealed class CharacterEditCommand() : SubCommandBase("edit", "Edits a c
             .WithSelectMenu(gameSystem.BuildPropertyGroupChoiceComponent(
                 message.GetMessageId(EditCharacterMessage.PropertyGroupControlId),
                 property => property.CanStore))
-            .WithButton("Cancel", message.GetMessageId(EditCharacterMessage.CancelControlId));
+            .WithButton("Cancel", message.GetMessageId(EditCharacterMessage.CancelControlId), ButtonStyle.Secondary);
 
         await command.RespondAsync($"Editing '{name}' : Select a property group", ephemeral: true,
             components: componentBuilder.Build());

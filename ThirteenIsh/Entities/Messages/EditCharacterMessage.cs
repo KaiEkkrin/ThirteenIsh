@@ -81,7 +81,7 @@ public class EditCharacterMessage : MessageBase
             }
 
             var componentBuilder = new ComponentBuilder().WithSelectMenu(selectMenuBuilder)
-                .WithButton("Cancel", message.GetMessageId(CancelControlId));
+                .WithButton("Cancel", message.GetMessageId(CancelControlId), ButtonStyle.Secondary);
 
             await component.RespondAsync($"Editing '{Name}' : Select a property to change", ephemeral: true,
                 components: componentBuilder.Build());
@@ -110,7 +110,7 @@ public class EditCharacterMessage : MessageBase
 
             var componentBuilder = new ComponentBuilder()
                 .WithSelectMenu(menuBuilder)
-                .WithButton("Cancel", message.GetMessageId(CancelControlId));
+                .WithButton("Cancel", message.GetMessageId(CancelControlId), ButtonStyle.Secondary);
 
             await component.RespondAsync($"Editing '{Name}' : Select a '{selectionValue}' value", ephemeral: true,
                 components: componentBuilder.Build());
