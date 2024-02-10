@@ -3,7 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 using ThirteenIsh.Commands;
 using ThirteenIsh.Services;
 
-namespace ThirteenIsh.Entities;
+namespace ThirteenIsh.Entities.Messages;
 
 public class LeaveAdventureMessage : MessageBase
 {

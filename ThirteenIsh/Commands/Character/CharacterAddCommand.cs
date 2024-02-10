@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using ThirteenIsh.Entities.Messages;
 using ThirteenIsh.Game;
 using ThirteenIsh.Services;
 
@@ -31,6 +32,7 @@ internal sealed class CharacterAddCommand() : SubCommandBase("add", "Adds a new 
             return;
         }
 
+        // Add the character
         var dataService = serviceProvider.GetRequiredService<DataService>();
         var character = await dataService.CreateCharacterAsync(name, gameSystemName, command.User.Id, cancellationToken);
         if (character is null)
@@ -40,6 +42,14 @@ internal sealed class CharacterAddCommand() : SubCommandBase("add", "Adds a new 
             return;
         }
 
-        await CommandUtil.RespondWithCharacterSheetAsync(command, character, $"Created character: {name}");
+        // Start the character add wizard, which will help the user give them initial properties
+        AddCharacterMessage message = new()
+        {
+            Name = name,
+            PropertyGroupName = gameSystem.PropertyGroups.First().GroupName,
+            UserId = (long)command.User.Id
+        };
+        await dataService.AddMessageAsync(message, cancellationToken);
+        await message.RespondWithWizardPageAsync(command, character, gameSystem);
     }
 }

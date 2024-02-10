@@ -6,6 +6,7 @@ using Polly.Retry;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using ThirteenIsh.Entities;
+using ThirteenIsh.Entities.Messages;
 
 namespace ThirteenIsh.Services;
 

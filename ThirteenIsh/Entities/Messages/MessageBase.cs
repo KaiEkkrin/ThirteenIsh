@@ -3,7 +3,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System.Diagnostics.CodeAnalysis;
 
-namespace ThirteenIsh.Entities;
+namespace ThirteenIsh.Entities.Messages;
 
 /// <summary>
 /// Common base class for tracked message types.

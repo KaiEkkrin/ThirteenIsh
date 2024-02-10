@@ -42,4 +42,9 @@ internal class GamePropertyGroup(string groupName, ImmutableList<GamePropertyBas
         if (!properties.Any(predicate)) return;
         builder.AddOption(groupName, groupName);
     }
+
+    public ImmutableList<GamePropertyBase> GetProperties(Func<GamePropertyBase, bool> predicate)
+    {
+        return properties.RemoveAll(property => !predicate(property));
+    }
 }

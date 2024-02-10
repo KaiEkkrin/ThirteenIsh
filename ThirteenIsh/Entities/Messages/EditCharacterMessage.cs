@@ -4,7 +4,7 @@ using ThirteenIsh.Commands;
 using ThirteenIsh.Game;
 using ThirteenIsh.Services;
 
-namespace ThirteenIsh.Entities;
+namespace ThirteenIsh.Entities.Messages;
 
 public class EditCharacterMessage : MessageBase
 {
@@ -25,6 +25,7 @@ public class EditCharacterMessage : MessageBase
 
     /// <summary>
     /// The property name to edit.
+    /// TODO try to make it so that instead I see dropdowns for every property in the group?
     /// </summary>
     public string? PropertyName { get; set; }
 
@@ -107,7 +108,8 @@ public class EditCharacterMessage : MessageBase
                 return true;
             }
 
-            var componentBuilder = new ComponentBuilder().WithSelectMenu(menuBuilder)
+            var componentBuilder = new ComponentBuilder()
+                .WithSelectMenu(menuBuilder)
                 .WithButton("Cancel", message.GetMessageId(CancelControlId));
 
             await component.RespondAsync($"Editing '{Name}' : Select a '{selectionValue}' value", ephemeral: true,

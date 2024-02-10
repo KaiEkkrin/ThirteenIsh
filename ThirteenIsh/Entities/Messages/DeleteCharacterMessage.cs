@@ -2,7 +2,7 @@
 using Discord.WebSocket;
 using ThirteenIsh.Services;
 
-namespace ThirteenIsh.Entities;
+namespace ThirteenIsh.Entities.Messages;
 
 public class DeleteCharacterMessage : MessageBase
 {

@@ -3,7 +3,7 @@ using Discord.WebSocket;
 using System.Collections.Concurrent;
 using System.Reflection;
 using ThirteenIsh.Commands;
-using ThirteenIsh.Entities;
+using ThirteenIsh.Entities.Messages;
 
 namespace ThirteenIsh.Services;
 

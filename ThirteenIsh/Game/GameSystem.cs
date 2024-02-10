@@ -177,7 +177,10 @@ internal class GameSystem
         }
 
         menuBuilder = new SelectMenuBuilder()
-            .WithCustomId(messageId);
+            .WithCustomId(messageId)
+            .WithMinValues(1)
+            .WithMaxValues(1)
+            .WithPlaceholder($"-- {property.Name} --");
 
         property.AddPropertyValueChoiceOptions(menuBuilder, sheet);
         errorMessage = null;
