@@ -53,7 +53,8 @@ internal sealed class CharacterSetSubCommand() : SubCommandBase("set", "Sets a p
         var property = gameSystem.FindStorableProperty(propertyName);
         if (property is null)
         {
-            await command.RespondAsync($"'{propertyName}' does not uniquely match a settable property name.");
+            await command.RespondAsync($"'{propertyName}' does not uniquely match a settable property name.",
+                ephemeral: true);
             return;
         }
 

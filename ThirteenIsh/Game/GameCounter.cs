@@ -75,9 +75,28 @@ internal class GameCounter(string name, string? alias = null, int defaultValue =
         }
     }
 
+    public override string GetDisplayValue(Adventurer adventurer)
+    {
+        return (GetValue(adventurer.Sheet), GetVariableValue(adventurer)) switch
+        {
+            ({ } maxValue, { } varValue) => $"{varValue}/{maxValue}",
+            ({ } maxValue, null) => $"{maxValue}",
+            _ => Unset
+        };
+    }
+
     public override string GetDisplayValue(CharacterSheet sheet)
     {
         return GetValue(sheet) is { } value ? $"{value}" : Unset;
+    }
+
+    /// <summary>
+    /// Gets the maximum value of this counter's variable
+    /// (only relevant if it has an associated variable.)
+    /// </summary>
+    public virtual int? GetMaxVariableValue(CharacterSheet characterSheet)
+    {
+        return GetValue(characterSheet);
     }
 
     /// <summary>
@@ -95,6 +114,29 @@ internal class GameCounter(string name, string? alias = null, int defaultValue =
     public virtual int? GetValue(CharacterSheet characterSheet)
     {
         return characterSheet.Counters.TryGetValue(Name, out var value) ? value : defaultValue;
+    }
+
+    /// <summary>
+    /// Gets the value of this counter's variable from the adventurer, if there is a variable.
+    /// </summary>
+    public virtual int? GetVariableValue(Adventurer adventurer)
+    {
+        return adventurer.Variables.TryGetValue(Name, out var value) ? value : null;
+    }
+
+    public void SetVariableClamped(int newValue, Adventurer adventurer)
+    {
+        var maxValue = GetMaxVariableValue(adventurer.Sheet);
+        if (maxValue.HasValue)
+        {
+            newValue = Math.Min(maxValue.Value, Math.Max(minValue, newValue));
+        }
+        else
+        {
+            newValue = Math.Max(minValue, newValue);
+        }
+
+        adventurer.Variables[Name] = newValue;
     }
 
     public override bool TryEditCharacterProperty(string newValue, CharacterSheet sheet,
@@ -124,6 +166,20 @@ internal class GameCounter(string name, string? alias = null, int defaultValue =
         }
 
         sheet.Counters[Name] = newValueInt;
+        errorMessage = null;
+        return true;
+    }
+
+    public bool TrySetVariable(int newValue, Adventurer adventurer, [MaybeNullWhen(true)] out string errorMessage)
+    {
+        var maxValue = GetMaxVariableValue(adventurer.Sheet);
+        if (newValue < minValue || newValue > maxValue)
+        {
+            errorMessage = $"{Name} must be between {minValue} and {maxValue}.";
+            return false;
+        }
+
+        adventurer.Variables[Name] = newValue;
         errorMessage = null;
         return true;
     }

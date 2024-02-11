@@ -107,6 +107,10 @@ public class ParsingTests
         20, 18, 20, 16, 20, 18, 20, 18)]
     [InlineData("4d20l2", 8,
         20, 18, 20, 4, 20, 4, 20, 4)]
+    [InlineData("4d8", 14,
+        8, 2, 8, 3, 8, 4, 8, 5)]
+    [InlineData("-4d8", -15,
+        8, 2, 8, 3, 8, 4, 8, 6)]
     public void DiceAreRolledAsExpected(string expression, int expectedResult, params int[] randomExpectations)
     {
         MockRandomWrapper random = new(randomExpectations);
@@ -152,6 +156,8 @@ public class ParsingTests
     [InlineData("-5d-4")]
     [InlineData("2d10k0")]
     [InlineData("2d10l0")]
+    [InlineData("-2d10k-2")]
+    [InlineData("-2d10l-3")]
     public void OverLargeDiceRollsDoNotParseSuccessfully(string expression)
     {
         var parseTree = Parser.Parse(expression);

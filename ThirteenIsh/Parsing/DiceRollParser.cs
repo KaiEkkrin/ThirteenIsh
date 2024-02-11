@@ -18,15 +18,19 @@ internal sealed class DiceRollParser : ParserBase
         CheckMaxDepth(offset, ref depth);
 
         // Parse the dice count
-        var diceCount = IntegerParser.Instance.Parse(input, offset, depth);
-        if (!string.IsNullOrEmpty(diceCount.Error))
-            return diceCount;
+        var rawDiceCount = IntegerParser.Instance.Parse(input, offset, depth);
+        if (!string.IsNullOrEmpty(rawDiceCount.Error))
+            return rawDiceCount;
 
-        if (diceCount.LiteralValue < 1 || diceCount.LiteralValue > MaxDiceCount)
-            return new ErrorParseTree(offset, $"Invalid dice count: {diceCount.LiteralValue}");
+        var (diceCount, diceSign) = rawDiceCount.LiteralValue < 0
+            ? (-rawDiceCount.LiteralValue, -1)
+            : (rawDiceCount.LiteralValue, 1);
+
+        if (diceCount == 0 || diceCount > MaxDiceCount)
+            return new ErrorParseTree(offset, $"Invalid dice count: {diceCount}");
 
         // Parse the "d"
-        var d = DParser.Parse(input, diceCount.Offset, depth);
+        var d = DParser.Parse(input, rawDiceCount.Offset, depth);
         if (!string.IsNullOrEmpty(d.Error)) return d;
 
         // Parse the dice size
@@ -48,9 +52,9 @@ internal sealed class DiceRollParser : ParserBase
             if (!string.IsNullOrEmpty(keepValue.Error))
                 return keepValue;
 
-            if (keepValue.LiteralValue < 1 || keepValue.LiteralValue > diceCount.LiteralValue)
+            if (keepValue.LiteralValue < 1 || keepValue.LiteralValue > diceCount)
                 return new ErrorParseTree(keep.Offset,
-                    $"Invalid keep count {keepValue.LiteralValue} for dice count {diceCount.LiteralValue}");
+                    $"Invalid keep count {keepValue.LiteralValue} for dice count {diceCount}");
 
             lastOffset = keepValue.Offset;
             switch (keep.Operator)
@@ -66,6 +70,6 @@ internal sealed class DiceRollParser : ParserBase
         }
 
         return new DiceRollParseTree(
-            lastOffset, diceCount.LiteralValue, diceSize.LiteralValue, keepHighest, keepLowest);
+            lastOffset, diceCount, diceSign, diceSize.LiteralValue, keepHighest, keepLowest);
     }
 }

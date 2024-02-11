@@ -11,4 +11,10 @@ public class Adventurer
     public DateTimeOffset LastUpdated { get; set; } = DateTimeOffset.Now;
 
     public CharacterSheet Sheet { get; set; } = new();
+
+    /// <summary>
+    /// This adventurer's variables. These are the current values of counters that
+    /// can have them.
+    /// </summary>
+    public Dictionary<string, int> Variables { get; set; } = [];
 }

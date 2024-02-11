@@ -6,17 +6,34 @@ namespace ThirteenIsh.Game;
 /// <summary>
 /// Game properties are logically grouped together for structured display.
 /// </summary>
-internal class GamePropertyGroup(string groupName, ImmutableList<GamePropertyBase> properties)
+internal class GamePropertyGroup<TProperty>(string groupName, ImmutableList<TProperty> properties)
+    where TProperty : GamePropertyBase
 {
     public string GroupName => groupName;
 
-    public ImmutableList<GamePropertyBase> Properties => properties;
+    public ImmutableList<TProperty> Properties => properties;
 
-    public EmbedFieldBuilder? BuildEmbedField(CharacterSheet sheet, string[] onlyTheseProperties)
+    public EmbedFieldBuilder? BuildEmbedField(Adventurer adventurer, IReadOnlyCollection<string>? onlyTheseProperties)
     {
         var rows = properties
             .Where(property => !property.IsHidden &&
-                    (onlyTheseProperties.Length == 0 || onlyTheseProperties.Contains(property.Name)))
+                    (onlyTheseProperties is not { Count: > 0 } || onlyTheseProperties.Contains(property.Name)))
+            .Select(property => new[] { property.Name, property.GetDisplayValue(adventurer) })
+            .ToList();
+
+        if (rows.Count == 0) return null;
+        var table = DiscordUtil.BuildTable(2, rows, 1);
+
+        return new EmbedFieldBuilder()
+            .WithName(groupName)
+            .WithValue(table);
+    }
+
+    public EmbedFieldBuilder? BuildEmbedField(CharacterSheet sheet, IReadOnlyCollection<string>? onlyTheseProperties)
+    {
+        var rows = properties
+            .Where(property => !property.IsHidden &&
+                    (onlyTheseProperties is not { Count: > 0 } || onlyTheseProperties.Contains(property.Name)))
             .Select(property => new[] { property.Name, property.GetDisplayValue(sheet) })
             .ToList();
 
@@ -28,7 +45,7 @@ internal class GamePropertyGroup(string groupName, ImmutableList<GamePropertyBas
             .WithValue(table);
     }
 
-    public void AddPropertyChoiceOptions(SelectMenuBuilder builder, Func<GamePropertyBase, bool> predicate)
+    public void AddPropertyChoiceOptions(SelectMenuBuilder builder, Func<TProperty, bool> predicate)
     {
         foreach (var property in properties)
         {
@@ -37,14 +54,20 @@ internal class GamePropertyGroup(string groupName, ImmutableList<GamePropertyBas
         }
     }
 
-    public void AddPropertyGroupChoiceOptions(SelectMenuBuilder builder, Func<GamePropertyBase, bool> predicate)
+    public void AddPropertyGroupChoiceOptions(SelectMenuBuilder builder, Func<TProperty, bool> predicate)
     {
         if (!properties.Any(predicate)) return;
         builder.AddOption(groupName, groupName);
     }
 
-    public ImmutableList<GamePropertyBase> GetProperties(Func<GamePropertyBase, bool> predicate)
+    public ImmutableList<TProperty> GetProperties(Func<TProperty, bool> predicate)
     {
         return properties.RemoveAll(property => !predicate(property));
     }
 }
+
+internal class GamePropertyGroup(string groupName, ImmutableList<GamePropertyBase> properties)
+    : GamePropertyGroup<GamePropertyBase>(groupName, properties)
+{
+}
+

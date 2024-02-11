@@ -64,12 +64,16 @@ internal sealed class PcJoinSubCommand() : SubCommandBase("join", "Joins the cur
 
             if (!currentAdventure.Adventurers.TryGetValue(command.User.Id, out var adventurer))
             {
-                currentAdventure.Adventurers.Add(command.User.Id, new Adventurer
+                adventurer = new Adventurer()
                 {
                     Name = character.Name,
                     LastUpdated = DateTimeOffset.Now,
                     Sheet = character.Sheet
-                });
+                };
+
+                var gameSystem = GameSystem.Get(character.GameSystem);
+                gameSystem.ResetVariables(adventurer);
+                currentAdventure.Adventurers.Add(command.User.Id, adventurer);
 
                 return new MessageEditResult<Adventure>(currentAdventure);
             }

@@ -4,6 +4,8 @@ internal sealed class PcCommand() : CommandBase("pc", "Manage player characters 
     new PcGetSubCommand(),
     new PcJoinSubCommand(),
     new PcLeaveSubCommand(),
-    new PcUpdateSubCommand())
+    new PcUpdateSubCommand(),
+    new PcVModCommand(),
+    new PcVSetCommand())
 {
 }

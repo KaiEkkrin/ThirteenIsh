@@ -5,7 +5,7 @@ using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Pcs;
 
-internal sealed class PcLeaveSubCommand() : SubCommandBase("leave", "Leaves the current adventure.")
+internal sealed class PcResetSubCommand() : SubCommandBase("reset", "Resets the current adventurer's variables.")
 {
     public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
         IServiceProvider serviceProvider, CancellationToken cancellationToken)
@@ -20,21 +20,27 @@ internal sealed class PcLeaveSubCommand() : SubCommandBase("leave", "Leaves the 
             return;
         }
 
+        if (!guild.CurrentAdventure.Adventurers.TryGetValue(command.User.Id, out var adventurer))
+        {
+            await command.RespondAsync("You do not have a character in the current adventure.", ephemeral: true);
+            return;
+        }
+
         // Supply a confirm button
-        LeaveAdventureMessage message = new()
+        ResetAdventurerMessage message = new()
         {
             GuildId = (long)guildId,
-            Name = guild.CurrentAdventure.Name,
+            AdventureName = guild.CurrentAdventure.Name,
             UserId = (long)command.User.Id
         };
 
         await dataService.AddMessageAsync(message, cancellationToken);
 
         ComponentBuilder builder = new();
-        builder.WithButton("Leave", message.GetMessageId(), ButtonStyle.Danger);
+        builder.WithButton("Reset", message.GetMessageId(), ButtonStyle.Primary);
 
         await command.RespondAsync(
-            $"Do you really want to leave the adventure named '{guild.CurrentAdventure.Name}'? This cannot be undone.",
+            $"Do you really want to reset all the variables of the adventurer named '{adventurer.Name}'?",
             ephemeral: true, components: builder.Build());
     }
 }

@@ -22,15 +22,24 @@ internal class GameSystem
         PropertyGroups = propertyGroups;
 
         Dictionary<string, GamePropertyBase> properties = [];
+        var variableCounterGroupsBuilder = ImmutableList.CreateBuilder<GamePropertyGroup<GameCounter>>();
         foreach (var propertyGroup in propertyGroups)
         {
+            var variableCountersBuilder = ImmutableList.CreateBuilder<GameCounter>();
             foreach (var property in propertyGroup.Properties)
             {
                 properties.Add(property.Name, property);
+                if (property is GameCounter { HasVariable: true } counter)
+                    variableCountersBuilder.Add(counter);
             }
+
+            if (variableCountersBuilder.Count > 0)
+                variableCounterGroupsBuilder.Add(new GamePropertyGroup<GameCounter>(
+                    propertyGroup.GroupName, variableCountersBuilder.ToImmutable()));
         }
 
         Properties = properties;
+        VariableCounterGroups = variableCounterGroupsBuilder.ToImmutable();
     }
     
     /// <summary>
@@ -64,6 +73,12 @@ internal class GameSystem
     public IReadOnlyDictionary<string, GamePropertyBase> Properties { get; }
 
     /// <summary>
+    /// A filtered copy of PropertyGroups consisting only of those counters with
+    /// associated variables.
+    /// </summary>
+    public ImmutableList<GamePropertyGroup<GameCounter>> VariableCounterGroups { get; }
+
+    /// <summary>
     /// All the properties to show when adding a new character in this game system.
     /// </summary>
     public IEnumerable<GamePropertyBase> ShowOnAddProperties => PropertyGroups
@@ -71,11 +86,46 @@ internal class GameSystem
         .Where(property => property.ShowOnAdd);
 
     /// <summary>
+    /// Adds all this adventurer's fields to the embed, in their well-known order of declaration.
+    /// Like AddCharacterSheetFields.
+    /// </summary>
+    public EmbedBuilder AddAdventurerFields(EmbedBuilder builder, Adventurer adventurer,
+        IReadOnlyCollection<string>? onlyTheseProperties)
+    {
+        foreach (var group in PropertyGroups)
+        {
+            var fieldBuilder = group.BuildEmbedField(adventurer, onlyTheseProperties);
+            if (fieldBuilder is null) continue;
+            builder.AddField(fieldBuilder);
+        }
+
+        return builder;
+    }
+
+    /// <summary>
+    /// Adds this adventurer's fields to the embed, in their well-known order of declaration.
+    /// Only fields with variables.
+    /// Like AddCharacterSheetFields.
+    /// </summary>
+    public EmbedBuilder AddAdventurerVariableFields(EmbedBuilder builder, Adventurer adventurer,
+        IReadOnlyCollection<string>? onlyTheseProperties)
+    {
+        foreach (var group in VariableCounterGroups)
+        {
+            var fieldBuilder = group.BuildEmbedField(adventurer, onlyTheseProperties);
+            if (fieldBuilder is null) continue;
+            builder.AddField(fieldBuilder);
+        }
+
+        return builder;
+    }
+
+    /// <summary>
     /// Adds this character sheet's fields to the embed -- in their well-known
     /// order of declaration
     /// </summary>
     public EmbedBuilder AddCharacterSheetFields(EmbedBuilder builder, CharacterSheet sheet,
-        string[] onlyTheseProperties)
+        IReadOnlyCollection<string>? onlyTheseProperties)
     {
         // Discord only allows adding up to 25 fields to an embed, so we group together
         // our categories of counters here, formatting a table for each one.
@@ -86,32 +136,7 @@ internal class GameSystem
             builder.AddField(fieldBuilder);
         }
 
-        var customPropertyGroup = BuildCustomPropertyGroup(sheet);
-        var customFieldBuilder = customPropertyGroup.BuildEmbedField(sheet, onlyTheseProperties);
-        return customFieldBuilder is null
-            ? builder
-            : builder.AddField(customFieldBuilder);
-    }
-
-    /// <summary>
-    /// Builds a game properties group containing the custom properties on this character sheet.
-    /// </summary>
-    public GamePropertyGroup BuildCustomPropertyGroup(CharacterSheet sheet)
-    {
-        GamePropertyGroupBuilder builder = new(Custom);
-        foreach (var (name, _) in sheet.Properties)
-        {
-            if (Properties.ContainsKey(name)) continue;
-            builder.AddProperty(new GameProperty(name, Array.Empty<string>(), false));
-        }
-
-        foreach (var (name, _) in sheet.Counters)
-        {
-            if (Properties.ContainsKey(name)) continue;
-            builder.AddProperty(new GameCounter(name));
-        }
-
-        return builder.OrderByName().Build();
+        return builder;
     }
 
     public static SlashCommandOptionBuilder BuildGameSystemChoiceOption(string name)
@@ -172,6 +197,20 @@ internal class GameSystem
     }
 
     /// <summary>
+    /// Finds a variable counter by unambiguous prefix match.
+    /// </summary>
+    public GameCounter? FindVariable(string namePart)
+    {
+        var matchingCounters = Properties.Values
+            .OfType<GameCounter>()
+            .Where(counter => counter.HasVariable == true &&
+                counter.Name.StartsWith(namePart, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        return matchingCounters.Count == 1 ? matchingCounters[0] : null;
+    }
+
+    /// <summary>
     /// Gets the named game system.
     /// </summary>
     public static GameSystem Get(string name) => AllGameSystems.First(o => o.Name == name);
@@ -183,6 +222,22 @@ internal class GameSystem
     {
         if (!Properties.TryGetValue(name, out var property)) return null;
         return property;
+    }
+
+    /// <summary>
+    /// Resets all this adventurer's variables to default values.
+    /// </summary>
+    public void ResetVariables(Adventurer adventurer)
+    {
+        // TODO support custom counters (I'll need to declare information about those somewhere)
+        adventurer.Variables.Clear();
+        foreach (var (counterName, counterMaxValue) in adventurer.Sheet.Counters)
+        {
+            if (!Properties.TryGetValue(counterName, out var property) ||
+                property is not GameCounter { HasVariable: true }) continue;
+
+            adventurer.Variables[counterName] = counterMaxValue;
+        }
     }
 
     public bool TryBuildPropertyValueChoiceComponent(string messageId, string propertyName, CharacterSheet sheet,

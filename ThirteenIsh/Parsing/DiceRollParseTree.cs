@@ -5,13 +5,10 @@ using System.Text;
 namespace ThirteenIsh.Parsing;
 
 [DebuggerDisplay("{AsString}")]
-internal sealed class DiceRollParseTree(int offset, int diceCount, int diceSize,
+internal sealed class DiceRollParseTree(int offset, int diceCount, int diceSign, int diceSize,
     int? keepHighest = null, int? keepLowest = null)
     : ParseTreeBase(offset)
 {
-    public int DiceCount => diceCount;
-    public int DiceSize => diceSize;
-
     public string AsString => ToString();
 
     public override int Evaluate(IRandomWrapper random, out string working)
@@ -35,8 +32,15 @@ internal sealed class DiceRollParseTree(int offset, int diceCount, int diceSize,
                 "DiceRollParseTree does not support both keepHighest and keepLowest at once")
         };
 
+        var diceSignStringPart = diceSign switch
+        {
+            -1 => "-",
+            1 => string.Empty,
+            _ => throw new NotSupportedException("DiceRollParseTree accepts only diceSign of -1 or 1")
+        };
+
         StringBuilder workingBuilder = new();
-        workingBuilder.Append(CultureInfo.CurrentCulture, $"{diceCount}d{diceSize}");
+        workingBuilder.Append(CultureInfo.CurrentCulture, $"{diceSignStringPart}{diceCount}d{diceSize}");
         if (keepHighest.HasValue)
         {
             workingBuilder.Append(CultureInfo.CurrentCulture, $"k{keepHighest}");
@@ -46,7 +50,7 @@ internal sealed class DiceRollParseTree(int offset, int diceCount, int diceSize,
             workingBuilder.Append(CultureInfo.CurrentCulture, $"l{keepLowest}");
         }
 
-        var sum = DoSummation(rolls, keepCounts, out var sumWorking);
+        var sum = diceSign * DoSummation(rolls, keepCounts, out var sumWorking);
         workingBuilder.Append(CultureInfo.CurrentCulture,
             $" 🎲 {sum}{sumWorking}");
 

@@ -39,18 +39,26 @@ internal static class CommandUtil
     public static Task RespondWithAdventurerSummaryAsync(
         IDiscordInteraction command,
         Adventurer adventurer,
-        string title)
+        GameSystem gameSystem,
+        AdventurerSummaryOptions options)
     {
-        // TODO new-style adventurer summaries
         EmbedBuilder embedBuilder = new();
         embedBuilder.WithAuthor(command.User);
-        embedBuilder.WithTitle(title);
-//        embedBuilder.WithDescription(@$"Level {adventurer.Sheet.Level} {adventurer.Sheet.Class}
-//Last updated on {adventurer.LastUpdated:F}");
+        embedBuilder.WithTitle(options.Title);
 
-        // TODO get game system, etc (this should be configured in the adventure.)
-        // AddCharacterSheetFields(embedBuilder, adventurer.Sheet);
-        embedBuilder.AddField("Last Updated", $"{adventurer.LastUpdated:F}");
+        embedBuilder = options.OnlyVariables
+            ? gameSystem.AddAdventurerVariableFields(embedBuilder, adventurer, options.OnlyTheseProperties)
+            : gameSystem.AddAdventurerFields(embedBuilder, adventurer, options.OnlyTheseProperties);
+
+        if (!options.OnlyVariables) embedBuilder.AddField("Last Updated", $"{adventurer.LastUpdated:F}");
+        if (options.ExtraFields is not null)
+        {
+            foreach (var extraFieldBuilder in options.ExtraFields)
+            {
+                embedBuilder.AddField(extraFieldBuilder);
+            }
+        }
+
         return command.RespondAsync(embed: embedBuilder.Build());
     }
 
@@ -191,5 +199,28 @@ internal static class CommandUtil
 
         adventure = null;
         return false;
+    }
+
+    public readonly struct AdventurerSummaryOptions
+    {
+        /// <summary>
+        /// If set, a collection of extra fields to add to the bottom of the embed.
+        /// </summary>
+        public IReadOnlyCollection<EmbedFieldBuilder>? ExtraFields { get; init; }
+
+        /// <summary>
+        /// If set and non-empty, only these properties will be returned.
+        /// </summary>
+        public IReadOnlyCollection<string>? OnlyTheseProperties { get; init; }
+
+        /// <summary>
+        /// If set, only variables will be returned. Otherwise, everything will be returned.
+        /// </summary>
+        public bool OnlyVariables { get; init; }
+
+        /// <summary>
+        /// The title to use.
+        /// </summary>
+        public string Title { get; init; }
     }
 }
