@@ -5,7 +5,7 @@ using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Adventures;
 
-internal sealed class AdventureEditSubCommand() : SubCommandBase("edit", "Edits an adventure.")
+internal sealed class AdventureSetSubCommand() : SubCommandBase("set", "Sets an adventure property.")
 {
     public override SlashCommandOptionBuilder CreateBuilder()
     {

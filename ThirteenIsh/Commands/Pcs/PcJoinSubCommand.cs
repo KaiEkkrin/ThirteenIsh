@@ -58,6 +58,10 @@ internal sealed class PcJoinSubCommand() : SubCommandBase("join", "Joins the cur
             if (guild.CurrentAdventure is not { } currentAdventure)
                 return new MessageEditResult<Adventure>(null, "There is no current adventure in this guild.");
 
+            if (guild.CurrentAdventure.GameSystem != character.GameSystem)
+                return new MessageEditResult<Adventure>(null,
+                    "This character was not created in the same game system as the adventure.");
+
             if (!currentAdventure.Adventurers.TryGetValue(command.User.Id, out var adventurer))
             {
                 currentAdventure.Adventurers.Add(command.User.Id, new Adventurer

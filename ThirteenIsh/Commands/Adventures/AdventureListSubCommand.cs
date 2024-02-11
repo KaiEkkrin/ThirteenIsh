@@ -1,5 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using System.Globalization;
+using System.Text;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Adventures;
@@ -19,9 +21,15 @@ internal sealed class AdventureListSubCommand() : SubCommandBase("list", "Lists 
 
         foreach (var adventure in guild.Adventures.OrderBy(o => o.Name))
         {
+            var nameStringBuilder = new StringBuilder()
+                .Append(CultureInfo.CurrentCulture, $"[{adventure.GameSystem}] {adventure.Name}");
+
+            if (adventure.Name == guild.CurrentAdventureName)
+                nameStringBuilder.Append(" [Current]");
+
             embedBuilder.AddField(new EmbedFieldBuilder()
                 .WithIsInline(false)
-                .WithName(adventure.Name == guild.CurrentAdventureName ? $"{adventure.Name} [Current]" : adventure.Name)
+                .WithName(nameStringBuilder.ToString())
                 .WithValue($"{adventure.Adventurers.Count} adventurers"));
         }
 

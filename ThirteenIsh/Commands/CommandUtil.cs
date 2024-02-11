@@ -21,16 +21,17 @@ internal static class CommandUtil
         embedBuilder.WithAuthor(command.User);
         embedBuilder.WithTitle(adventure.Name == guild.CurrentAdventureName ? $"{title} [Current]" : title);
         embedBuilder.WithDescription(adventure.Description);
+        embedBuilder.AddField("Game System", adventure.GameSystem);
 
-        // TODO new-style adventurer summaries
-        //foreach (var (userId, adventurer) in adventure.Adventurers.OrderBy(kv => kv.Value.Name))
-        //{
-        //    var guildUser = await discordService.GetGuildUserAsync(guild.GuildId.Value, userId);
-        //    embedBuilder.AddField(new EmbedFieldBuilder()
-        //        .WithIsInline(true)
-        //        .WithName($"{adventurer.Name} [{guildUser.DisplayName}]")
-        //        .WithValue($"Level {adventurer.Sheet.Level} {adventurer.Sheet.Class}"));
-        //}
+        var gameSystem = GameSystem.Get(adventure.GameSystem);
+        foreach (var (userId, adventurer) in adventure.Adventurers.OrderBy(pair => pair.Value.Name))
+        {
+            var guildUser = await discordService.GetGuildUserAsync(guild.NativeGuildId, userId);
+            embedBuilder.AddField(new EmbedFieldBuilder()
+                .WithIsInline(true)
+                .WithName($"{adventurer.Name} [{guildUser.DisplayName}]")
+                .WithValue(gameSystem.Logic.GetCharacterSummary(adventurer.Sheet)));
+        }
 
         await command.RespondAsync(embed: embedBuilder.Build());
     }
@@ -49,6 +50,7 @@ internal static class CommandUtil
 
         // TODO get game system, etc (this should be configured in the adventure.)
         // AddCharacterSheetFields(embedBuilder, adventurer.Sheet);
+        embedBuilder.AddField("Last Updated", $"{adventurer.LastUpdated:F}");
         return command.RespondAsync(embed: embedBuilder.Build());
     }
 
@@ -62,9 +64,12 @@ internal static class CommandUtil
         EmbedBuilder embedBuilder = new();
         embedBuilder.WithAuthor(command.User);
         embedBuilder.WithTitle(title);
+        embedBuilder.AddField("Game System", character.GameSystem);
 
         var gameSystem = GameSystem.Get(character.GameSystem);
         embedBuilder = gameSystem.AddCharacterSheetFields(embedBuilder, character.Sheet, onlyTheseProperties);
+
+        embedBuilder.AddField("Last Edited", $"{character.LastEdited:F}");
         return command.RespondAsync(embed: embedBuilder.Build());
     }
 

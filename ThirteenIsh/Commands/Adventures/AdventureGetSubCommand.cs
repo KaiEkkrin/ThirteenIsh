@@ -4,7 +4,7 @@ using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Adventures;
 
-internal sealed class AdventureShowSubCommand() : SubCommandBase("show", "Shows the details of an adventure.")
+internal sealed class AdventureGetSubCommand() : SubCommandBase("get", "Gets the details of an adventure.")
 {
     public override SlashCommandOptionBuilder CreateBuilder()
     {

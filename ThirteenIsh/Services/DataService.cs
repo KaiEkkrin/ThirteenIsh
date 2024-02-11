@@ -76,6 +76,7 @@ public sealed class DataService : IDisposable
         {
             Name = name,
             GameSystem = gameSystem,
+            LastEdited = DateTimeOffset.Now,
             Sheet = new CharacterSheet(),
             UserId = (long)userId,
             Version = 1
@@ -150,6 +151,7 @@ public sealed class DataService : IDisposable
             var editResult = await operation.DoEditAsync(character, cancellationToken);
             if (!editResult.Success) return editResult.Value;
 
+            character.LastEdited = DateTimeOffset.Now;
             var beforeVersion = character.Version++;
 
             // Edit this exact character record only if nothing else has changed it in the meantime

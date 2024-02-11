@@ -26,6 +26,8 @@ public class Character : UserEntityBase
     /// </summary>
     public CharacterSheet Sheet { get; set; } = new();
 
+    public DateTimeOffset LastEdited { get; set; } = DateTimeOffset.Now;
+
     /// <summary>
     /// An incrementing version number, used to detect conflicts.
     /// </summary>

@@ -3,7 +3,7 @@ using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Pcs;
 
-internal sealed class PcShowSubCommand() : SubCommandBase("show", "Shows your player character in the current adventure.")
+internal sealed class PcGetSubCommand() : SubCommandBase("get", "Shows your player character in the current adventure.")
 {
     public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
         IServiceProvider serviceProvider, CancellationToken cancellationToken)

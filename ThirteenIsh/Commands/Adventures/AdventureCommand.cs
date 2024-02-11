@@ -4,10 +4,10 @@ namespace ThirteenIsh.Commands.Adventures;
 
 internal sealed class AdventureCommand() : CommandBase("adventure", "Manage adventures.",
         new AdventureAddSubCommand(),
-        new AdventureEditSubCommand(),
+        new AdventureGetSubCommand(),
         new AdventureListSubCommand(),
         new AdventureRemoveSubCommand(),
-        new AdventureShowSubCommand(),
+        new AdventureSetSubCommand(),
         new AdventureSwitchSubCommand())
 {
     public override SlashCommandBuilder CreateBuilder()
