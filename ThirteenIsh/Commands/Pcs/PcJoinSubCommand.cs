@@ -45,7 +45,7 @@ internal sealed class PcJoinSubCommand() : SubCommandBase("join", "Joins the cur
 
         EmbedBuilder embedBuilder = new();
         embedBuilder.WithAuthor(command.User);
-        embedBuilder.WithTitle($"Joined {updatedAdventure.Name} as {characterName}");
+        embedBuilder.WithTitle($"Joined {updatedAdventure.Name} as {character.Name}");
 
         await command.RespondAsync(embed: embedBuilder.Build());
     }

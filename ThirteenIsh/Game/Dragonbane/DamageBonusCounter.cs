@@ -5,6 +5,7 @@ namespace ThirteenIsh.Game.Dragonbane;
 /// <summary>
 /// This is the size of the bonus damage die rolled with weapons that use the
 /// matching ability counter.
+/// TODO should be able to roll this, although it requires weapon selection too :)
 /// </summary>
 internal class DamageBonusCounter(string name, GameAbilityCounter abilityCounter) : GameCounter(name)
 {

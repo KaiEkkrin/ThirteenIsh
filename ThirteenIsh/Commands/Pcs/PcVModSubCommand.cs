@@ -5,7 +5,7 @@ using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Commands.Pcs;
 
-internal class PcVModCommand() : PcVCommandBase("vmod", "Adds to or subtracts from a variable value,",
+internal class PcVModSubCommand() : PcVSubCommandBase("vmod", "Adds to or subtracts from a variable value,",
     "The variable name to change.", "A number or dice expression to change it by.")
 {
     protected override VCommandEditOperation CreateEditOperation(SocketSlashCommand command,

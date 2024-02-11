@@ -11,6 +11,14 @@ internal sealed class DiceRollParseTree(int offset, int diceCount, int diceSign,
 {
     public string AsString => ToString();
 
+    public static DiceRollParseTree BuildWithRerolls(int diceSize, int rerolls)
+    {
+        int? keepHighest = rerolls >= 1 ? 1 : null;
+        int? keepLowest = rerolls <= -1 ? 1 : null;
+        return new DiceRollParseTree(
+            0, Math.Abs(rerolls) + 1, 1, diceSize, keepHighest, keepLowest);
+    }
+
     public override int Evaluate(IRandomWrapper random, out string working)
     {
         // I want to illustrate the rolls in the natural order they came out,

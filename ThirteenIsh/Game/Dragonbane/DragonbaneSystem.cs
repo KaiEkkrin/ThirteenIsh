@@ -115,8 +115,8 @@ internal static class DragonbaneSystem
         // The variables to these track durability.
         // Players will need to make a custom counter for weapon durability ;)
         var equipmentBuilder = new GamePropertyGroupBuilder(Equipment)
-            .AddProperty(new GameCounter("Armor", hasVariable: true))
-            .AddProperty(new GameCounter("Helmet", hasVariable: true));
+            .AddProperty(new GameCounter("Armor", options: GameCounterOptions.HasVariable))
+            .AddProperty(new GameCounter("Helmet", options: GameCounterOptions.HasVariable));
 
         return new GameSystemBuilder("Dragonbane")
             .AddPropertyGroup(basicsBuilder)

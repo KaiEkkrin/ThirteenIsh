@@ -5,7 +5,7 @@ using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Commands.Pcs;
 
-internal sealed class PcVSetCommand() : PcVCommandBase("vset", "Sets a variable value.",
+internal sealed class PcVSetSubCommand() : PcVSubCommandBase("vset", "Sets a variable value.",
     "The variable name to set.", "A number or dice expression to set it to.")
 {
     protected override VCommandEditOperation CreateEditOperation(SocketSlashCommand command,

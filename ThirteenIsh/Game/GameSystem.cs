@@ -29,7 +29,7 @@ internal class GameSystem
             foreach (var property in propertyGroup.Properties)
             {
                 properties.Add(property.Name, property);
-                if (property is GameCounter { HasVariable: true } counter)
+                if (property is GameCounter counter && counter.Options.HasFlag(GameCounterOptions.HasVariable))
                     variableCountersBuilder.Add(counter);
             }
 
@@ -184,6 +184,20 @@ internal class GameSystem
     }
 
     /// <summary>
+    /// Finds a counter by unambiguous prefix match and a predicate.
+    /// </summary>
+    public GameCounter? FindCounter(string namePart, Func<GameCounter, bool> predicate)
+    {
+        var matchingCounters = Properties.Values
+            .OfType<GameCounter>()
+            .Where(counter => predicate(counter) &&
+                counter.Name.StartsWith(namePart, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        return matchingCounters.Count == 1 ? matchingCounters[0] : null;
+    }
+
+    /// <summary>
     /// Finds a property by unambiguous prefix match.
     /// </summary>
     public GamePropertyBase? FindStorableProperty(string namePart)
@@ -194,20 +208,6 @@ internal class GameSystem
             .ToList();
 
         return matchingProperties.Count == 1 ? matchingProperties[0].Value : null;
-    }
-
-    /// <summary>
-    /// Finds a variable counter by unambiguous prefix match.
-    /// </summary>
-    public GameCounter? FindVariable(string namePart)
-    {
-        var matchingCounters = Properties.Values
-            .OfType<GameCounter>()
-            .Where(counter => counter.HasVariable == true &&
-                counter.Name.StartsWith(namePart, StringComparison.OrdinalIgnoreCase))
-            .ToList();
-
-        return matchingCounters.Count == 1 ? matchingCounters[0] : null;
     }
 
     /// <summary>
@@ -234,7 +234,8 @@ internal class GameSystem
         foreach (var (counterName, counterMaxValue) in adventurer.Sheet.Counters)
         {
             if (!Properties.TryGetValue(counterName, out var property) ||
-                property is not GameCounter { HasVariable: true }) continue;
+                property is not GameCounter gameCounter ||
+                !gameCounter.Options.HasFlag(GameCounterOptions.HasVariable)) continue;
 
             adventurer.Variables[counterName] = counterMaxValue;
         }

@@ -10,7 +10,7 @@ namespace ThirteenIsh.Commands.Pcs;
 /// <summary>
 /// Extend this to make the vset and vmod commands since they're extremely similar
 /// </summary>
-internal abstract class PcVCommandBase(string name, string description,
+internal abstract class PcVSubCommandBase(string name, string description,
     string nameOptionDescription, string valueOptionDescription)
     : SubCommandBase(name, description)
 {
@@ -56,7 +56,7 @@ internal abstract class PcVCommandBase(string name, string description,
         }
 
         var gameSystem = GameSystem.Get(guild.CurrentAdventure.GameSystem);
-        var counter = gameSystem.FindVariable(namePart);
+        var counter = gameSystem.FindCounter(namePart, c => c.Options.HasFlag(GameCounterOptions.HasVariable));
         if (counter is null)
         {
             await command.RespondAsync($"'{namePart}' does not uniquely match a variable name.",

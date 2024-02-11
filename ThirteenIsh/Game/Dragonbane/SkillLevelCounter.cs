@@ -1,4 +1,5 @@
 ﻿using ThirteenIsh.Entities;
+using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Game.Dragonbane;
 
@@ -7,7 +8,7 @@ namespace ThirteenIsh.Game.Dragonbane;
 /// (or equal to) in order to succeed at a skill check for it.
 /// </summary>
 internal class SkillLevelCounter(GameAbilityCounter attribute, GameCounter skill, bool secondary = false)
-    : GameCounter($"{skill.Name} Level", isHidden: true)
+    : GameCounter($"{skill.Name} Level", options: GameCounterOptions.CanRoll | GameCounterOptions.IsHidden)
 {
     /// <summary>
     /// The attribute associated with this skill.
@@ -42,9 +43,33 @@ internal class SkillLevelCounter(GameAbilityCounter attribute, GameCounter skill
         var skillValue = skill.GetValue(characterSheet);
         if (!baseChance.HasValue || !skillValue.HasValue) return null;
         return skillValue >= 1
-            ? Math.Max(18, baseChance.Value * 2 + skillValue.Value - 1)
+            ? Math.Min(18, baseChance.Value * 2 + skillValue.Value - 1)
             : secondary
             ? 0
             : baseChance;
+    }
+
+    public override GameCounterRollResult Roll(
+        Adventurer adventurer,
+        ParseTreeBase? bonus,
+        IRandomWrapper random,
+        int rerolls,
+        ref int? targetValue)
+    {
+        ParseTreeBase parseTree = DiceRollParseTree.BuildWithRerolls(20, rerolls);
+        if (bonus is not null)
+        {
+            parseTree = new BinaryOperationParseTree(0, parseTree, bonus, '+');
+        }
+
+        var rolledValue = parseTree.Evaluate(random, out var working);
+
+        targetValue ??= GetValue(adventurer.Sheet);
+        return new GameCounterRollResult
+        {
+            Roll = rolledValue,
+            Success = targetValue.HasValue ? rolledValue <= targetValue.Value : null,
+            Working = working
+        };
     }
 }

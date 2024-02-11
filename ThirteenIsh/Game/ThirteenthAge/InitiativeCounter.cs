@@ -2,6 +2,7 @@
 
 namespace ThirteenIsh.Game.ThirteenthAge;
 
+// TODO should be able to roll this
 internal class InitiativeCounter(
     GameCounter levelCounter,
     AbilityBonusCounter dexterityBonusCounter)

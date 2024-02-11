@@ -1,8 +1,18 @@
 ﻿using Discord;
 using System.Diagnostics.CodeAnalysis;
 using ThirteenIsh.Entities;
+using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Game;
+
+[Flags]
+internal enum GameCounterOptions
+{
+    None = 0,
+    CanRoll = 1,
+    HasVariable = 2,
+    IsHidden = 4
+}
 
 /// <summary>
 /// A game counter is a numeric value associated with a character, and possibly associated
@@ -10,7 +20,8 @@ namespace ThirteenIsh.Game;
 /// The corresponding entities are a CharacterCounter and an AdventurerVariable.
 /// </summary>
 internal class GameCounter(string name, string? alias = null, int defaultValue = 0, int minValue = 0,
-    int? maxValue = null, bool hasVariable = false, bool isHidden = false) : GamePropertyBase(name, alias, isHidden)
+    int? maxValue = null, GameCounterOptions options = GameCounterOptions.None)
+    : GamePropertyBase(name, alias, options.HasFlag(GameCounterOptions.IsHidden))
 {
     /// <summary>
     /// The default value for this counter.
@@ -27,7 +38,10 @@ internal class GameCounter(string name, string? alias = null, int defaultValue =
     /// </summary>
     public int? MaxValue => maxValue;
 
-    public bool HasVariable => hasVariable;
+    /// <summary>
+    /// This counter's options.
+    /// </summary>
+    public GameCounterOptions Options => options;
 
     /// <summary>
     /// Adds a component that would edit this counter's value to the component builder.
@@ -124,6 +138,28 @@ internal class GameCounter(string name, string? alias = null, int defaultValue =
         return adventurer.Variables.TryGetValue(Name, out var value) ? value : null;
     }
 
+    /// <summary>
+    /// Makes a roll based on this counter.
+    /// </summary>
+    /// <param name="adventurer">The adventurer to roll for.</param>
+    /// <param name="bonus">An optional bonus to add.</param>
+    /// <param name="random">The random provider.</param>
+    /// <param name="rerolls">The number of times to reroll and take highest, or
+    /// lowest (if negative). 0 means roll only once.</param>
+    /// <param name="targetValue">An optional target value. If one is not supplied and this
+    /// game system implies one, the implied one will be filled in.</param>
+    /// <returns>The roll result.</returns>
+    /// <exception cref="NotSupportedException">If this counter cannot be rolled.</exception>
+    public virtual GameCounterRollResult Roll(
+        Adventurer adventurer,
+        ParseTreeBase? bonus,
+        IRandomWrapper random,
+        int rerolls,
+        ref int? targetValue)
+    {
+        throw new NotSupportedException(nameof(Roll));
+    }
+
     public void SetVariableClamped(int newValue, Adventurer adventurer)
     {
         var maxValue = GetMaxVariableValue(adventurer.Sheet);
@@ -185,3 +221,20 @@ internal class GameCounter(string name, string? alias = null, int defaultValue =
     }
 }
 
+public readonly struct GameCounterRollResult
+{
+    /// <summary>
+    /// The number rolled after modifiers.
+    /// </summary>
+    public int Roll { get; init; }
+
+    /// <summary>
+    /// If success is defined, whether or not this roll was successful.
+    /// </summary>
+    public bool? Success { get; init; }
+
+    /// <summary>
+    /// The roll working.
+    /// </summary>
+    public string Working { get; init; }
+}
