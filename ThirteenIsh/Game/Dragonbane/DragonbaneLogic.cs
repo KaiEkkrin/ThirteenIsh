@@ -7,6 +7,11 @@ internal sealed class DragonbaneLogic(
     GameProperty professionProperty
     ) : GameSystemLogicBase
 {
+    public override void EncounterBegin(Encounter encounter)
+    {
+        // There's nothing in particular to do here
+    }
+
     public override string GetCharacterSummary(CharacterSheet sheet)
     {
         var kin = kinProperty.GetValue(sheet);

@@ -7,6 +7,13 @@ internal sealed class ThirteenthAgeLogic(
     GameCounter levelCounter
     ) : GameSystemLogicBase
 {
+    private const string EscalationDie = "EscalationDie";
+
+    public override void EncounterBegin(Encounter encounter)
+    {
+        encounter.Variables[EscalationDie] = 0;
+    }
+
     public override string GetCharacterSummary(CharacterSheet sheet)
     {
         var characterClass = classProperty.GetValue(sheet);

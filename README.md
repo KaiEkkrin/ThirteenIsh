@@ -11,7 +11,7 @@ I followed the instructions in [Discord.net -- Your First Bot](https://discordne
 
 And, it will need these bot permissions:
 
-* TODO -- any here?
+* Manage Messages (8192)
 
 ## Database
 

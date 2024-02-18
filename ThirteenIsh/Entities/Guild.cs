@@ -1,5 +1,6 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using ThirteenIsh.Serialization;
 
 namespace ThirteenIsh.Entities;
 
@@ -26,6 +27,7 @@ public class Guild
 
     /// <summary>
     /// This guild's list of adventures.
+    /// TODO make sure it's not possible to add two adventures with the same name.
     /// </summary>
     public List<Adventure> Adventures { get; set; } = [];
 
@@ -33,6 +35,12 @@ public class Guild
     /// This guild's current adventure.
     /// </summary>
     public string CurrentAdventureName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Maps each channel ID to the current encounter in that channel, if any.
+    /// </summary>
+    [BsonSerializer(typeof(UlongDictionarySerializer<Encounter>))]
+    public Dictionary<ulong, Encounter> Encounters { get; set; } = [];
 
     /// <summary>
     /// An incrementing version number, used to detect conflicts.

@@ -11,6 +11,7 @@ CommandRegistration.RegisterCommands(builder.Services);
 builder.Services
     .AddSingleton<DataService>()
     .AddSingleton<DiscordService>()
+    .AddSingleton<PinnedMessageService>()
     .AddSingleton<IRandomWrapper, RandomWrapper>()
     .AddHostedService<Worker>();
 
