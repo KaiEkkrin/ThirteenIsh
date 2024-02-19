@@ -10,6 +10,21 @@ namespace ThirteenIsh.Commands;
 
 internal static class CommandUtil
 {
+    public static SlashCommandOptionBuilder AddRerollsOption(this SlashCommandOptionBuilder builder, string name)
+    {
+        return builder.AddOption(new SlashCommandOptionBuilder()
+                .WithName(name)
+                .WithDescription("A number of rerolls")
+                .WithType(ApplicationCommandOptionType.Integer)
+                .AddChoice("3", 3)
+                .AddChoice("2", 2)
+                .AddChoice("1", 1)
+                .AddChoice("0", 0)
+                .AddChoice("-1", -1)
+                .AddChoice("-2", -2)
+                .AddChoice("-3", -3));
+    }
+
     public static async Task RespondWithAdventureSummaryAsync(
         this DiscordService discordService,
         IDiscordInteraction command,

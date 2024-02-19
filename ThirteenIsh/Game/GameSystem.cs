@@ -9,11 +9,11 @@ namespace ThirteenIsh.Game;
 /// </summary>
 internal class GameSystem
 {
-    public static readonly IReadOnlyList<GameSystem> AllGameSystems = new[]
-    {
+    public static readonly IReadOnlyList<GameSystem> AllGameSystems =
+    [
         ThirteenthAge.ThirteenthAgeSystem.Build(),
         Dragonbane.DragonbaneSystem.Build()
-    };
+    ];
 
     public GameSystem(string name, GameSystemLogicBase logic, ImmutableList<GamePropertyGroup> propertyGroups)
     {

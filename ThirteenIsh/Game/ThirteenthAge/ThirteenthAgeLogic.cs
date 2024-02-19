@@ -1,9 +1,11 @@
 ﻿using ThirteenIsh.Entities;
+using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Game.ThirteenthAge;
 
 internal sealed class ThirteenthAgeLogic(
     GameProperty classProperty,
+    AbilityBonusCounter dexterityBonusCounter,
     GameCounter levelCounter
     ) : GameSystemLogicBase
 {
@@ -12,6 +14,27 @@ internal sealed class ThirteenthAgeLogic(
     public override void EncounterBegin(Encounter encounter)
     {
         encounter.Variables[EscalationDie] = 0;
+    }
+
+    public override GameCounterRollResult? EncounterJoin(
+        Adventurer adventurer,
+        Encounter encounter,
+        IRandomWrapper random,
+        int rerolls,
+        ulong userId)
+    {
+        IntegerParseTree levelBonus = new(0, levelCounter.GetValue(adventurer.Sheet) ?? 0, "level");
+        int? targetValue = null;
+        var initiative = dexterityBonusCounter.Roll(adventurer, levelBonus, random, rerolls, ref targetValue);
+
+        encounter.Combatants.Add(new AdventurerCombatant
+        {
+            Initiative = initiative.Roll,
+            Name = adventurer.Name,
+            UserId = (long)userId
+        });
+
+        return initiative;
     }
 
     public override string GetCharacterSummary(CharacterSheet sheet)

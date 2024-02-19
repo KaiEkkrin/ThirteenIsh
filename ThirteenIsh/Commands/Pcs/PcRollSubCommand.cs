@@ -16,17 +16,7 @@ internal sealed class PcRollSubCommand() : SubCommandBase("roll", "Rolls against
             .AddOption("name", ApplicationCommandOptionType.String, "The property name to roll.",
                 isRequired: true)
             .AddOption("bonus", ApplicationCommandOptionType.String, "A bonus dice expression to add.")
-            .AddOption(new SlashCommandOptionBuilder()
-                .WithName("rerolls")
-                .WithDescription("A number of rerolls")
-                .WithType(ApplicationCommandOptionType.Integer)
-                .AddChoice("3", 3)
-                .AddChoice("2", 2)
-                .AddChoice("1", 1)
-                .AddChoice("0", 0)
-                .AddChoice("-1", -1)
-                .AddChoice("-2", -2)
-                .AddChoice("-3", -3))
+            .AddRerollsOption("rerolls")
             .AddOption("target-value", ApplicationCommandOptionType.Integer, "The target value.");
     }
 

@@ -1,4 +1,6 @@
-﻿namespace ThirteenIsh.Entities;
+﻿using MongoDB.Bson.Serialization.Attributes;
+
+namespace ThirteenIsh.Entities;
 
 /// <summary>
 /// An Adventurer is a Character within an adventure and combines their sheet
