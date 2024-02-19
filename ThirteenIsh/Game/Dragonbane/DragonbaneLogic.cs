@@ -43,6 +43,26 @@ internal sealed class DragonbaneLogic(
         return $"{kin} {profession}";
     }
 
+    protected override bool EncounterNextRound(Encounter encounter, IRandomWrapper random)
+    {
+        // When we roll over to the next round, re-draw the initiative.
+        var oldCombatants = new CombatantBase[encounter.Combatants.Count];
+        encounter.Combatants.CopyTo(oldCombatants);
+        encounter.Combatants.Clear();
+
+        ResetInitiativeDeck(encounter);
+        foreach (var combatant in oldCombatants)
+        {
+            var card = DrawInitiativeDeck(encounter, random, out _);
+            if (!card.HasValue) return false;
+
+            combatant.Initiative = card.Value;
+            encounter.AddCombatant(combatant);
+        }
+
+        return true;
+    }
+
     private static int? DrawInitiativeDeck(Encounter encounter, IRandomWrapper random, out string working)
     {
         var deck = encounter.Variables[InitiativeDeck];

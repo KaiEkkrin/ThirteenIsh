@@ -26,6 +26,27 @@ internal abstract class GameSystemLogicBase
         ulong userId);
 
     /// <summary>
+    /// Moves to the next combatant in the encounter. Returns the new turn index or null if
+    /// the encounter could not be progressed.
+    /// </summary>
+    public int? EncounterNext(Encounter encounter, IRandomWrapper random)
+    {
+        if (encounter.Combatants.Count == 0) return null;
+
+        if (encounter.TurnIndex.HasValue) encounter.TurnIndex += 1;
+        else encounter.TurnIndex = 0;
+
+        if (encounter.TurnIndex >= encounter.Combatants.Count)
+        {
+            encounter.TurnIndex = 0;
+            ++encounter.Round;
+            return EncounterNextRound(encounter, random) ? encounter.TurnIndex : null;
+        }
+
+        return encounter.TurnIndex;
+    }
+
+    /// <summary>
     /// Writes an encounter summary table suitable for being part of a pinned message.
     /// </summary>
     public string EncounterTable(Encounter encounter)
@@ -70,5 +91,10 @@ internal abstract class GameSystemLogicBase
         }
 
         DiscordUtil.BuildTable(builder, 4, data, 1);
+    }
+
+    protected virtual bool EncounterNextRound(Encounter encounter, IRandomWrapper random)
+    {
+        return true;
     }
 }
