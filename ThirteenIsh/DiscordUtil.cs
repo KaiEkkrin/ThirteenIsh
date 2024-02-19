@@ -5,8 +5,18 @@ namespace ThirteenIsh;
 internal class DiscordUtil
 {
     public static string BuildTable(
-        int columnCount, IEnumerable<string[]> data, params int[] rightJustifiedColumns)
+        int columnCount, IReadOnlyCollection<string[]> data, params int[] rightJustifiedColumns)
     {
+        StringBuilder builder = new();
+        BuildTable(builder, columnCount, data, rightJustifiedColumns);
+        return builder.ToString();
+    }
+
+    public static void BuildTable(
+        StringBuilder builder, int columnCount, IReadOnlyCollection<string[]> data, params int[] rightJustifiedColumns)
+    {
+        if (data.Count == 0) return;
+
         var rightJustify = new bool[columnCount];
         foreach (var column in rightJustifiedColumns)
         {
@@ -29,7 +39,6 @@ internal class DiscordUtil
             dataList.Add(row);
         }
 
-        StringBuilder builder = new();
         builder.AppendLine("```");
 
         const string cellPadding = "..";
@@ -63,7 +72,6 @@ internal class DiscordUtil
         }
 
         builder.AppendLine("```");
-        return builder.ToString();
 
         void AppendDataRow(string[] row)
         {

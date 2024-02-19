@@ -14,6 +14,7 @@ public class Encounter
 
     /// <summary>
     /// The list of combatants in turn order.
+    /// Call AddCombatant() to add one in the right place.
     /// </summary>
     public List<CombatantBase> Combatants { get; set; } = [];
 
@@ -31,12 +32,29 @@ public class Encounter
     public int Round { get; set; } = 1;
 
     /// <summary>
-    /// Whose turn it is currently.
+    /// Whose turn it is currently; null if the encounter has not yet been begun.
     /// </summary>
-    public int TurnIndex { get; set; }
+    public int? TurnIndex { get; set; }
 
     /// <summary>
     /// This encounter's variables (game system dependent.)
     /// </summary>
     public Dictionary<string, int> Variables { get; set; } = [];
+
+    /// <summary>
+    /// Adds a combatant into the place in the list determined by their initiative.
+    /// </summary>
+    public void AddCombatant(CombatantBase combatant)
+    {
+        for (var i = 0; i < Combatants.Count; i++)
+        {
+            if (combatant.Initiative <= Combatants[i].Initiative) continue;
+
+            Combatants.Insert(i, combatant);
+            if (TurnIndex >= i) ++TurnIndex; // keep it the same combatant's turn
+            return;
+        }
+
+        Combatants.Add(combatant);
+    }
 }

@@ -1,4 +1,6 @@
-﻿using ThirteenIsh.Entities;
+﻿using System.Globalization;
+using System.Text;
+using ThirteenIsh.Entities;
 using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Game.ThirteenthAge;
@@ -27,7 +29,7 @@ internal sealed class ThirteenthAgeLogic(
         int? targetValue = null;
         var initiative = dexterityBonusCounter.Roll(adventurer, levelBonus, random, rerolls, ref targetValue);
 
-        encounter.Combatants.Add(new AdventurerCombatant
+        encounter.AddCombatant(new AdventurerCombatant
         {
             Initiative = initiative.Roll,
             Name = adventurer.Name,
@@ -42,5 +44,11 @@ internal sealed class ThirteenthAgeLogic(
         var characterClass = classProperty.GetValue(sheet);
         var level = levelCounter.GetValue(sheet);
         return $"Level {level} {characterClass}";
+    }
+
+    protected override void AddEncounterHeadingRow(List<string[]> data, Encounter encounter)
+    {
+        base.AddEncounterHeadingRow(data, encounter);
+        data.Add(["Escalation Die", $"{encounter.Variables[EscalationDie]}"]);
     }
 }

@@ -1,4 +1,5 @@
-﻿using ThirteenIsh.Entities;
+﻿using System.Text;
+using ThirteenIsh.Entities;
 
 namespace ThirteenIsh.Game;
 
@@ -25,7 +26,49 @@ internal abstract class GameSystemLogicBase
         ulong userId);
 
     /// <summary>
+    /// Writes an encounter summary table suitable for being part of a pinned message.
+    /// </summary>
+    public string EncounterTable(Encounter encounter)
+    {
+        StringBuilder builder = new();
+        BuildEncounterHeadingTable(builder, encounter);
+        BuildEncounterInitiativeTable(builder, encounter);
+        return builder.ToString();
+    }
+
+    /// <summary>
     /// Provides a one-line summary of the character for character list purposes.
     /// </summary>
     public abstract string GetCharacterSummary(CharacterSheet sheet);
+
+    protected virtual void AddEncounterHeadingRow(List<string[]> data, Encounter encounter)
+    {
+        data.Add(["Round", $"{encounter.Round}"]);
+    }
+
+    private void BuildEncounterHeadingTable(StringBuilder builder, Encounter encounter)
+    {
+        List<string[]> data = [];
+        AddEncounterHeadingRow(data, encounter);
+        DiscordUtil.BuildTable(builder, 2, data, 1);
+    }
+
+    public static void BuildEncounterInitiativeTable(StringBuilder builder, Encounter encounter)
+    {
+        List<string[]> data = new(encounter.Combatants.Count);
+        for (var i = 0; i < encounter.Combatants.Count; ++i)
+        {
+            string[] row =
+                [
+                    i == encounter.TurnIndex ? "-->" : string.Empty,
+                    $"{encounter.Combatants[i].Initiative}",
+                    encounter.Combatants[i].Name,
+                    i == encounter.TurnIndex ? "<--" : string.Empty,
+                ];
+
+            data.Add(row);
+        }
+
+        DiscordUtil.BuildTable(builder, 4, data, 1);
+    }
 }

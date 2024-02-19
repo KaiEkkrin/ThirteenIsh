@@ -33,14 +33,20 @@ internal sealed class PcEncounterJoinSubCommand() : SubCommandBase("join", "Join
         }
 
         if (output is null) throw new InvalidOperationException(nameof(output));
+
+        // Update the encounter table
+        var encounterTable = output.GameSystem.Logic.EncounterTable(output.Encounter);
+        var pinnedMessageService = serviceProvider.GetRequiredService<PinnedMessageService>();
+        await pinnedMessageService.SetEncounterMessageAsync(command.Channel, output.Encounter.AdventureName, guildId,
+            encounterTable, cancellationToken);
+
+        // Send an appropriate response
         var embedBuilder = new EmbedBuilder()
             .WithAuthor(command.User)
             .WithTitle($"{output.Adventurer.Name} joined the encounter : {output.Result.Roll}")
             .WithDescription(output.Result.Working);
 
         await command.RespondAsync(embed: embedBuilder.Build());
-
-        // TODO Update the pinned encounter message.
     }
 
     private sealed class EditOperation(ulong channelId, ulong userId, IRandomWrapper random, int rerolls)
@@ -72,9 +78,10 @@ internal sealed class PcEncounterJoinSubCommand() : SubCommandBase("join", "Join
             if (!result.HasValue) return new MessageEditResult<EditOutput>(
                 null, "You are not able to join this encounter at this time.");
 
-            return new MessageEditResult<EditOutput>(new EditOutput(adventurer, encounter, result.Value));
+            return new MessageEditResult<EditOutput>(new EditOutput(adventurer, encounter, gameSystem, result.Value));
         }
     }
 
-    private sealed record EditOutput(Adventurer Adventurer, Encounter Encounter, GameCounterRollResult Result);
+    private sealed record EditOutput(Adventurer Adventurer, Encounter Encounter, GameSystem GameSystem,
+        GameCounterRollResult Result);
 }

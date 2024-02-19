@@ -26,7 +26,7 @@ internal sealed class DragonbaneLogic(
         var card = DrawInitiativeDeck(encounter, random, out var working);
         if (!card.HasValue) return null;
 
-        encounter.Combatants.Add(new AdventurerCombatant
+        encounter.AddCombatant(new AdventurerCombatant
         {
             Initiative = card.Value,
             Name = adventurer.Name,
