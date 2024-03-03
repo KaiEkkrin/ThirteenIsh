@@ -5,7 +5,7 @@ namespace ThirteenIsh;
 internal class DiscordUtil
 {
     public static string BuildTable(
-        int columnCount, IReadOnlyCollection<string[]> data, params int[] rightJustifiedColumns)
+        int columnCount, IReadOnlyCollection<IReadOnlyList<string>> data, params int[] rightJustifiedColumns)
     {
         StringBuilder builder = new();
         BuildTable(builder, columnCount, data, rightJustifiedColumns);
@@ -13,7 +13,8 @@ internal class DiscordUtil
     }
 
     public static void BuildTable(
-        StringBuilder builder, int columnCount, IReadOnlyCollection<string[]> data, params int[] rightJustifiedColumns)
+        StringBuilder builder, int columnCount, IReadOnlyCollection<IReadOnlyList<string>> data,
+        params int[] rightJustifiedColumns)
     {
         if (data.Count == 0) return;
 
@@ -24,12 +25,12 @@ internal class DiscordUtil
         }
 
         // Work out how wide each cell will be, and thence the whole table
-        List<string[]> dataList = [];
+        List<IReadOnlyList<string>> dataList = [];
         var maxCellSizes = new int[columnCount];
         foreach (var row in data)
         {
-            if (row.Length != columnCount)
-                throw new ArgumentException($"Found row with {row.Length} columns, expected {columnCount}", nameof(data));
+            if (row.Count != columnCount)
+                throw new ArgumentException($"Found row with {row.Count} columns, expected {columnCount}", nameof(data));
 
             for (var i = 0; i < columnCount; ++i)
             {
@@ -73,7 +74,7 @@ internal class DiscordUtil
 
         builder.AppendLine("```");
 
-        void AppendDataRow(string[] row)
+        void AppendDataRow(IReadOnlyList<string> row)
         {
             for (var i = 0; i < columnCount; ++i)
             {

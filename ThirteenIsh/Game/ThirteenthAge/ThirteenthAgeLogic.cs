@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Text;
 using ThirteenIsh.Entities;
 using ThirteenIsh.Parsing;
@@ -8,6 +9,7 @@ namespace ThirteenIsh.Game.ThirteenthAge;
 internal sealed class ThirteenthAgeLogic(
     GameProperty classProperty,
     AbilityBonusCounter dexterityBonusCounter,
+    HitPointsCounter hitPointsCounter,
     GameCounter levelCounter
     ) : GameSystemLogicBase
 {
@@ -50,6 +52,15 @@ internal sealed class ThirteenthAgeLogic(
     {
         base.AddEncounterHeadingRow(data, encounter);
         data.Add(["Escalation Die", $"{encounter.Variables[EscalationDie]}"]);
+    }
+
+    protected override void BuildEncounterInitiativeTableRow(Adventure adventure, CombatantBase combatant,
+        List<string> row)
+    {
+        base.BuildEncounterInitiativeTableRow(adventure, combatant, row);
+
+        var hitPointsCell = BuildPointsEncounterTableCell(adventure, combatant, hitPointsCounter);
+        row.Add(hitPointsCell);
     }
 
     protected override bool EncounterNextRound(Encounter encounter, IRandomWrapper random)

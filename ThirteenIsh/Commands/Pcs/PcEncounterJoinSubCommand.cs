@@ -35,7 +35,7 @@ internal sealed class PcEncounterJoinSubCommand() : SubCommandBase("join", "Join
         if (output is null) throw new InvalidOperationException(nameof(output));
 
         // Update the encounter table
-        var encounterTable = output.GameSystem.Logic.EncounterTable(output.Encounter);
+        var encounterTable = output.GameSystem.Logic.EncounterTable(output.Adventure, output.Encounter);
         var pinnedMessageService = serviceProvider.GetRequiredService<PinnedMessageService>();
         await pinnedMessageService.SetEncounterMessageAsync(command.Channel, output.Encounter.AdventureName, guildId,
             encounterTable, cancellationToken);
@@ -44,7 +44,7 @@ internal sealed class PcEncounterJoinSubCommand() : SubCommandBase("join", "Join
         var embedBuilder = new EmbedBuilder()
             .WithAuthor(command.User)
             .WithTitle($"{output.Adventurer.Name} joined the encounter : {output.Result.Roll}")
-            .WithDescription(output.Result.Working);
+            .WithDescription($"{output.Result.Working}\n{encounterTable}");
 
         await command.RespondAsync(embed: embedBuilder.Build());
     }
@@ -67,6 +67,12 @@ internal sealed class PcEncounterJoinSubCommand() : SubCommandBase("join", "Join
                     null, "No encounter is currently in progress in this channel.");
             }
 
+            if (encounter.AdventureName != guild.CurrentAdventure.Name)
+            {
+                return new MessageEditResult<EditOutput>(
+                    null, "The current adventure does not match the encounter in progress.");
+            }
+
             if (encounter.Combatants.OfType<AdventurerCombatant>().Any(o => o.NativeUserId == userId))
             {
                 return new MessageEditResult<EditOutput>(
@@ -78,10 +84,11 @@ internal sealed class PcEncounterJoinSubCommand() : SubCommandBase("join", "Join
             if (!result.HasValue) return new MessageEditResult<EditOutput>(
                 null, "You are not able to join this encounter at this time.");
 
-            return new MessageEditResult<EditOutput>(new EditOutput(adventurer, encounter, gameSystem, result.Value));
+            return new MessageEditResult<EditOutput>(new EditOutput(
+                guild.CurrentAdventure, adventurer, encounter, gameSystem, result.Value));
         }
     }
 
-    private sealed record EditOutput(Adventurer Adventurer, Encounter Encounter, GameSystem GameSystem,
+    private sealed record EditOutput(Adventure Adventure, Adventurer Adventurer, Encounter Encounter, GameSystem GameSystem,
         GameCounterRollResult Result);
 }

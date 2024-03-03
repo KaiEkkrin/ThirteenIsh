@@ -1,10 +1,13 @@
-﻿using ThirteenIsh.Entities;
+﻿using Microsoft.VisualBasic;
+using ThirteenIsh.Entities;
 
 namespace ThirteenIsh.Game.Dragonbane;
 
 internal sealed class DragonbaneLogic(
     GameProperty kinProperty,
-    GameProperty professionProperty
+    GameProperty professionProperty,
+    PointsCounter hitPointsCounter,
+    PointsCounter willpowerPointsCounter
     ) : GameSystemLogicBase
 {
     // We store the un-drawn cards of the initiative deck as a bit field in this encounter variable
@@ -41,6 +44,17 @@ internal sealed class DragonbaneLogic(
         var kin = kinProperty.GetValue(sheet);
         var profession = professionProperty.GetValue(sheet);
         return $"{kin} {profession}";
+    }
+
+    protected override void BuildEncounterInitiativeTableRow(Adventure adventure, CombatantBase combatant, List<string> row)
+    {
+        base.BuildEncounterInitiativeTableRow(adventure, combatant, row);
+
+        var hitPointsCell = BuildPointsEncounterTableCell(adventure, combatant, hitPointsCounter);
+        row.Add(hitPointsCell);
+
+        var willpowerPointsCell = BuildPointsEncounterTableCell(adventure, combatant, willpowerPointsCounter);
+        row.Add(willpowerPointsCell);
     }
 
     protected override bool EncounterNextRound(Encounter encounter, IRandomWrapper random)

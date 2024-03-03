@@ -1,4 +1,5 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
+using System.Diagnostics.CodeAnalysis;
 
 namespace ThirteenIsh.Entities;
 
@@ -14,4 +15,9 @@ public class AdventurerCombatant : CombatantBase
 
     [BsonIgnore]
     public ulong NativeUserId => (ulong)UserId;
+
+    public override bool TryGetAdventurer(Adventure adventure, [MaybeNullWhen(false)] out Adventurer adventurer)
+    {
+        return adventure.Adventurers.TryGetValue(NativeUserId, out adventurer);
+    }
 }

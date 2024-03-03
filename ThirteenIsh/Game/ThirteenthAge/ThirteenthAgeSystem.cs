@@ -48,8 +48,9 @@ internal static class ThirteenthAgeSystem
         var wisdomBonusCounter = BuildAbility(abilityScoresBuilder, Wisdom);
         var charismaBonusCounter = BuildAbility(abilityScoresBuilder, Charisma);
 
+        HitPointsCounter hitPointsCounter = new(classProperty, levelCounter, constitutionBonusCounter);
         var generalBuilder = new GamePropertyGroupBuilder(General)
-            .AddProperty(new HitPointsCounter(classProperty, levelCounter, constitutionBonusCounter))
+            .AddProperty(hitPointsCounter)
             .AddProperty(new ArmorClassCounter(classProperty, levelCounter, constitutionBonusCounter, dexterityBonusCounter,
                 wisdomBonusCounter))
             .AddProperty(new PhysicalDefenseCounter(classProperty, levelCounter, strengthBonusCounter, dexterityBonusCounter,
@@ -63,7 +64,7 @@ internal static class ThirteenthAgeSystem
             .AddPropertyGroup(basicsBuilder)
             .AddPropertyGroup(abilityScoresBuilder)
             .AddPropertyGroup(generalBuilder)
-            .Build(new ThirteenthAgeLogic(classProperty, dexterityBonusCounter, levelCounter));
+            .Build(new ThirteenthAgeLogic(classProperty, dexterityBonusCounter, hitPointsCounter, levelCounter));
     }
 
     private static AbilityBonusCounter BuildAbility(GamePropertyGroupBuilder builder, string abilityName)

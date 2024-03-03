@@ -24,7 +24,7 @@ internal sealed class AdventureEncounterBeginCommand() : SubCommandBase("begin",
 
         if (output is null) throw new InvalidOperationException(nameof(output));
 
-        var encounterTable = output.GameSystem.Logic.EncounterTable(output.Encounter);
+        var encounterTable = output.GameSystem.Logic.EncounterTable(output.Adventure, output.Encounter);
         var pinnedMessageService = serviceProvider.GetRequiredService<PinnedMessageService>();
         await pinnedMessageService.SetEncounterMessageAsync(command.Channel, output.Encounter.AdventureName, guildId,
             encounterTable, cancellationToken);
@@ -53,9 +53,9 @@ internal sealed class AdventureEncounterBeginCommand() : SubCommandBase("begin",
             gameSystem.Logic.EncounterBegin(encounter);
 
             guild.Encounters.Add(channelId, encounter);
-            return new MessageEditResult<EditOutput>(new EditOutput(gameSystem, guild, encounter));
+            return new MessageEditResult<EditOutput>(new EditOutput(guild.CurrentAdventure, gameSystem, guild, encounter));
         }
     }
 
-    private sealed record EditOutput(GameSystem GameSystem, Guild Guild, Encounter Encounter);
+    private sealed record EditOutput(Adventure Adventure, GameSystem GameSystem, Guild Guild, Encounter Encounter);
 }

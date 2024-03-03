@@ -40,7 +40,7 @@ internal sealed class PcEncounterNextSubCommand() : SubCommandBase("next", "Move
         if (output is null) throw new InvalidOperationException(nameof(output));
 
         // Update the encounter table
-        var encounterTable = output.GameSystem.Logic.EncounterTable(output.Encounter);
+        var encounterTable = output.GameSystem.Logic.EncounterTable(output.Adventure, output.Encounter);
         var pinnedMessageService = serviceProvider.GetRequiredService<PinnedMessageService>();
         await pinnedMessageService.SetEncounterMessageAsync(command.Channel, output.Encounter.AdventureName, guildId,
             encounterTable, cancellationToken);
@@ -56,7 +56,8 @@ internal sealed class PcEncounterNextSubCommand() : SubCommandBase("next", "Move
 
         var embedBuilder = new EmbedBuilder()
             .WithAuthor(command.User)
-            .WithTitle(titleBuilder.ToString());
+            .WithTitle(titleBuilder.ToString())
+            .WithDescription(encounterTable);
 
         await command.RespondAsync(embed: embedBuilder.Build());
     }
@@ -79,6 +80,12 @@ internal sealed class PcEncounterNextSubCommand() : SubCommandBase("next", "Move
                     null, "No encounter is currently in progress in this channel.");
             }
 
+            if (encounter.AdventureName != guild.CurrentAdventure.Name)
+            {
+                return new MessageEditResult<EditOutput>(
+                    null, "The current adventure does not match the encounter in progress.");
+            }
+
             var previousCombatantName = encounter.TurnIndex.HasValue
                 ? encounter.Combatants[encounter.TurnIndex.Value].Name
                 : null;
@@ -88,10 +95,10 @@ internal sealed class PcEncounterNextSubCommand() : SubCommandBase("next", "Move
                 return new MessageEditResult<EditOutput>(null, "This encounter cannot be progressed at this time.");
 
             return new MessageEditResult<EditOutput>(new EditOutput(
-                previousCombatantName, encounter.Combatants[turnIndex].Name, encounter, gameSystem));
+                previousCombatantName, encounter.Combatants[turnIndex].Name, guild.CurrentAdventure, encounter, gameSystem));
         }
     }
 
-    private sealed record EditOutput(string? PreviousCombatantName, string CurrentCombatantName, Encounter Encounter,
-        GameSystem GameSystem);
+    private sealed record EditOutput(string? PreviousCombatantName, string CurrentCombatantName,
+        Adventure Adventure, Encounter Encounter, GameSystem GameSystem);
 }

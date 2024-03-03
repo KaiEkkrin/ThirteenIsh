@@ -49,11 +49,11 @@ internal abstract class GameSystemLogicBase
     /// <summary>
     /// Writes an encounter summary table suitable for being part of a pinned message.
     /// </summary>
-    public string EncounterTable(Encounter encounter)
+    public string EncounterTable(Adventure adventure, Encounter encounter)
     {
         StringBuilder builder = new();
         BuildEncounterHeadingTable(builder, encounter);
-        BuildEncounterInitiativeTable(builder, encounter);
+        BuildEncounterInitiativeTable(adventure, builder, encounter);
         return builder.ToString();
     }
 
@@ -74,23 +74,42 @@ internal abstract class GameSystemLogicBase
         DiscordUtil.BuildTable(builder, 2, data, 1);
     }
 
-    public static void BuildEncounterInitiativeTable(StringBuilder builder, Encounter encounter)
+    public void BuildEncounterInitiativeTable(Adventure adventure, StringBuilder builder, Encounter encounter)
     {
-        List<string[]> data = new(encounter.Combatants.Count);
+        List<IReadOnlyList<string>> data = new(encounter.Combatants.Count);
+        var columnCount = 4; // just a starting guess, rows are dynamically created (but must all match)
         for (var i = 0; i < encounter.Combatants.Count; ++i)
         {
-            string[] row =
-                [
-                    i == encounter.TurnIndex ? "-->" : string.Empty,
-                    $"{encounter.Combatants[i].Initiative}",
-                    encounter.Combatants[i].Name,
-                    i == encounter.TurnIndex ? "<--" : string.Empty,
-                ];
-
+            List<string> row = new(columnCount);
+            row.Add(i == encounter.TurnIndex ? "-->" : string.Empty);
+            BuildEncounterInitiativeTableRow(adventure, encounter.Combatants[i], row);
+            row.Add(i == encounter.TurnIndex ? "<--" : string.Empty);
             data.Add(row);
+
+            columnCount = row.Count;
         }
 
-        DiscordUtil.BuildTable(builder, 4, data, 1);
+        DiscordUtil.BuildTable(builder, columnCount, data, 1);
+    }
+
+    protected virtual void BuildEncounterInitiativeTableRow(Adventure adventure, CombatantBase combatant,
+        List<string> row)
+    {
+        row.Add($"{combatant.Initiative}");
+        row.Add(combatant.Name);
+    }
+
+    protected static string BuildPointsEncounterTableCell(Adventure adventure, CombatantBase combatant,
+        GameCounter counter)
+    {
+        if (!combatant.TryGetAdventurer(adventure, out var adventurer)) return "???";
+
+        var currentPoints = counter.GetVariableValue(adventurer);
+        var maxPoints = counter.GetValue(adventurer.Sheet);
+
+        var currentPointsString = currentPoints.HasValue ? $"{currentPoints.Value}" : "???";
+        var maxPointsString = maxPoints.HasValue ? $"{maxPoints.Value}" : "???";
+        return $"{counter.Alias} {currentPointsString}/{maxPointsString}";
     }
 
     protected virtual bool EncounterNextRound(Encounter encounter, IRandomWrapper random)
