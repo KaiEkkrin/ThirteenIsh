@@ -30,6 +30,11 @@ Configure these via command line, environment variables or user secrets.
 * "BotToken": the Discord bot token.
 * "MongoConnectionString": the MongoDB connection string.
 
+## Docker-compose based deployment
+
+* Create a file "my.docker.env" in the project root and add to it `BotToken="...my bot token..."`.
+* Run e.g. `docker-compose up -d --build`
+
 ## TO DO
 
 (Lots of the below is out of date compared to how I actually did it and I should update when things are more complete.)
