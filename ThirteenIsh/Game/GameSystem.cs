@@ -188,6 +188,14 @@ internal class GameSystem
     /// </summary>
     public GameCounter? FindCounter(string namePart, Func<GameCounter, bool> predicate)
     {
+        // Admit exact match of alias first
+        var aliasMatchCounter = Properties.Values
+            .OfType<GameCounter>()
+            .Where(counter => predicate(counter) && counter.Alias?.Equals(namePart, StringComparison.OrdinalIgnoreCase) == true)
+            .ToList();
+
+        if (aliasMatchCounter.Count == 1) return aliasMatchCounter[0];
+
         var matchingCounters = Properties.Values
             .OfType<GameCounter>()
             .Where(counter => predicate(counter) &&

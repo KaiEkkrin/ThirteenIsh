@@ -3,8 +3,8 @@ using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Game.ThirteenthAge;
 
-internal class AbilityBonusCounter(GameCounter scoreCounter) : GameCounter($"{scoreCounter.Name} {Suffix}",
-    options: GameCounterOptions.CanRoll | GameCounterOptions.IsHidden)
+internal class AbilityBonusCounter(GameCounter levelCounter, GameCounter scoreCounter)
+    : GameCounter($"{scoreCounter.Name} {Suffix}", options: GameCounterOptions.CanRoll | GameCounterOptions.IsHidden)
 {
     public const string Suffix = "Bonus";
 
@@ -30,10 +30,15 @@ internal class AbilityBonusCounter(GameCounter scoreCounter) : GameCounter($"{sc
         var value = GetValue(adventurer.Sheet);
         if (!value.HasValue) throw new GamePropertyException(Name);
 
+        // In 13th Age we always add the character's level bonus to rolls like this
+        IntegerParseTree levelBonus = new(0, levelCounter.GetValue(adventurer.Sheet) ?? 0, "level");
         ParseTreeBase parseTree =
             new BinaryOperationParseTree(0,
-                DiceRollParseTree.BuildWithRerolls(20, rerolls),
-                new IntegerParseTree(0, value.Value, Name),
+                new BinaryOperationParseTree(0,
+                    DiceRollParseTree.BuildWithRerolls(20, rerolls),
+                    new IntegerParseTree(0, value.Value, Name),
+                    '+'),
+                levelBonus,
                 '+');
 
         if (bonus is not null)

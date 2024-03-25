@@ -1,7 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Globalization;
-using System.Text;
-using ThirteenIsh.Entities;
+﻿using ThirteenIsh.Entities;
 using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Game.ThirteenthAge;
@@ -27,10 +24,8 @@ internal sealed class ThirteenthAgeLogic(
         int rerolls,
         ulong userId)
     {
-        IntegerParseTree levelBonus = new(0, levelCounter.GetValue(adventurer.Sheet) ?? 0, "level");
         int? targetValue = null;
-        var initiative = dexterityBonusCounter.Roll(adventurer, levelBonus, random, rerolls, ref targetValue);
-
+        var initiative = dexterityBonusCounter.Roll(adventurer, null, random, rerolls, ref targetValue);
         encounter.AddCombatant(new AdventurerCombatant
         {
             Initiative = initiative.Roll,
