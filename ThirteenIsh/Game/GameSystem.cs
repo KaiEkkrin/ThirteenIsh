@@ -191,7 +191,8 @@ internal class GameSystem
         // Admit exact match of alias first
         var aliasMatchCounter = Properties.Values
             .OfType<GameCounter>()
-            .Where(counter => predicate(counter) && counter.Alias?.Equals(namePart, StringComparison.OrdinalIgnoreCase) == true)
+            .Where(counter => predicate(counter) &&
+                counter.Alias?.Equals(namePart, StringComparison.OrdinalIgnoreCase) == true)
             .ToList();
 
         if (aliasMatchCounter.Count == 1) return aliasMatchCounter[0];

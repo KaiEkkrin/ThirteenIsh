@@ -61,6 +61,7 @@ internal sealed class ThirteenthAgeLogic(
     protected override bool EncounterNextRound(Encounter encounter, IRandomWrapper random)
     {
         // When we roll over to the next round, increase the escalation die, to a maximum of 6.
+        // TODO Add commands to explicitly set and modify an encounter variable?
         encounter.Variables[EscalationDie] = Math.Min(6, encounter.Variables[EscalationDie] + 1);
         return true;
     }

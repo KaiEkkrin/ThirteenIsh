@@ -54,23 +54,10 @@ internal sealed class PcEncounterJoinSubCommand() : SubCommandBase("join", "Join
     {
         public override MessageEditResult<EditOutput> DoEdit(Guild guild)
         {
-            if (guild.CurrentAdventure?.Adventurers.TryGetValue(userId, out var adventurer) != true ||
-                adventurer is null)
+            if (!CommandUtil.TryGetCurrentCombatant(guild, channelId, userId, out var adventure, out var adventurer,
+                out var encounter, out var errorMessage))
             {
-                return new MessageEditResult<EditOutput>(
-                    null, "Either there is no current adventure or you have not joined it.");
-            }
-
-            if (!guild.Encounters.TryGetValue(channelId, out var encounter))
-            {
-                return new MessageEditResult<EditOutput>(
-                    null, "No encounter is currently in progress in this channel.");
-            }
-
-            if (encounter.AdventureName != guild.CurrentAdventure.Name)
-            {
-                return new MessageEditResult<EditOutput>(
-                    null, "The current adventure does not match the encounter in progress.");
+                return new MessageEditResult<EditOutput>(null, errorMessage);
             }
 
             if (encounter.Combatants.OfType<AdventurerCombatant>().Any(o => o.NativeUserId == userId))
@@ -79,13 +66,13 @@ internal sealed class PcEncounterJoinSubCommand() : SubCommandBase("join", "Join
                     null, "You have already joined this encounter.");
             }
 
-            var gameSystem = GameSystem.Get(guild.CurrentAdventure.GameSystem);
+            var gameSystem = GameSystem.Get(adventure.GameSystem);
             var result = gameSystem.Logic.EncounterJoin(adventurer, encounter, random, rerolls, userId);
             if (!result.HasValue) return new MessageEditResult<EditOutput>(
                 null, "You are not able to join this encounter at this time.");
 
             return new MessageEditResult<EditOutput>(new EditOutput(
-                guild.CurrentAdventure, adventurer, encounter, gameSystem, result.Value));
+                adventure, adventurer, encounter, gameSystem, result.Value));
         }
     }
 

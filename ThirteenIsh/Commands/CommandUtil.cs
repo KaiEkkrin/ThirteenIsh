@@ -114,6 +114,41 @@ internal static class CommandUtil
         return false;
     }
 
+    public static bool TryFindCombatantsByName(IEnumerable<string> nameParts, Encounter encounter,
+        IList<CombatantBase> combatants, [MaybeNullWhen(true)] out string errorMessage)
+    {
+        foreach (var namePart in nameParts)
+        {
+            var matchingCombatants = encounter.Combatants
+                .Where(c => c.Name.StartsWith(namePart, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            switch (matchingCombatants.Count)
+            {
+                case 0:
+                    errorMessage = $"'{namePart}' does not match any combatants in the current encounter.";
+                    return false;
+
+                case 1:
+                    if (!combatants.Contains(matchingCombatants[0])) combatants.Add(matchingCombatants[0]);
+                    break;
+
+                default:
+                    errorMessage = $"'{namePart}' does not uniquely match any combatants in the current encounter.";
+                    return false;
+            }
+        }
+
+        if (combatants.Count == 0)
+        {
+            errorMessage = "No targets selected.";
+            return false;
+        }
+
+        errorMessage = null;
+        return true;
+    }
+
     public static bool TryGetCanonicalizedMultiPartOption(
         SocketSlashCommandData data, string name, [MaybeNullWhen(false)] out string canonicalizedValue)
     {
@@ -214,6 +249,45 @@ internal static class CommandUtil
 
         adventure = null;
         return false;
+    }
+
+    public static bool TryGetCurrentCombatant(Guild guild, ulong channelId, ulong userId,
+        [MaybeNullWhen(false)] out Adventure adventure,
+        [MaybeNullWhen(false)] out Adventurer adventurer,
+        [MaybeNullWhen(false)] out Encounter encounter,
+        [MaybeNullWhen(true)] out string errorMessage)
+    {
+        adventure = guild.CurrentAdventure;
+        if (adventure is null)
+        {
+            adventurer = null;
+            encounter = null;
+            errorMessage = "There is no current adventure.";
+            return false;
+        }
+
+        if (!adventure.Adventurers.TryGetValue(userId, out adventurer))
+        {
+            encounter = null;
+            errorMessage = "You have not joined the current adventure.";
+            return false;
+        }
+
+        if (!guild.Encounters.TryGetValue(channelId, out encounter))
+        {
+            adventurer = null;
+            errorMessage = "No encounter is currently in progress in this channel.";
+            return false;
+        }
+
+        if (encounter.AdventureName != adventure.Name)
+        {
+            errorMessage = "The current adventure does not match the encounter in progress.";
+            return false;
+        }
+
+        errorMessage = null;
+        return true;
     }
 
     public readonly struct AdventurerSummaryOptions

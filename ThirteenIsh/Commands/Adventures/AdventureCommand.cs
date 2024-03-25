@@ -2,6 +2,7 @@
 
 namespace ThirteenIsh.Commands.Adventures;
 
+// TODO overly long command name "adventure" -- change to "gm"? (Since this is where game master commands go)
 internal sealed class AdventureCommand() : CommandBase("adventure", "Manage adventures.",
         new AdventureAddSubCommand(),
         new AdventureEncounterSubCommandGroup(),

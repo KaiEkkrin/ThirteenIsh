@@ -1,6 +1,5 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using Microsoft.VisualBasic;
 using System.Globalization;
 using System.Text;
 using ThirteenIsh.Entities;
@@ -67,35 +66,22 @@ internal sealed class PcEncounterNextSubCommand() : SubCommandBase("next", "Move
     {
         public override MessageEditResult<EditOutput> DoEdit(Guild guild)
         {
-            if (guild.CurrentAdventure?.Adventurers.TryGetValue(userId, out var adventurer) != true ||
-                adventurer is null)
+            if (!CommandUtil.TryGetCurrentCombatant(guild, channelId, userId, out var adventure, out _, out var encounter,
+                out var errorMessage))
             {
-                return new MessageEditResult<EditOutput>(
-                    null, "Either there is no current adventure or you have not joined it.");
-            }
-
-            if (!guild.Encounters.TryGetValue(channelId, out var encounter))
-            {
-                return new MessageEditResult<EditOutput>(
-                    null, "No encounter is currently in progress in this channel.");
-            }
-
-            if (encounter.AdventureName != guild.CurrentAdventure.Name)
-            {
-                return new MessageEditResult<EditOutput>(
-                    null, "The current adventure does not match the encounter in progress.");
+                return new MessageEditResult<EditOutput>(null, errorMessage);
             }
 
             var previousCombatantName = encounter.TurnIndex.HasValue
                 ? encounter.Combatants[encounter.TurnIndex.Value].Name
                 : null;
 
-            var gameSystem = GameSystem.Get(guild.CurrentAdventure.GameSystem);
+            var gameSystem = GameSystem.Get(adventure.GameSystem);
             if (gameSystem.Logic.EncounterNext(encounter, random) is not { } turnIndex)
                 return new MessageEditResult<EditOutput>(null, "This encounter cannot be progressed at this time.");
 
             return new MessageEditResult<EditOutput>(new EditOutput(
-                previousCombatantName, encounter.Combatants[turnIndex].Name, guild.CurrentAdventure, encounter, gameSystem));
+                previousCombatantName, encounter.Combatants[turnIndex].Name, adventure, encounter, gameSystem));
         }
     }
 
