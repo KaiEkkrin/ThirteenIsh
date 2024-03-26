@@ -12,6 +12,7 @@ namespace ThirteenIsh.Entities.Messages;
     typeof(AddCharacterMessage),
     typeof(DeleteAdventureMessage),
     typeof(DeleteCharacterMessage),
+    typeof(EndEncounterMessage),
     typeof(LeaveAdventureMessage),
     typeof(ResetAdventurerMessage))]
 public class MessageBase : UserEntityBase

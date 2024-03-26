@@ -11,7 +11,7 @@ I followed the instructions in [Discord.net -- Your First Bot](https://discordne
 
 And, it will need these bot permissions:
 
-* TODO -- any here?
+* Manage Messages (8192)
 
 ## Database
 
@@ -30,7 +30,14 @@ Configure these via command line, environment variables or user secrets.
 * "BotToken": the Discord bot token.
 * "MongoConnectionString": the MongoDB connection string.
 
+## Docker-compose based deployment
+
+* Create a file "my.docker.env" in the project root and add to it `BotToken="...my bot token..."`.
+* Run e.g. `docker-compose up -d --build`
+
 ## TO DO
+
+(Lots of the below is out of date compared to how I actually did it and I should update when things are more complete.)
 
 ### Adventure re-design
 
@@ -87,6 +94,11 @@ TO DO: convenience commands in adventure (or in combat when in one), such as att
 * `combat-join` -- adds current adventurer to the combat
 * `combat-leave` -- leaves combat with the current adventurer
 * `combat-remove` -- remove a monster from the combat
+
+### Attacks and damage
+
+* `pc attack` -- attack the target (name of target, name of system-dependent attack ability). Rolls and determines success based on the attack ability and the target.
+* `pc damage` -- damage the target (name of target, system-dependent name of counter to damage with suitable default e.g. Hit Points). Rolls and offers a dialog to the target's player letting them accept or deny the damage, if accepted applies it to their variables.
 
 ### 13th Age
 

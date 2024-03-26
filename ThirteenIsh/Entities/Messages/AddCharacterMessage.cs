@@ -1,5 +1,4 @@
 ﻿using Discord.WebSocket;
-using MongoDB.Driver.Core.Misc;
 using ThirteenIsh.Commands;
 using ThirteenIsh.EditOperations;
 using ThirteenIsh.Game;

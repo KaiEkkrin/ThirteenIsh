@@ -41,15 +41,16 @@ internal static class ThirteenthAgeSystem
 
         GamePropertyGroupBuilder abilityScoresBuilder = new(AbilityScores);
 
-        var strengthBonusCounter = BuildAbility(abilityScoresBuilder, Strength);
-        var dexterityBonusCounter = BuildAbility(abilityScoresBuilder, Dexterity);
-        var constitutionBonusCounter = BuildAbility(abilityScoresBuilder, Constitution);
-        var intelligenceBonusCounter = BuildAbility(abilityScoresBuilder, Intelligence);
-        var wisdomBonusCounter = BuildAbility(abilityScoresBuilder, Wisdom);
-        var charismaBonusCounter = BuildAbility(abilityScoresBuilder, Charisma);
+        var strengthBonusCounter = BuildAbility(abilityScoresBuilder, Strength, levelCounter);
+        var dexterityBonusCounter = BuildAbility(abilityScoresBuilder, Dexterity, levelCounter);
+        var constitutionBonusCounter = BuildAbility(abilityScoresBuilder, Constitution, levelCounter);
+        var intelligenceBonusCounter = BuildAbility(abilityScoresBuilder, Intelligence, levelCounter);
+        var wisdomBonusCounter = BuildAbility(abilityScoresBuilder, Wisdom, levelCounter);
+        var charismaBonusCounter = BuildAbility(abilityScoresBuilder, Charisma, levelCounter);
 
+        HitPointsCounter hitPointsCounter = new(classProperty, levelCounter, constitutionBonusCounter);
         var generalBuilder = new GamePropertyGroupBuilder(General)
-            .AddProperty(new HitPointsCounter(classProperty, levelCounter, constitutionBonusCounter))
+            .AddProperty(hitPointsCounter)
             .AddProperty(new ArmorClassCounter(classProperty, levelCounter, constitutionBonusCounter, dexterityBonusCounter,
                 wisdomBonusCounter))
             .AddProperty(new PhysicalDefenseCounter(classProperty, levelCounter, strengthBonusCounter, dexterityBonusCounter,
@@ -63,13 +64,14 @@ internal static class ThirteenthAgeSystem
             .AddPropertyGroup(basicsBuilder)
             .AddPropertyGroup(abilityScoresBuilder)
             .AddPropertyGroup(generalBuilder)
-            .Build(new ThirteenthAgeLogic(classProperty, levelCounter));
+            .Build(new ThirteenthAgeLogic(classProperty, dexterityBonusCounter, hitPointsCounter, levelCounter));
     }
 
-    private static AbilityBonusCounter BuildAbility(GamePropertyGroupBuilder builder, string abilityName)
+    private static AbilityBonusCounter BuildAbility(GamePropertyGroupBuilder builder, string abilityName,
+        GameCounter levelCounter)
     {
         GameAbilityCounter counter = new(abilityName);
-        AbilityBonusCounter bonusCounter = new(counter);
+        AbilityBonusCounter bonusCounter = new(levelCounter, counter);
         builder.AddProperty(counter).AddProperty(bonusCounter);
         return bonusCounter;
     }

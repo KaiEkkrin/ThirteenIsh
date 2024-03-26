@@ -3,6 +3,7 @@ using Discord.WebSocket;
 using System.Collections.Concurrent;
 using System.Reflection;
 using ThirteenIsh.Commands;
+using ThirteenIsh.Entities;
 using ThirteenIsh.Entities.Messages;
 
 namespace ThirteenIsh.Services;
@@ -106,6 +107,13 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
         _isDisposed = true;
     }
 
+    public async Task<IMessageChannel?> GetGuildMessageChannelAsync(ulong guildId, ulong channelId)
+    {
+        var guild = _client.GetGuild(guildId);
+        var channel = await ((IGuild)guild).GetChannelAsync(channelId);
+        return channel as IMessageChannel; // so you can send messages to it
+    }
+
     public Task<IGuildUser> GetGuildUserAsync(ulong guildId, ulong userId)
     {
         var guild = _client.GetGuild(guildId);
@@ -128,6 +136,8 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
         if (_isDisposed) return Task.CompletedTask;
 
         // This is slow, and should be done asynchronously.
+        // TODO also need to be able to detect that the bot was previously kicked from a
+        // guild, which of course de-registers its commands...
         Task.Run(() => RegisterGuildCommandsAsync(arg));
         return Task.CompletedTask;
     }

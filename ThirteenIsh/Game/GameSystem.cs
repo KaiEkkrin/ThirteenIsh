@@ -9,11 +9,11 @@ namespace ThirteenIsh.Game;
 /// </summary>
 internal class GameSystem
 {
-    public static readonly IReadOnlyList<GameSystem> AllGameSystems = new[]
-    {
+    public static readonly IReadOnlyList<GameSystem> AllGameSystems =
+    [
         ThirteenthAge.ThirteenthAgeSystem.Build(),
         Dragonbane.DragonbaneSystem.Build()
-    };
+    ];
 
     public GameSystem(string name, GameSystemLogicBase logic, ImmutableList<GamePropertyGroup> propertyGroups)
     {
@@ -188,6 +188,15 @@ internal class GameSystem
     /// </summary>
     public GameCounter? FindCounter(string namePart, Func<GameCounter, bool> predicate)
     {
+        // Admit exact match of alias first
+        var aliasMatchCounter = Properties.Values
+            .OfType<GameCounter>()
+            .Where(counter => predicate(counter) &&
+                counter.Alias?.Equals(namePart, StringComparison.OrdinalIgnoreCase) == true)
+            .ToList();
+
+        if (aliasMatchCounter.Count == 1) return aliasMatchCounter[0];
+
         var matchingCounters = Properties.Values
             .OfType<GameCounter>()
             .Where(counter => predicate(counter) &&
@@ -231,13 +240,13 @@ internal class GameSystem
     {
         // TODO support custom counters (I'll need to declare information about those somewhere)
         adventurer.Variables.Clear();
-        foreach (var (counterName, counterMaxValue) in adventurer.Sheet.Counters)
+        foreach (var group in VariableCounterGroups)
         {
-            if (!Properties.TryGetValue(counterName, out var property) ||
-                property is not GameCounter gameCounter ||
-                !gameCounter.Options.HasFlag(GameCounterOptions.HasVariable)) continue;
-
-            adventurer.Variables[counterName] = counterMaxValue;
+            foreach (var counter in group.Properties)
+            {
+                if (counter.GetValue(adventurer.Sheet) is { } counterValue)
+                    adventurer.Variables[counter.Name] = counterValue;
+            }
         }
     }
 

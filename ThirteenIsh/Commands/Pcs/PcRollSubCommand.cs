@@ -16,18 +16,8 @@ internal sealed class PcRollSubCommand() : SubCommandBase("roll", "Rolls against
             .AddOption("name", ApplicationCommandOptionType.String, "The property name to roll.",
                 isRequired: true)
             .AddOption("bonus", ApplicationCommandOptionType.String, "A bonus dice expression to add.")
-            .AddOption(new SlashCommandOptionBuilder()
-                .WithName("rerolls")
-                .WithDescription("A number of rerolls")
-                .WithType(ApplicationCommandOptionType.Integer)
-                .AddChoice("3", 3)
-                .AddChoice("2", 2)
-                .AddChoice("1", 1)
-                .AddChoice("0", 0)
-                .AddChoice("-1", -1)
-                .AddChoice("-2", -2)
-                .AddChoice("-3", -3))
-            .AddOption("target-value", ApplicationCommandOptionType.Integer, "The target value.");
+            .AddOption("dc", ApplicationCommandOptionType.Integer, "The amount that counts as a success.")
+            .AddRerollsOption("rerolls");
     }
 
     public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
@@ -47,8 +37,8 @@ internal sealed class PcRollSubCommand() : SubCommandBase("roll", "Rolls against
             return;
         }
 
+        int? dc = CommandUtil.TryGetOption<int>(option, "dc", out var t) ? t : null;
         if (!CommandUtil.TryGetOption<int>(option, "rerolls", out var rerolls)) rerolls = 0;
-        int? targetValue = CommandUtil.TryGetOption<int>(option, "target-value", out var t) ? t : null;
 
         var dataService = serviceProvider.GetRequiredService<DataService>();
         var guild = await dataService.EnsureGuildAsync(guildId, cancellationToken);
@@ -71,13 +61,13 @@ internal sealed class PcRollSubCommand() : SubCommandBase("roll", "Rolls against
         }
 
         var random = serviceProvider.GetRequiredService<IRandomWrapper>();
-        var result = counter.Roll(adventurer, bonus, random, rerolls, ref targetValue);
+        var result = counter.Roll(adventurer, bonus, random, rerolls, ref dc);
 
         var titleBuilder = new StringBuilder()
             .Append(CultureInfo.CurrentCulture, $"{adventurer.Name} : Rolled {counter.Name}");
 
-        if (targetValue.HasValue)
-            titleBuilder.Append(CultureInfo.CurrentCulture, $" vs {targetValue.Value}");
+        if (dc.HasValue)
+            titleBuilder.Append(CultureInfo.CurrentCulture, $" vs {dc.Value}");
 
         titleBuilder.Append(CultureInfo.CurrentCulture, $" : {result.Roll}");
         if (result.Success.HasValue)

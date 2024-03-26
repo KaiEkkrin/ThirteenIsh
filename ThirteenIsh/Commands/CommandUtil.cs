@@ -10,7 +10,22 @@ namespace ThirteenIsh.Commands;
 
 internal static class CommandUtil
 {
-    public static async Task RespondWithAdventureSummaryAsync(
+    public static SlashCommandOptionBuilder AddRerollsOption(this SlashCommandOptionBuilder builder, string name)
+    {
+        return builder.AddOption(new SlashCommandOptionBuilder()
+                .WithName(name)
+                .WithDescription("A number of rerolls")
+                .WithType(ApplicationCommandOptionType.Integer)
+                .AddChoice("3", 3)
+                .AddChoice("2", 2)
+                .AddChoice("1", 1)
+                .AddChoice("0", 0)
+                .AddChoice("-1", -1)
+                .AddChoice("-2", -2)
+                .AddChoice("-3", -3));
+    }
+
+    public static async Task<Embed> BuildAdventureSummaryEmbedAsync(
         this DiscordService discordService,
         IDiscordInteraction command,
         Guild guild,
@@ -33,10 +48,10 @@ internal static class CommandUtil
                 .WithValue(gameSystem.Logic.GetCharacterSummary(adventurer.Sheet)));
         }
 
-        await command.RespondAsync(embed: embedBuilder.Build());
+        return embedBuilder.Build();
     }
 
-    public static Task RespondWithAdventurerSummaryAsync(
+    public static Embed BuildAdventurerSummaryEmbed(
         IDiscordInteraction command,
         Adventurer adventurer,
         GameSystem gameSystem,
@@ -59,10 +74,10 @@ internal static class CommandUtil
             }
         }
 
-        return command.RespondAsync(embed: embedBuilder.Build());
+        return embedBuilder.Build();
     }
 
-    public static Task RespondWithCharacterSheetAsync(
+    public static Embed BuildCharacterSheetEmbed(
         IDiscordInteraction command,
         Entities.Character character,
         string title,
@@ -78,7 +93,38 @@ internal static class CommandUtil
         embedBuilder = gameSystem.AddCharacterSheetFields(embedBuilder, character.Sheet, onlyTheseProperties);
 
         embedBuilder.AddField("Last Edited", $"{character.LastEdited:F}");
-        return command.RespondAsync(embed: embedBuilder.Build());
+        return embedBuilder.Build();
+    }
+
+    public static async Task RespondWithAdventureSummaryAsync(
+        this DiscordService discordService,
+        IDiscordInteraction command,
+        Guild guild,
+        Adventure adventure,
+        string title)
+    {
+        var embed = await discordService.BuildAdventureSummaryEmbedAsync(command, guild, adventure, title);
+        await command.RespondAsync(embed: embed);
+    }
+
+    public static Task RespondWithAdventurerSummaryAsync(
+        IDiscordInteraction command,
+        Adventurer adventurer,
+        GameSystem gameSystem,
+        AdventurerSummaryOptions options)
+    {
+        var embed = BuildAdventurerSummaryEmbed(command, adventurer, gameSystem, options);
+        return command.RespondAsync(embed: embed);
+    }
+
+    public static Task RespondWithCharacterSheetAsync(
+        IDiscordInteraction command,
+        Entities.Character character,
+        string title,
+        params string[] onlyTheseProperties)
+    {
+        var embed = BuildCharacterSheetEmbed(command, character, title, onlyTheseProperties);
+        return command.RespondAsync(embed: embed);
     }
 
     public static bool TryConvertTo<T>(object? value, [MaybeNullWhen(false)] out T result)
@@ -97,6 +143,41 @@ internal static class CommandUtil
 
         result = default;
         return false;
+    }
+
+    public static bool TryFindCombatantsByName(IEnumerable<string> nameParts, Encounter encounter,
+        IList<CombatantBase> combatants, [MaybeNullWhen(true)] out string errorMessage)
+    {
+        foreach (var namePart in nameParts)
+        {
+            var matchingCombatants = encounter.Combatants
+                .Where(c => c.Name.StartsWith(namePart, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            switch (matchingCombatants.Count)
+            {
+                case 0:
+                    errorMessage = $"'{namePart}' does not match any combatants in the current encounter.";
+                    return false;
+
+                case 1:
+                    if (!combatants.Contains(matchingCombatants[0])) combatants.Add(matchingCombatants[0]);
+                    break;
+
+                default:
+                    errorMessage = $"'{namePart}' does not uniquely match any combatants in the current encounter.";
+                    return false;
+            }
+        }
+
+        if (combatants.Count == 0)
+        {
+            errorMessage = "No targets selected.";
+            return false;
+        }
+
+        errorMessage = null;
+        return true;
     }
 
     public static bool TryGetCanonicalizedMultiPartOption(
@@ -199,6 +280,45 @@ internal static class CommandUtil
 
         adventure = null;
         return false;
+    }
+
+    public static bool TryGetCurrentCombatant(Guild guild, ulong channelId, ulong userId,
+        [MaybeNullWhen(false)] out Adventure adventure,
+        [MaybeNullWhen(false)] out Adventurer adventurer,
+        [MaybeNullWhen(false)] out Encounter encounter,
+        [MaybeNullWhen(true)] out string errorMessage)
+    {
+        adventure = guild.CurrentAdventure;
+        if (adventure is null)
+        {
+            adventurer = null;
+            encounter = null;
+            errorMessage = "There is no current adventure.";
+            return false;
+        }
+
+        if (!adventure.Adventurers.TryGetValue(userId, out adventurer))
+        {
+            encounter = null;
+            errorMessage = "You have not joined the current adventure.";
+            return false;
+        }
+
+        if (!guild.Encounters.TryGetValue(channelId, out encounter))
+        {
+            adventurer = null;
+            errorMessage = "No encounter is currently in progress in this channel.";
+            return false;
+        }
+
+        if (encounter.AdventureName != adventure.Name)
+        {
+            errorMessage = "The current adventure does not match the encounter in progress.";
+            return false;
+        }
+
+        errorMessage = null;
+        return true;
     }
 
     public readonly struct AdventurerSummaryOptions
