@@ -18,7 +18,7 @@ namespace ThirteenIsh.Commands.Pcs;
 /// Also make a `prev` command to go to the previous combatant and a `swap` command to swap two
 /// combatants in the initiative.
 /// </summary>
-internal sealed class PcEncounterNextSubCommand() : SubCommandBase("next", "Moves on to the next combatant in the encounter.")
+internal sealed class PcCombatNextSubCommand() : SubCommandBase("next", "Moves on to the next combatant in the encounter.")
 {
     public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
         IServiceProvider serviceProvider, CancellationToken cancellationToken)

@@ -11,7 +11,7 @@ using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Pcs;
 
-internal sealed class PcEncounterDamageCommand()
+internal sealed class PcCombatDamageCommand()
     : SubCommandBase("damage", "Deals damage to a player or monster in the encounter.")
 {
     public override SlashCommandOptionBuilder CreateBuilder()

@@ -5,7 +5,7 @@ using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Adventures;
 
-internal sealed class AdventureEncounterEndCommand() : SubCommandBase("end", "Ends an encounter in the current channel.")
+internal sealed class AdventureCombatEndCommand() : SubCommandBase("end", "Ends an encounter in the current channel.")
 {
     public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
         IServiceProvider serviceProvider, CancellationToken cancellationToken)

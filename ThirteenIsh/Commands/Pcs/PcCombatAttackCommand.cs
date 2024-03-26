@@ -11,7 +11,7 @@ namespace ThirteenIsh.Commands.Pcs;
 
 // This is like `pc-roll`, but instead of rolling against a specified DC, here we roll against
 // the attribute of another player (or monster) in the current encounter
-internal sealed class PcEncounterAttackCommand()
+internal sealed class PcCombatAttackCommand()
     : SubCommandBase("attack", "Rolls against a player or monster in the encounter.")
 {
     public override SlashCommandOptionBuilder CreateBuilder()

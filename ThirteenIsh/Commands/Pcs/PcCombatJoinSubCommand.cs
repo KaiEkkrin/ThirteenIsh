@@ -6,7 +6,7 @@ using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Pcs;
 
-internal sealed class PcEncounterJoinSubCommand() : SubCommandBase("join", "Joins the current encounter.")
+internal sealed class PcCombatJoinSubCommand() : SubCommandBase("join", "Joins the current encounter.")
 {
     public override SlashCommandOptionBuilder CreateBuilder()
     {
