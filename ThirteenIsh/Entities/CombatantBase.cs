@@ -1,7 +1,5 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
 using System.Diagnostics.CodeAnalysis;
-using ThirteenIsh.Game;
-
 namespace ThirteenIsh.Entities;
 
 /// <summary>

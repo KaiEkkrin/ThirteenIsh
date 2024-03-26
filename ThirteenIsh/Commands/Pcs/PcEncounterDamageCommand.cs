@@ -123,6 +123,8 @@ internal sealed class PcEncounterDamageCommand()
         }
 
         // The next bit could take a while so we'll defer our response
+        // TODO tbh, as soon as any command starts doing an async thing that isn't a reply
+        // it should defer
         await command.DeferAsync();
 
         var random = serviceProvider.GetRequiredService<IRandomWrapper>();
@@ -130,7 +132,6 @@ internal sealed class PcEncounterDamageCommand()
             ? new DamageRoller(parseTree, random)
             : new CombinedDamageRoller(parseTree, random);
 
-        // TODO : Spawn one message per target, to go to them to ask if they accept the damage
         var discordService = serviceProvider.GetRequiredService<DiscordService>();
         StringBuilder stringBuilder = new();
         for (var i = 0; i < targetCombatants.Count; ++i)

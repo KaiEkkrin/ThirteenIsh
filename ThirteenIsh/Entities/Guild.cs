@@ -27,7 +27,6 @@ public class Guild
 
     /// <summary>
     /// This guild's list of adventures.
-    /// TODO make sure it's not possible to add two adventures with the same name.
     /// </summary>
     public List<Adventure> Adventures { get; set; } = [];
 
