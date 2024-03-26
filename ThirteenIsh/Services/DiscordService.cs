@@ -107,6 +107,13 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
         _isDisposed = true;
     }
 
+    public async Task<IMessageChannel?> GetGuildMessageChannelAsync(ulong guildId, ulong channelId)
+    {
+        var guild = _client.GetGuild(guildId);
+        var channel = await ((IGuild)guild).GetChannelAsync(channelId);
+        return channel as IMessageChannel; // so you can send messages to it
+    }
+
     public Task<IGuildUser> GetGuildUserAsync(ulong guildId, ulong userId)
     {
         var guild = _client.GetGuild(guildId);

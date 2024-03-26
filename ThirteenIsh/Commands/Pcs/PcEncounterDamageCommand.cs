@@ -102,10 +102,10 @@ internal sealed class PcEncounterDamageCommand()
             return;
         }
 
-        var vsCounter = gameSystem.FindCounter(vsNamePart, _ => true);
+        var vsCounter = gameSystem.FindCounter(vsNamePart, c => c.Options.HasFlag(GameCounterOptions.HasVariable));
         if (vsCounter is null)
         {
-            await command.RespondAsync($"'{vsNamePart}' does not uniquely match a counter property.", ephemeral: true);
+            await command.RespondAsync($"'{vsNamePart}' does not uniquely match a variable property.", ephemeral: true);
             return;
         }
 
@@ -141,7 +141,7 @@ internal sealed class PcEncounterDamageCommand()
 
         var embedBuilder = new EmbedBuilder()
             .WithAuthor(command.User)
-            .WithTitle($"{adventure.Name} : Rolled damage")
+            .WithTitle($"{adventure.Name} : Rolled damage to {vsCounter.Name}")
             .WithDescription(stringBuilder.ToString());
 
         await command.ModifyOriginalResponseAsync(properties => properties.Embed = embedBuilder.Build());
@@ -166,6 +166,7 @@ internal sealed class PcEncounterDamageCommand()
                         EncounterDamageMessage message = new()
                         {
                             Damage = -result.Roll,
+                            ChannelId = (long)channelId,
                             GuildId = (long)guildId,
                             UserId = adventurerCombatant.UserId,
                             VariableName = vsCounter.Name

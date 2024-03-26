@@ -23,6 +23,14 @@ public class EncounterDamageMessage : MessageBase
     public int Damage { get; set; }
 
     /// <summary>
+    /// The channel ID. (This won't be in the message context, because this message is sent as a DM.)
+    /// </summary>
+    public long ChannelId { get; set; }
+
+    [BsonIgnore]
+    public ulong NativeChannelId => (ulong)ChannelId;
+
+    /// <summary>
     /// The guild ID. (This won't be in the message context, because this message is sent as a DM.)
     /// </summary>
     public long GuildId { get; set; }
@@ -78,8 +86,7 @@ public class EncounterDamageMessage : MessageBase
             ? $"{updatedAdventurer.Name} lost {-totalDamage} {counter.Name}"
             : $"{updatedAdventurer.Name} gained {totalDamage} {counter.Name}";
 
-        // TODO Publish a message to the guild too
-
+        // Build the embed for the response
         List<EmbedFieldBuilder> extraFields = [];
         if (parseTree is not IntegerParseTree)
         {
@@ -88,7 +95,7 @@ public class EncounterDamageMessage : MessageBase
                 .WithValue(result.Working));
         }
 
-        await CommandUtil.RespondWithAdventurerSummaryAsync(component, updatedAdventurer, gameSystem,
+        var embed = CommandUtil.BuildAdventurerSummaryEmbed(component, updatedAdventurer, gameSystem,
             new CommandUtil.AdventurerSummaryOptions
             {
                 ExtraFields = extraFields,
@@ -97,6 +104,16 @@ public class EncounterDamageMessage : MessageBase
                 Title = title
             });
 
+        // Send the embed to the channel so everyone sees what has happened
+        var discordService = serviceProvider.GetRequiredService<DiscordService>();
+        var channel = await discordService.GetGuildMessageChannelAsync(NativeGuildId, NativeChannelId);
+        if (channel is not null)
+        {
+            await channel.SendMessageAsync(embed: embed);
+        }
+
+        // Reply with the embed, too
+        await component.RespondAsync(embed: embed);
         return true;
     }
 

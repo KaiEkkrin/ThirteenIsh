@@ -25,7 +25,7 @@ internal static class CommandUtil
                 .AddChoice("-3", -3));
     }
 
-    public static async Task RespondWithAdventureSummaryAsync(
+    public static async Task<Embed> BuildAdventureSummaryEmbedAsync(
         this DiscordService discordService,
         IDiscordInteraction command,
         Guild guild,
@@ -48,10 +48,10 @@ internal static class CommandUtil
                 .WithValue(gameSystem.Logic.GetCharacterSummary(adventurer.Sheet)));
         }
 
-        await command.RespondAsync(embed: embedBuilder.Build());
+        return embedBuilder.Build();
     }
 
-    public static Task RespondWithAdventurerSummaryAsync(
+    public static Embed BuildAdventurerSummaryEmbed(
         IDiscordInteraction command,
         Adventurer adventurer,
         GameSystem gameSystem,
@@ -74,10 +74,10 @@ internal static class CommandUtil
             }
         }
 
-        return command.RespondAsync(embed: embedBuilder.Build());
+        return embedBuilder.Build();
     }
 
-    public static Task RespondWithCharacterSheetAsync(
+    public static Embed BuildCharacterSheetEmbed(
         IDiscordInteraction command,
         Entities.Character character,
         string title,
@@ -93,7 +93,38 @@ internal static class CommandUtil
         embedBuilder = gameSystem.AddCharacterSheetFields(embedBuilder, character.Sheet, onlyTheseProperties);
 
         embedBuilder.AddField("Last Edited", $"{character.LastEdited:F}");
-        return command.RespondAsync(embed: embedBuilder.Build());
+        return embedBuilder.Build();
+    }
+
+    public static async Task RespondWithAdventureSummaryAsync(
+        this DiscordService discordService,
+        IDiscordInteraction command,
+        Guild guild,
+        Adventure adventure,
+        string title)
+    {
+        var embed = await discordService.BuildAdventureSummaryEmbedAsync(command, guild, adventure, title);
+        await command.RespondAsync(embed: embed);
+    }
+
+    public static Task RespondWithAdventurerSummaryAsync(
+        IDiscordInteraction command,
+        Adventurer adventurer,
+        GameSystem gameSystem,
+        AdventurerSummaryOptions options)
+    {
+        var embed = BuildAdventurerSummaryEmbed(command, adventurer, gameSystem, options);
+        return command.RespondAsync(embed: embed);
+    }
+
+    public static Task RespondWithCharacterSheetAsync(
+        IDiscordInteraction command,
+        Entities.Character character,
+        string title,
+        params string[] onlyTheseProperties)
+    {
+        var embed = BuildCharacterSheetEmbed(command, character, title, onlyTheseProperties);
+        return command.RespondAsync(embed: embed);
     }
 
     public static bool TryConvertTo<T>(object? value, [MaybeNullWhen(false)] out T result)
