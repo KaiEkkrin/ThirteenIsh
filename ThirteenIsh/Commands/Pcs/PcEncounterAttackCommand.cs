@@ -24,8 +24,7 @@ internal sealed class PcEncounterAttackCommand()
             .AddOption("target", ApplicationCommandOptionType.String,
                 "The target(s) in the current encounter (comma separated). Specify `vs` and the counter targeted.",
                 isRequired: true)
-            .AddOption("vs", ApplicationCommandOptionType.String, "If `target` is specified, the counter targeted.",
-                isRequired: true);
+            .AddOption("vs", ApplicationCommandOptionType.String, "The counter targeted.", isRequired: true);
     }
 
     public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,

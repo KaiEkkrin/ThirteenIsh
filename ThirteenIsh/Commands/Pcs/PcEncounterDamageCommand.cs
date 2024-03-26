@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
 using ThirteenIsh.Entities;
+using ThirteenIsh.Entities.Messages;
 using ThirteenIsh.Game;
 using ThirteenIsh.Parsing;
 using ThirteenIsh.Services;
@@ -31,7 +32,8 @@ internal sealed class PcEncounterDamageCommand()
             .AddOption("roll-separately", ApplicationCommandOptionType.Boolean, "Roll separately for each target")
             .AddOption("target", ApplicationCommandOptionType.String,
                 "The target(s) in the current encounter (comma separated). Specify `vs` and the counter targeted.",
-                isRequired: true);
+                isRequired: true)
+            .AddOption("vs", ApplicationCommandOptionType.String, "The variable targeted.", isRequired: true);
     }
 
     public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
@@ -57,6 +59,13 @@ internal sealed class PcEncounterDamageCommand()
         if (targets is not { Length: > 0 })
         {
             await command.RespondAsync("No target supplied.", ephemeral: true);
+            return;
+        }
+
+        var vsNamePart = CommandUtil.TryGetOption<string>(option, "vs", out var vsString) ? vsString : null;
+        if (string.IsNullOrWhiteSpace(vsNamePart))
+        {
+            await command.RespondAsync("No vs supplied.", ephemeral: true);
             return;
         }
 
@@ -93,6 +102,13 @@ internal sealed class PcEncounterDamageCommand()
             return;
         }
 
+        var vsCounter = gameSystem.FindCounter(vsNamePart, _ => true);
+        if (vsCounter is null)
+        {
+            await command.RespondAsync($"'{vsNamePart}' does not uniquely match a counter property.", ephemeral: true);
+            return;
+        }
+
         // If we have a counter include that in the overall parse tree
         if (counter is not null && counterValue.HasValue)
         {
@@ -106,17 +122,21 @@ internal sealed class PcEncounterDamageCommand()
             parseTree = new BinaryOperationParseTree(0, parseTree, counterParseTree, '+');
         }
 
+        // The next bit could take a while so we'll defer our response
+        await command.DeferAsync();
+
         var random = serviceProvider.GetRequiredService<IRandomWrapper>();
         DamageRoller damageRoller = rollSeparately
             ? new DamageRoller(parseTree, random)
             : new CombinedDamageRoller(parseTree, random);
 
         // TODO : Spawn one message per target, to go to them to ask if they accept the damage
+        var discordService = serviceProvider.GetRequiredService<DiscordService>();
         StringBuilder stringBuilder = new();
         for (var i = 0; i < targetCombatants.Count; ++i)
         {
             if (i > 0) stringBuilder.AppendLine(); // space things out
-            RollDamageVs(targetCombatants[i]);
+            await RollDamageVsAsync(targetCombatants[i]);
         }
 
         var embedBuilder = new EmbedBuilder()
@@ -124,12 +144,13 @@ internal sealed class PcEncounterDamageCommand()
             .WithTitle($"{adventure.Name} : Rolled damage")
             .WithDescription(stringBuilder.ToString());
 
-        await command.RespondAsync(embed: embedBuilder.Build());
+        await command.ModifyOriginalResponseAsync(properties => properties.Embed = embedBuilder.Build());
         return;
 
-        void RollDamageVs(CombatantBase target)
+        async Task RollDamageVsAsync(CombatantBase target)
         {
             stringBuilder.Append(CultureInfo.CurrentCulture, $"vs {target.Name}");
+
             // TODO should this switch turn into a virtual method on CombatantBase?
             switch (target)
             {
@@ -141,6 +162,25 @@ internal sealed class PcEncounterDamageCommand()
                         stringBuilder.AppendLine(result.Working);
 
                         // TODO Append the message to go to the target's player to acknowledge the damage
+                        var targetUser = await discordService.GetGuildUserAsync(guildId, adventurerCombatant.NativeUserId);
+                        EncounterDamageMessage message = new()
+                        {
+                            Damage = -result.Roll,
+                            GuildId = (long)guildId,
+                            UserId = adventurerCombatant.UserId,
+                            VariableName = vsCounter.Name
+                        };
+                        await dataService.AddMessageAsync(message, cancellationToken);
+
+                        var component = new ComponentBuilder()
+                            .WithButton("Take full", message.GetMessageId(EncounterDamageMessage.TakeFullControlId))
+                            .WithButton("Take half", message.GetMessageId(EncounterDamageMessage.TakeHalfControlId))
+                            .WithButton("Take none", message.GetMessageId(EncounterDamageMessage.TakeNoneControlId));
+
+                        await targetUser.SendMessageAsync(
+                            $"{adventurer.Name} dealt you {result.Roll} damage to {vsCounter.Name}",
+                            components: component.Build());
+
                         break;
                     }
 
