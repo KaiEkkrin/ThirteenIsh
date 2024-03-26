@@ -24,7 +24,10 @@ internal sealed class PcEncounterDamageCommand()
                 .WithType(ApplicationCommandOptionType.Integer)
                 .AddChoice("1", 1)
                 .AddChoice("2", 2)
-                .AddChoice("3", 3))
+                .AddChoice("3", 3)
+                .AddChoice("4", 4)
+                .AddChoice("5", 5)
+                .AddChoice("6", 6))
             .AddOption("roll-separately", ApplicationCommandOptionType.Boolean, "Roll separately for each target")
             .AddOption("target", ApplicationCommandOptionType.String,
                 "The target(s) in the current encounter (comma separated). Specify `vs` and the counter targeted.",

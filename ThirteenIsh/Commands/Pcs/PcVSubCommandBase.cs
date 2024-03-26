@@ -1,6 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ThirteenIsh.Entities;
+using ThirteenIsh.EditOperations;
 using ThirteenIsh.Game;
 using ThirteenIsh.Parsing;
 using ThirteenIsh.Services;
@@ -91,31 +91,12 @@ internal abstract class PcVSubCommandBase(string name, string description,
             new CommandUtil.AdventurerSummaryOptions
             {
                 ExtraFields = extraFields,
-                OnlyTheseProperties = new[] { counter.Name },
+                OnlyTheseProperties = [counter.Name],
                 OnlyVariables = true,
                 Title = $"Set {counter.Name} on {updatedAdventurer.Name}"
             });
     }
 
-    protected abstract VCommandEditOperation CreateEditOperation(SocketSlashCommand command,
+    protected abstract EditVariableOperationBase CreateEditOperation(SocketSlashCommand command,
         GameCounter counter, ParseTreeBase parseTree, IRandomWrapper random);
-
-    protected abstract class VCommandEditOperation(SocketSlashCommand command)
-        : SyncEditOperation<ResultOrMessage<VCommandResult>, Guild, MessageEditResult<VCommandResult>>
-    {
-        public sealed override MessageEditResult<VCommandResult> DoEdit(Guild guild)
-        {
-            if (guild.CurrentAdventure is not { } currentAdventure)
-                return new MessageEditResult<VCommandResult>(null, "There is no current adventure in this guild.");
-
-            if (!currentAdventure.Adventurers.TryGetValue(command.User.Id, out var adventurer))
-                return new MessageEditResult<VCommandResult>(null, "You have not joined the current adventure.");
-
-            return DoEditInternal(currentAdventure, adventurer);
-        }
-
-        protected abstract MessageEditResult<VCommandResult> DoEditInternal(Adventure adventure, Adventurer adventurer);
-    }
-
-    protected record VCommandResult(Adventure Adventure, string Working);
 }
