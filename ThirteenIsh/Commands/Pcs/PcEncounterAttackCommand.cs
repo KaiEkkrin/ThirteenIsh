@@ -1,5 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using System.Globalization;
+using System.Text;
 using ThirteenIsh.Entities;
 using ThirteenIsh.Game;
 using ThirteenIsh.Parsing;
@@ -92,8 +94,56 @@ internal class PcEncounterAttackCommand() : SubCommandBase("attack", "Rolls agai
             return;
         }
 
-        // TODO
-        throw new NotImplementedException();
+        var random = serviceProvider.GetRequiredService<IRandomWrapper>();
+        StringBuilder stringBuilder = new();
+        for (var i = 0; i < targetCombatants.Count; ++i)
+        {
+            if (i > 0) stringBuilder.AppendLine(); // space things out
+            RollVs(targetCombatants[i]);
+        }
+
+        var embedBuilder = new EmbedBuilder()
+            .WithAuthor(command.User)
+            .WithTitle($"{adventurer.Name} : Rolled {counter.Name} vs {vsCounter.Name}")
+            .WithDescription(stringBuilder.ToString());
+
+        await command.RespondAsync(embed: embedBuilder.Build());
+        return;
+
+        void RollVs(CombatantBase target)
+        {
+            stringBuilder.Append(CultureInfo.CurrentCulture, $"vs {target.Name}");
+            switch (target)
+            {
+                case AdventurerCombatant adventurerCombatant when adventure.Adventurers.TryGetValue(
+                    adventurerCombatant.NativeUserId, out var targetAdventurer):
+                    {
+                        var dc = vsCounter.GetValue(targetAdventurer.Sheet);
+                        if (!dc.HasValue)
+                        {
+                            stringBuilder.AppendLine(CultureInfo.CurrentCulture, $" : Target has no {vsCounter.Name}");
+                            break;
+                        }
+
+                        var result = counter.Roll(adventurer, bonus, random, rerolls, ref dc);
+                        stringBuilder.Append(CultureInfo.CurrentCulture, $" ({dc}) : {result.Roll}");
+                        if (result.Success.HasValue)
+                        {
+                            var successString = result.Success.Value ? "Success!" : "Failure!";
+                            stringBuilder.Append(" -- ").Append(successString);
+                        }
+                        stringBuilder.AppendLine();
+                        stringBuilder.AppendLine(result.Working);
+                        break;
+                    }
+
+                // TODO add code for rolling vs monsters here
+
+                default:
+                    stringBuilder.AppendLine(" : Target unresolved");
+                    break;
+            }
+        }
     }
 
     private static ParseTreeBase? GetBonus(SocketSlashCommandDataOption option)
