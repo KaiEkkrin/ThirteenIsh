@@ -117,4 +117,10 @@ internal abstract class GameSystemLogicBase
     {
         return true;
     }
+
+    public readonly struct DamageCounter
+    {
+        public GameCounter Counter { get; init; }
+        public int Multiplier { get; init; }
+    }
 }

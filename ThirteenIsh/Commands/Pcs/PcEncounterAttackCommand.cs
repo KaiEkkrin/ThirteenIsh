@@ -11,7 +11,8 @@ namespace ThirteenIsh.Commands.Pcs;
 
 // This is like `pc-roll`, but instead of rolling against a specified DC, here we roll against
 // the attribute of another player (or monster) in the current encounter
-internal class PcEncounterAttackCommand() : SubCommandBase("attack", "Rolls against a player or monster in the encounter.")
+internal sealed class PcEncounterAttackCommand()
+    : SubCommandBase("attack", "Rolls against a player or monster in the encounter.")
 {
     public override SlashCommandOptionBuilder CreateBuilder()
     {
@@ -113,6 +114,7 @@ internal class PcEncounterAttackCommand() : SubCommandBase("attack", "Rolls agai
         void RollVs(CombatantBase target)
         {
             stringBuilder.Append(CultureInfo.CurrentCulture, $"vs {target.Name}");
+            // TODO should this switch turn into a virtual method on CombatantBase?
             switch (target)
             {
                 case AdventurerCombatant adventurerCombatant when adventure.Adventurers.TryGetValue(
