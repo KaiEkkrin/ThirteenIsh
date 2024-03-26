@@ -35,74 +35,22 @@ Configure these via command line, environment variables or user secrets.
 * Create a file "my.docker.env" in the project root and add to it `BotToken="...my bot token..."`.
 * Run e.g. `docker-compose up -d --build`
 
-## TO DO
+## General TO DO
 
-(Lots of the below is out of date compared to how I actually did it and I should update when things are more complete.)
+There are lots of TODO comments in the codebase. Here I'm going to try to write my list for MVP for beginning the campaign. Where system specific I can support 13th Age only and leave Dragonbane until later.
 
-### Adventure re-design
+* Monster stats. Save to the account with a name, like characters -- they can in fact go in the characters collection, with a much-reduced set of properties. For 13th Age, just the following will do: AC, PD, MD, HP. Extend the game system to declare monster properties separately, and upon character creation, use a flag to declare a character to be a monster?
+* Adding monsters to encounters. We'll copy the monster directly into the encounter, rather than copying it into the adventure. Unique name generation (prefix + incrementing number.)
+* Removing monsters from encounters.
+* `prev` and `swap` commands for encounters, for moving to the previous initiative and for swapping two combatants around in the initiative.
+* List of tags at the combatant level. Arbitrary strings, unique (case insensitive). Commands to add and remove. Use for applying conditions to player characters and monsters.
+* Custom counters (optionally with variable) added on characters -- variables tracked on PC, like normal counter variables.
+* Extra built-in counters per 13th Age class representing class-specific resources.
+* `pc-rest` command as a helper for various kinds of rests (define in a system specific manner).
 
-Not much here. When creating an adventure, select a game system from the drop-down. Game system cannot be changed after creation (all hell would break loose.)
+## 13th Age
 
-### Character re-design
-
-The CharacterSheet is now a base class for (Game System)CharacterSheet. (So necessarily each character is tied to a game system, can only be added to adventures in that system etc.)
-
-A **Property** is a property of a character's sheet. It has a name and an enumerated value. E.g. character class.
-
-A **Counter** is a property of a character's sheet. It has a name, an optional alias, a numeric value, a minimum value, a maximum value, whether or not it has an associated variable, and if it does, an optional rest interval and an optional rest amount.
-
-Characters have fixed counters (automatically added by the character sheet and filled in by the user on creation), derived counters (automatically added by the character sheet with values computed from the fixed counters etc), and custom counters (added and removed at any time by the user, can contain anything.)
-
-Rest intervals are an enumerated value whose possible selections depend on the game system.
-
-### Character commands re-design
-
-I don't like the sub-command group thing or the individual settings for different abilities. Also, more of the character sheet needs to be customised per game system and I do want to do the basics of both 13th Age and Dragonbane (and whatever else happens to come along.)
-
-* `character-add` -- add a new character -- select a game system from a drop-down, then receive a form to fill in with the non-custom bits.
-* `character-edit` -- select a character, get the same form to edit.
-* `character-get` -- show a character's sheet
-* `character-list` -- list all characters
-* `character-remove` -- remove a character
-* `character-roll` -- rolls based on the selected stat and the character's game system
-* `character-set` -- set a specific property to a specific value (avoids the form)
-* `character-counter-add` or `counter-add` -- add a custom counter with a reset value
-* `character-counter-list` or `counter-list` -- list all counters for a character
-* `character-counter-remove` or `counter-remove` -- remove a counter from a character
-* `character-counter-set` or `counter-set` -- edit a custom counter with its reset value
-
-For now I don't want to try to provide commands to help players level up, track/count bonuses on level up and other fixed things like that -- e.g. ability score boosts, icon relationships, skills in 13th Age. Too messy, and not helpful with character variable tracking across combat and adventures, which is the real point of this bot.
-
-### Player character commands
-
-Should I have `pc-roll` to roll taking into account some variables known by the game system? Other convenience things e.g. attacking and auto-applying variable changes to target(s)? (luxury!) -- TO DO. For Dragonbane, having this roll against a skill would be really useful.
-
-* `pc-rest` -- applies a level of "rest" to the adventurer's variables taking into account game system and custom counters
-* `pc-var` -- alters a counter variable
-
-A **Variable** is a property of the adventurer not the character sheet. It corresponds to a counter and tracks the value over time, between the counter minimum and its actual value.
-
-Some game systems may have extra variables, e.g. in Dragonbane, in combat the initiative card variable (corresponds to whether the character has used their initiative yet in this round); in many systems, the death save mechanic; etc.
-
-TO DO: convenience commands in adventure (or in combat when in one), such as attack another character/monster, deal damage to them, etc?
-
-### Combat commands basic design
-
-* `combat-add` -- add a monster to the combat (game system-specific config...)
-* `combat-begin` -- GM command only -- starts combat in the current game system
-* `combat-end` -- GM command only -- ends combat in the current game system
-* `combat-join` -- adds current adventurer to the combat
-* `combat-leave` -- leaves combat with the current adventurer
-* `combat-remove` -- remove a monster from the combat
-
-### Attacks and damage
-
-* `pc attack` -- attack the target (name of target, name of system-dependent attack ability). Rolls and determines success based on the attack ability and the target.
-* `pc damage` -- damage the target (name of target, system-dependent name of counter to damage with suitable default e.g. Hit Points). Rolls and offers a dialog to the target's player letting them accept or deny the damage, if accepted applies it to their variables.
-
-### 13th Age
-
-#### Properties (dropdown select)
+### Properties (dropdown select)
 
 These are configured in the character sheet on add or edit.
 
@@ -111,7 +59,7 @@ These are configured in the character sheet on add or edit.
 
 Some selections of the class property may add extra fixed counters, e.g. battle cries and spells for the bard (TODO do later after doing the basics.)
 
-#### Fixed counters
+### Fixed counters
 
 These are configured in the character sheet on add or edit.
 
@@ -123,7 +71,7 @@ These are configured in the character sheet on add or edit.
 * Wisdom \[WIS\]
 * Charisma \[CHA\]
 
-#### Derived counters
+### Derived counters
 
 These are automatically created by the character sub-class for the rule system. See page 31 of the rule book.
 
@@ -137,14 +85,14 @@ Should I allow for ad hoc modifier counters for all of these? To account for mag
 * Recoveries
 * RecoveryDie
 
-### Dragonbane
+## Dragonbane
 
-#### Properties
+### Properties
 
 * Kin (needed, because it affects e.g. movement. See page. 9.)
 * Profession (like "class" in 13th Age, D&D, see page 15.)
 
-#### Fixed counters
+### Fixed counters
 
 * Strength \[STR\]
 * Constitution \[CON\]
@@ -156,7 +104,7 @@ Should I allow for ad hoc modifier counters for all of these? To account for mag
 * Points for the magical secondary skills.
 * ArmorRating (configured as a single number rather than selecting armor types, which would be messy.)
 
-#### Derived counters
+### Derived counters
 
 * Movement (page 27.)
 * HitPoints \[HP\]
@@ -166,7 +114,7 @@ I think it's reasonable to make players make their own custom counters to track 
 
 TO DO come up with something that will let the GM ensure fair skill advancement between player characters (?)
 
-#### Extra variables
+### Extra variables
 
 * Initiative
 * DeathSuccesses (see page 50)
@@ -174,7 +122,7 @@ TO DO come up with something that will let the GM ensure fair skill advancement 
 * Exhausted, Sickly, Dazed, Angry, Scared, Disheartened (these are 0 or 1 only and default to 0)
 * Advancement Marks for every skill (0 or 1, see page 29)
 
-#### Rests (see page 54)
+### Rests (see page 54)
 
 * Round: recover 1d6 WP
 * Stretch: recover 1d6 HP, 1d6 WP, heal a chosen condition (needs UI...)
