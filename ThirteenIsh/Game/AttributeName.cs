@@ -6,13 +6,16 @@ namespace ThirteenIsh.Game;
 
 internal static partial class AttributeName
 {
-    [GeneratedRegex(@"(\p{L})(\p{L}*)")]
+    [GeneratedRegex(@"^(\p{L}+)([0-9]*)$", RegexOptions.Compiled)]
+    private static partial Regex AliasRegex();
+
+    [GeneratedRegex(@"(\p{L})(\p{L}*)", RegexOptions.Compiled)]
     private static partial Regex NamePartRegex();
 
-    [GeneratedRegex(@"[^\p{L}\s]")]
+    [GeneratedRegex(@"[^\p{L}\s]", RegexOptions.Compiled)]
     private static partial Regex NotNameRegex();
 
-    [GeneratedRegex(@"\s+")]
+    [GeneratedRegex(@"\s+", RegexOptions.Compiled)]
     private static partial Regex WhiteSpaceRegex();
 
     /// <summary>

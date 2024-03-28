@@ -12,6 +12,8 @@ using ThirteenIsh.Services;
 namespace ThirteenIsh.Commands.Pcs;
 
 // TODO Make an equivalent for dealing damage with a monster?
+// (or move this stuff to just `13-combat` and have it work off of the current combatant,
+// or a named one, without necessarily being bound to the PC?)
 internal sealed class PcCombatDamageCommand()
     : SubCommandBase("damage", "Deals damage to a player or monster in the encounter.")
 {

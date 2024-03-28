@@ -13,6 +13,8 @@ namespace ThirteenIsh.Commands.Pcs;
 // the attribute of another player (or monster) in the current encounter
 // TODO Make an equivalent for attacking with a monster? (with an optional property name, since
 // monsters often have ad hoc attacks?)
+// (or move this stuff to just `13-combat` and have it work off of the current combatant,
+// or a named one, without necessarily being bound to the PC?)
 internal sealed class PcCombatAttackCommand()
     : SubCommandBase("attack", "Rolls against a player or monster in the encounter.")
 {
