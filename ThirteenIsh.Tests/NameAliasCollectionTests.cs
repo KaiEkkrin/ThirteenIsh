@@ -4,6 +4,16 @@ using Xunit.Abstractions;
 
 namespace ThirteenIsh.Tests;
 
+// TODO Fix it so that:
+// - (Easy) Every name part always gets at least 1 character represented in the alias (up to the alias length).
+// This will fix the most trivial cases of ambiguity.
+// - (Harder) Every unique name always maps to the same alias prefix where possible, and every time we see
+// a new name, it is mapped to a different alias prefix if possible. (E.g. "Kobold Archer", "Kobold Alchemist",
+// "Kobold Archer", "Kobold Alchemist" with alias length 4 should map to e.g. KobA1, KoAl1, KobA2, KoAl2.)
+// Means I need to initialise the NameAliasCollection with the name for each alias, and reconstruct the mapping
+// as best I can on construction (using mappings with least ambiguity where no unambiguous mapping exists.)
+// I think it might be reasonable to consider this functionality non-essential and defer it until after I've
+// done the non-MVP stuff.
 public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
 {
     [Theory]
