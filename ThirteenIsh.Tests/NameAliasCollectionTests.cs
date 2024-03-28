@@ -1,4 +1,5 @@
-﻿using Shouldly;
+﻿using SharpCompress.Crypto;
+using Shouldly;
 using System.Text;
 using ThirteenIsh.Game;
 using Xunit.Abstractions;
@@ -13,12 +14,42 @@ namespace ThirteenIsh.Tests;
 // as best I can on construction (using mappings with least ambiguity where no unambiguous mapping exists.)
 public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
 {
+    public static TheoryData<int, bool, string[]> NameAliasData
+    {
+        get
+        {
+            TheoryData<int, bool, string[]> data = [];
+
+            AddData(7, false, "Bard", "Cleric", "Warlock");
+            AddData(4, true, "Kobold Archer", "Kobold Warrior", "Kobold Hero");
+            AddData(4, true, "Kobold Archer", "Kobold Archer", "Kobold Warrior", "Kobold Archer", "Kobold Hero",
+                "Kobold Warrior");
+
+            AddData(4, true, "Kobold Archer", "Kobold Archer", "Kobold Warrior", "Kobold Archer", "Kobold Hero",
+                "Kobold War Hero", "Kobold Alchemist", "Kobold Archer");
+
+            // TODO why do the repeating cases pass in the way that they do?
+            AddDataRepeating(3, true, 10, "Aaaaaa", "Aaaaab", "Aaaaac", "Aaaaaa", "Aaaaab", "Aaaaad");
+            AddDataRepeating(3, true, 10, "A b c d e", "A b c d f", "A b c d g", "A b d e f", "A b d e g");
+
+            return data;
+            void AddData(int prefixLength, bool alwaysAddNumber, params string[] names)
+            {
+                data.Add(prefixLength, alwaysAddNumber, names);
+            }
+
+            void AddDataRepeating(int prefixLength, bool alwaysAddNumber, int repeatCount, params string[] names)
+            {
+                for (var i = 0; i < repeatCount; ++i)
+                {
+                    data.Add(prefixLength, alwaysAddNumber, names);
+                }
+            }
+        }
+    }
+
     [Theory]
-    [InlineData(7, false, "Bard", "Cleric", "Warlock")]
-    [InlineData(4, true, "Kobold Archer", "Kobold Warrior", "Kobold Hero")]
-    [InlineData(4, true, "Kobold Archer", "Kobold Archer", "Kobold Warrior", "Kobold Archer", "Kobold Hero", "Kobold Warrior")]
-    [InlineData(4, true, "Kobold Archer", "Kobold Archer", "Kobold Warrior", "Kobold Archer", "Kobold Hero",
-        "Kobold War Hero", "Kobold Alchemist", "Kobold Archer")]
+    [MemberData(nameof(NameAliasData))]
     public void UniqueAliasesAreGeneratedBuildingCollectionEachTime(
         int prefixLength, bool alwaysAddNumber, params string[] names)
     {
@@ -46,11 +77,7 @@ public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
     }
 
     [Theory]
-    [InlineData(7, false, "Bard", "Cleric", "Warlock")]
-    [InlineData(4, true, "Kobold Archer", "Kobold Warrior", "Kobold Hero")]
-    [InlineData(4, true, "Kobold Archer", "Kobold Archer", "Kobold Warrior", "Kobold Archer", "Kobold Hero", "Kobold Warrior")]
-    [InlineData(4, true, "Kobold Archer", "Kobold Archer", "Kobold Warrior", "Kobold Archer", "Kobold Hero",
-        "Kobold War Hero", "Kobold Alchemist", "Kobold Archer")]
+    [MemberData(nameof(NameAliasData))]
     public void UniqueAliasesAreGeneratedWithPersistentCollection(
         int prefixLength, bool alwaysAddNumber, params string[] names)
     {
