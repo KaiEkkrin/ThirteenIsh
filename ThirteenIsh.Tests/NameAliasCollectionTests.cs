@@ -1,19 +1,16 @@
 ﻿using Shouldly;
+using System.Text;
 using ThirteenIsh.Game;
 using Xunit.Abstractions;
 
 namespace ThirteenIsh.Tests;
 
 // TODO Fix it so that:
-// - (Easy) Every name part always gets at least 1 character represented in the alias (up to the alias length).
-// This will fix the most trivial cases of ambiguity.
 // - (Harder) Every unique name always maps to the same alias prefix where possible, and every time we see
 // a new name, it is mapped to a different alias prefix if possible. (E.g. "Kobold Archer", "Kobold Alchemist",
 // "Kobold Archer", "Kobold Alchemist" with alias length 4 should map to e.g. KobA1, KoAl1, KobA2, KoAl2.)
 // Means I need to initialise the NameAliasCollection with the name for each alias, and reconstruct the mapping
 // as best I can on construction (using mappings with least ambiguity where no unambiguous mapping exists.)
-// I think it might be reasonable to consider this functionality non-essential and defer it until after I've
-// done the non-MVP stuff.
 public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
 {
     [Theory]
@@ -25,23 +22,27 @@ public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
     public void UniqueAliasesAreGeneratedBuildingCollectionEachTime(
         int prefixLength, bool alwaysAddNumber, params string[] names)
     {
-        SortedSet<string> existingAliases = [];
+        SortedDictionary<string, string> namesByAlias = [];
         foreach (var name in names)
         {
-            NameAliasCollection collection = new(existingAliases);
+            NameAliasCollection collection = new(namesByAlias.Keys);
             var alias = collection.Add(name, prefixLength, alwaysAddNumber);
-            existingAliases.ShouldNotContain(alias);
-            existingAliases.Add(alias);
+            namesByAlias.ShouldNotContainKey(alias, name);
+            namesByAlias.Add(alias, name);
         }
 
-        foreach (var alias in existingAliases)
+        foreach (var alias in namesByAlias.Keys)
         {
             testOutputHelper.WriteLine(alias);
         }
 
         // TODO check output looks sane
         // existingAliases.ShouldBeEmpty();
-        existingAliases.Count.ShouldBe(names.Length);
+        namesByAlias.Count.ShouldBe(names.Length);
+        foreach (var (alias, name) in namesByAlias)
+        {
+            AssertContainsFirstCharacterOfEachNamePart(alias, name, prefixLength);
+        }
     }
 
     [Theory]
@@ -54,18 +55,46 @@ public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
         int prefixLength, bool alwaysAddNumber, params string[] names)
     {
         NameAliasCollection collection = new([]);
+        SortedDictionary<string, string> namesByAlias = [];
         foreach (var name in names)
         {
-            collection.Add(name, prefixLength, alwaysAddNumber);
+            var alias = collection.Add(name, prefixLength, alwaysAddNumber);
+            namesByAlias.ShouldNotContainKey(alias, name);
+            namesByAlias.Add(alias, name);
         }
 
-        foreach (var alias in collection.Aliases)
+        foreach (var alias in namesByAlias.Keys)
         {
             testOutputHelper.WriteLine(alias);
         }
 
         // TODO check output looks sane
         // collection.Aliases.ShouldBeEmpty();
-        collection.Aliases.ToHashSet().Count.ShouldBe(names.Length);
+        namesByAlias.Count.ShouldBe(names.Length);
+        collection.Aliases.Order().ShouldBe(namesByAlias.Keys);
+        foreach (var (alias, name) in namesByAlias)
+        {
+            AssertContainsFirstCharacterOfEachNamePart(alias, name, prefixLength);
+        }
+    }
+
+    private void AssertContainsFirstCharacterOfEachNamePart(string alias, string name, int prefixLength)
+    {
+        // Build a regex pattern this alias should match:
+        StringBuilder patternBuilder = new("^");
+
+        AttributeName.TryCanonicalizeMultiPart(name, out var canonicalizedName).ShouldBeTrue(name);
+        var nameParts = canonicalizedName.Split(' ');
+        if (nameParts.Length > prefixLength) nameParts = nameParts[..prefixLength];
+
+        foreach (var namePart in nameParts)
+        {
+            patternBuilder.Append(namePart[0]);
+            patternBuilder.Append(@"\p{Ll}*"); // lowercase characters
+        }
+
+        patternBuilder.Append(@"[0-9]*$"); // number and end-of-line
+        var pattern = patternBuilder.ToString();
+        alias.ShouldMatch(pattern, $"First characters of: {string.Join(", ", nameParts)}");
     }
 }

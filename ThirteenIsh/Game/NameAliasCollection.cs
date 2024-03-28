@@ -104,7 +104,14 @@ internal sealed partial class NameAliasCollection
             yield break;
         }
 
-        for (var length = Math.Min(prefixLength, nameParts[index].Length); length >= 1; --length)
+        // Always leave room for the remaining name parts to contribute at least one character each
+        // to the alias:
+        var remainingPartsCount = nameParts.Length - (index + 1);
+        if (remainingPartsCount > prefixLength) throw new InvalidOperationException(
+            $"Found {remainingPartsCount} remaining parts but only {prefixLength} prefix length");
+
+        var startingLength = Math.Min(prefixLength - remainingPartsCount, nameParts[index].Length);
+        for (var length = startingLength; length >= 1; --length)
         {
             var prefix = nameParts[index][..length];
             foreach (var suffix in EnumeratePossiblePrefixParts(nameParts, index + 1, prefixLength - length))
