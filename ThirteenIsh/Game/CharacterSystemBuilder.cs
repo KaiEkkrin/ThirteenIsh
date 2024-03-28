@@ -1,17 +1,19 @@
-﻿namespace ThirteenIsh.Game;
+﻿using ThirteenIsh.Entities;
 
-internal sealed class GameSystemBuilder(string name)
+namespace ThirteenIsh.Game;
+
+internal sealed class CharacterSystemBuilder(CharacterType characterType, string name)
 {
     private readonly ImmutableList<GamePropertyGroup>.Builder _builder =
         ImmutableList.CreateBuilder<GamePropertyGroup>();
 
-    public GameSystemBuilder AddPropertyGroup(GamePropertyGroupBuilder group)
+    public CharacterSystemBuilder AddPropertyGroup(GamePropertyGroupBuilder group)
     {
         _builder.Add(group.Build());
         return this;
     }
 
-    public GameSystem Build(GameSystemLogicBase logic)
+    public CharacterSystem Build()
     {
         var propertyGroups = _builder.ToImmutable();
 
@@ -31,6 +33,6 @@ internal sealed class GameSystemBuilder(string name)
             }
         }
 
-        return new GameSystem(name, logic, propertyGroups);
+        return new CharacterSystem(characterType, name, propertyGroups);
     }
 }

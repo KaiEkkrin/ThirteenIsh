@@ -16,6 +16,11 @@ public class EncounterDamageMessage : MessageBase
     public const string TakeNoneControlId = "None";
 
     /// <summary>
+    /// The character type.
+    /// </summary>
+    public CharacterType CharacterType { get; set; }
+
+    /// <summary>
     /// The amount of damage.
     /// TODO Support dealing damage to monsters. Right now, I'm just going to deal damage to
     /// the user's current adventurer.
@@ -58,7 +63,8 @@ public class EncounterDamageMessage : MessageBase
         }
 
         var gameSystem = GameSystem.Get(guild.CurrentAdventure.GameSystem);
-        var counter = gameSystem.FindCounter(VariableName, c => c.Options.HasFlag(GameCounterOptions.HasVariable));
+        var characterSystem = gameSystem.GetCharacterSystem(CharacterType);
+        var counter = characterSystem.FindCounter(VariableName, c => c.Options.HasFlag(GameCounterOptions.HasVariable));
         if (counter is null)
         {
             await component.RespondAsync($"'{VariableName}' does not uniquely match a variable name.",
@@ -95,7 +101,7 @@ public class EncounterDamageMessage : MessageBase
                 .WithValue(result.Working));
         }
 
-        var embed = CommandUtil.BuildAdventurerSummaryEmbed(component, updatedAdventurer, gameSystem,
+        var embed = CommandUtil.BuildTrackedCharacterSummaryEmbed(component, updatedAdventurer, gameSystem,
             new CommandUtil.AdventurerSummaryOptions
             {
                 ExtraFields = extraFields,

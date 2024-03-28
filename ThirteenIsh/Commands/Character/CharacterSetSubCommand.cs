@@ -1,17 +1,19 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using ThirteenIsh.EditOperations;
+using ThirteenIsh.Entities;
 using ThirteenIsh.Game;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Character;
 
-internal sealed class CharacterSetSubCommand() : SubCommandBase("set", "Sets a property for a character.")
+internal sealed class CharacterSetSubCommand(CharacterType characterType)
+    : SubCommandBase("set", $"Sets a property for a {characterType.FriendlyName()}.")
 {
     public override SlashCommandOptionBuilder CreateBuilder()
     {
         return base.CreateBuilder()
-            .AddOption("name", ApplicationCommandOptionType.String, "The character name.",
+            .AddOption("name", ApplicationCommandOptionType.String, $"The {characterType.FriendlyName()} name.",
                 isRequired: true)
             .AddOption("property-name", ApplicationCommandOptionType.String, "The property name to set.",
                 isRequired: true)
@@ -24,7 +26,8 @@ internal sealed class CharacterSetSubCommand() : SubCommandBase("set", "Sets a p
     {
         if (!CommandUtil.TryGetCanonicalizedMultiPartOption(option, "name", out var name))
         {
-            await command.RespondAsync("Character names must contain only letters and spaces", ephemeral: true);
+            await command.RespondAsync(
+                $"{characterType.FriendlyName(FriendlyNameOptions.CapitalizeFirstCharacter)} names must contain only letters and spaces", ephemeral: true);
             return;
         }
 
@@ -41,16 +44,18 @@ internal sealed class CharacterSetSubCommand() : SubCommandBase("set", "Sets a p
         }
 
         var dataService = serviceProvider.GetRequiredService<DataService>();
-        var character = await dataService.GetCharacterAsync(name, command.User.Id, cancellationToken);
+        var character = await dataService.GetCharacterAsync(name, command.User.Id, characterType, cancellationToken);
         if (character is null)
         {
-            await command.RespondAsync($"Error getting character '{name}'. Perhaps they do not exist, or there is more than one character matching that name?",
+            await command.RespondAsync(
+                $"Error getting {characterType.FriendlyName()} '{name}'. Perhaps they do not exist, or there is more than one character or monster matching that name?",
                 ephemeral: true);
             return;
         }
 
         var gameSystem = GameSystem.Get(character.GameSystem);
-        var property = gameSystem.FindStorableProperty(propertyName);
+        var characterSystem = gameSystem.GetCharacterSystem(characterType);
+        var property = characterSystem.FindStorableProperty(propertyName);
         if (property is null)
         {
             await command.RespondAsync($"'{propertyName}' does not uniquely match a settable property name.",
@@ -59,7 +64,7 @@ internal sealed class CharacterSetSubCommand() : SubCommandBase("set", "Sets a p
         }
 
         var (updatedCharacter, errorMessage) = await dataService.EditCharacterAsync(
-            name, new SetCharacterPropertyOperation(property, newValue), command.User.Id,
+            name, new SetCharacterPropertyOperation(property, newValue), command.User.Id, characterType,
             cancellationToken);
 
         if (errorMessage is not null)
@@ -68,8 +73,10 @@ internal sealed class CharacterSetSubCommand() : SubCommandBase("set", "Sets a p
             return;
         }
 
-        if (updatedCharacter is null) throw new InvalidOperationException("character object was null after update");
-        await CommandUtil.RespondWithCharacterSheetAsync(command, updatedCharacter, $"Edited {updatedCharacter.Name}",
-            property.Name);
+        if (updatedCharacter is null) throw new InvalidOperationException(
+            $"{characterType.FriendlyName(FriendlyNameOptions.CapitalizeFirstCharacter)} object was null after update");
+
+        await CommandUtil.RespondWithCharacterSheetAsync(command, updatedCharacter,
+            $"Edited {characterType.FriendlyName()} '{updatedCharacter.Name}'", property.Name);
     }
 }

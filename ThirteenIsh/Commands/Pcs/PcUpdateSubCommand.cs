@@ -46,7 +46,9 @@ internal sealed class PcUpdateSubCommand() : SubCommandBase("update", "Syncs the
             if (!currentAdventure.Adventurers.TryGetValue(command.User.Id, out var adventurer))
                 return new MessageEditResult<Adventure>(null, "You have not joined the current adventure.");
 
-            var character = await dataService.GetCharacterAsync(adventurer.Name, command.User.Id, cancellationToken);
+            var character = await dataService.GetCharacterAsync(adventurer.Name, command.User.Id, CharacterType.PlayerCharacter,
+                cancellationToken);
+
             if (character is null)
                 return new MessageEditResult<Adventure>(null, $"Character {adventurer.Name} not found.");
 

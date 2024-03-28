@@ -1,5 +1,6 @@
 ﻿using Discord;
-using System.Diagnostics.CodeAnalysis;
+using System.Collections.Frozen;
+using System.Text;
 using ThirteenIsh.Entities;
 
 namespace ThirteenIsh.Game;
@@ -7,41 +8,17 @@ namespace ThirteenIsh.Game;
 /// <summary>
 /// Describes a game system, providing game-specific ways of interacting with it.
 /// </summary>
-internal class GameSystem
+internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> characterSystems)
 {
+    private readonly FrozenDictionary<CharacterType, CharacterSystem> _characterSystems =
+        characterSystems.ToFrozenDictionary(o => o.CharacterType);
+
     public static readonly IReadOnlyList<GameSystem> AllGameSystems =
     [
         ThirteenthAge.ThirteenthAgeSystem.Build(),
         Dragonbane.DragonbaneSystem.Build()
     ];
 
-    public GameSystem(string name, GameSystemLogicBase logic, ImmutableList<GamePropertyGroup> propertyGroups)
-    {
-        Name = name;
-        Logic = logic;
-        PropertyGroups = propertyGroups;
-
-        Dictionary<string, GamePropertyBase> properties = [];
-        var variableCounterGroupsBuilder = ImmutableList.CreateBuilder<GamePropertyGroup<GameCounter>>();
-        foreach (var propertyGroup in propertyGroups)
-        {
-            var variableCountersBuilder = ImmutableList.CreateBuilder<GameCounter>();
-            foreach (var property in propertyGroup.Properties)
-            {
-                properties.Add(property.Name, property);
-                if (property is GameCounter counter && counter.Options.HasFlag(GameCounterOptions.HasVariable))
-                    variableCountersBuilder.Add(counter);
-            }
-
-            if (variableCountersBuilder.Count > 0)
-                variableCounterGroupsBuilder.Add(new GamePropertyGroup<GameCounter>(
-                    propertyGroup.GroupName, variableCountersBuilder.ToImmutable()));
-        }
-
-        Properties = properties;
-        VariableCounterGroups = variableCounterGroupsBuilder.ToImmutable();
-    }
-    
     /// <summary>
     /// The "Custom" category.
     /// </summary>
@@ -55,89 +32,7 @@ internal class GameSystem
     /// <summary>
     /// This game system's name.
     /// </summary>
-    public string Name { get; }
-
-    /// <summary>
-    /// The custom logic associated with this game system.
-    /// </summary>
-    public GameSystemLogicBase Logic { get; }
-
-    /// <summary>
-    /// This game system's properties grouped in display order.
-    /// </summary>
-    public ImmutableList<GamePropertyGroup> PropertyGroups { get; }
-
-    /// <summary>
-    /// This game system's properties indexed by name.
-    /// </summary>
-    public IReadOnlyDictionary<string, GamePropertyBase> Properties { get; }
-
-    /// <summary>
-    /// A filtered copy of PropertyGroups consisting only of those counters with
-    /// associated variables.
-    /// </summary>
-    public ImmutableList<GamePropertyGroup<GameCounter>> VariableCounterGroups { get; }
-
-    /// <summary>
-    /// All the properties to show when adding a new character in this game system.
-    /// </summary>
-    public IEnumerable<GamePropertyBase> ShowOnAddProperties => PropertyGroups
-        .SelectMany(group => group.Properties)
-        .Where(property => property.ShowOnAdd);
-
-    /// <summary>
-    /// Adds all this adventurer's fields to the embed, in their well-known order of declaration.
-    /// Like AddCharacterSheetFields.
-    /// </summary>
-    public EmbedBuilder AddAdventurerFields(EmbedBuilder builder, Adventurer adventurer,
-        IReadOnlyCollection<string>? onlyTheseProperties)
-    {
-        foreach (var group in PropertyGroups)
-        {
-            var fieldBuilder = group.BuildEmbedField(adventurer, onlyTheseProperties);
-            if (fieldBuilder is null) continue;
-            builder.AddField(fieldBuilder);
-        }
-
-        return builder;
-    }
-
-    /// <summary>
-    /// Adds this adventurer's fields to the embed, in their well-known order of declaration.
-    /// Only fields with variables.
-    /// Like AddCharacterSheetFields.
-    /// </summary>
-    public EmbedBuilder AddAdventurerVariableFields(EmbedBuilder builder, Adventurer adventurer,
-        IReadOnlyCollection<string>? onlyTheseProperties)
-    {
-        foreach (var group in VariableCounterGroups)
-        {
-            var fieldBuilder = group.BuildEmbedField(adventurer, onlyTheseProperties);
-            if (fieldBuilder is null) continue;
-            builder.AddField(fieldBuilder);
-        }
-
-        return builder;
-    }
-
-    /// <summary>
-    /// Adds this character sheet's fields to the embed -- in their well-known
-    /// order of declaration
-    /// </summary>
-    public EmbedBuilder AddCharacterSheetFields(EmbedBuilder builder, CharacterSheet sheet,
-        IReadOnlyCollection<string>? onlyTheseProperties)
-    {
-        // Discord only allows adding up to 25 fields to an embed, so we group together
-        // our categories of counters here, formatting a table for each one.
-        foreach (var group in PropertyGroups)
-        {
-            var fieldBuilder = group.BuildEmbedField(sheet, onlyTheseProperties);
-            if (fieldBuilder is null) continue;
-            builder.AddField(fieldBuilder);
-        }
-
-        return builder;
-    }
+    public string Name { get; } = name;
 
     public static SlashCommandOptionBuilder BuildGameSystemChoiceOption(string name)
     {
@@ -155,68 +50,53 @@ internal class GameSystem
         return builder;
     }
 
-    public SelectMenuBuilder BuildPropertyChoiceComponent(string messageId, Func<GamePropertyBase, bool> predicate,
-        string? propertyGroupName = null)
-    {
-        var menuBuilder = new SelectMenuBuilder()
-            .WithCustomId(messageId);
+    /// <summary>
+    /// Sets up the beginning of an encounter.
+    /// </summary>
+    public abstract void EncounterBegin(Encounter encounter);
 
-        foreach (var propertyGroup in PropertyGroups)
+    /// <summary>
+    /// Has this adventurer join an encounter. Returns the roll result and emits
+    /// the working.
+    /// If this adventurer cannot join the encounter, returns null.
+    /// </summary>
+    public abstract GameCounterRollResult? EncounterJoin(
+        Adventurer adventurer,
+        Encounter encounter,
+        IRandomWrapper random,
+        int rerolls,
+        ulong userId);
+
+    /// <summary>
+    /// Moves to the next combatant in the encounter. Returns the new turn index or null if
+    /// the encounter could not be progressed.
+    /// </summary>
+    public int? EncounterNext(Encounter encounter, IRandomWrapper random)
+    {
+        if (encounter.Combatants.Count == 0) return null;
+
+        if (encounter.TurnIndex.HasValue) encounter.TurnIndex += 1;
+        else encounter.TurnIndex = 0;
+
+        if (encounter.TurnIndex >= encounter.Combatants.Count)
         {
-            if (!string.IsNullOrEmpty(propertyGroupName) && propertyGroup.GroupName != propertyGroupName) continue;
-            propertyGroup.AddPropertyChoiceOptions(menuBuilder, predicate);
+            encounter.TurnIndex = 0;
+            ++encounter.Round;
+            return EncounterNextRound(encounter, random) ? encounter.TurnIndex : null;
         }
 
-        return menuBuilder;
-    }
-
-    public SelectMenuBuilder BuildPropertyGroupChoiceComponent(string messageId, Func<GamePropertyBase, bool> predicate)
-    {
-        var menuBuilder = new SelectMenuBuilder()
-            .WithCustomId(messageId);
-
-        foreach (var propertyGroup in PropertyGroups)
-        {
-            propertyGroup.AddPropertyGroupChoiceOptions(menuBuilder, predicate);
-        }
-
-        return menuBuilder;
+        return encounter.TurnIndex;
     }
 
     /// <summary>
-    /// Finds a counter by unambiguous prefix match and a predicate.
+    /// Writes an encounter summary table suitable for being part of a pinned message.
     /// </summary>
-    public GameCounter? FindCounter(string namePart, Func<GameCounter, bool> predicate)
+    public string EncounterTable(Adventure adventure, Encounter encounter)
     {
-        // Admit exact match of alias first
-        var aliasMatchCounter = Properties.Values
-            .OfType<GameCounter>()
-            .Where(counter => predicate(counter) &&
-                counter.Alias?.Equals(namePart, StringComparison.OrdinalIgnoreCase) == true)
-            .ToList();
-
-        if (aliasMatchCounter.Count == 1) return aliasMatchCounter[0];
-
-        var matchingCounters = Properties.Values
-            .OfType<GameCounter>()
-            .Where(counter => predicate(counter) &&
-                counter.Name.StartsWith(namePart, StringComparison.OrdinalIgnoreCase))
-            .ToList();
-
-        return matchingCounters.Count == 1 ? matchingCounters[0] : null;
-    }
-
-    /// <summary>
-    /// Finds a property by unambiguous prefix match.
-    /// </summary>
-    public GamePropertyBase? FindStorableProperty(string namePart)
-    {
-        var matchingProperties = Properties
-            .Where(pair => pair.Value is { CanStore: true, IsHidden: false } &&
-                pair.Key.StartsWith(namePart, StringComparison.OrdinalIgnoreCase))
-            .ToList();
-
-        return matchingProperties.Count == 1 ? matchingProperties[0].Value : null;
+        StringBuilder builder = new();
+        BuildEncounterHeadingTable(builder, encounter);
+        BuildEncounterInitiativeTable(adventure, builder, encounter);
+        return builder.ToString();
     }
 
     /// <summary>
@@ -225,50 +105,76 @@ internal class GameSystem
     public static GameSystem Get(string name) => AllGameSystems.First(o => o.Name == name);
 
     /// <summary>
-    /// Gets a property by exact name match.
+    /// Provides a one-line summary of the character for character list purposes.
     /// </summary>
-    public GamePropertyBase? GetProperty(string name)
-    {
-        if (!Properties.TryGetValue(name, out var property)) return null;
-        return property;
-    }
+    public abstract string GetCharacterSummary(CharacterSheet sheet, CharacterType type);
 
     /// <summary>
-    /// Resets all this adventurer's variables to default values.
+    /// Gets the character system for a character type.
     /// </summary>
-    public void ResetVariables(Adventurer adventurer)
+    public CharacterSystem GetCharacterSystem(CharacterType characterType) => _characterSystems[characterType];
+
+    protected virtual void AddEncounterHeadingRow(List<string[]> data, Encounter encounter)
     {
-        // TODO support custom counters (I'll need to declare information about those somewhere)
-        adventurer.Variables.Clear();
-        foreach (var group in VariableCounterGroups)
-        {
-            foreach (var counter in group.Properties)
-            {
-                if (counter.GetValue(adventurer.Sheet) is { } counterValue)
-                    adventurer.Variables[counter.Name] = counterValue;
-            }
-        }
+        data.Add(["Round", $"{encounter.Round}"]);
     }
 
-    public bool TryBuildPropertyValueChoiceComponent(string messageId, string propertyName, CharacterSheet sheet,
-        [MaybeNullWhen(false)] out SelectMenuBuilder? menuBuilder, [MaybeNullWhen(true)] out string? errorMessage)
+    private void BuildEncounterHeadingTable(StringBuilder builder, Encounter encounter)
     {
-        if (!Properties.TryGetValue(propertyName, out var property))
+        List<string[]> data = [];
+        AddEncounterHeadingRow(data, encounter);
+        DiscordUtil.BuildTable(builder, 2, data, 1);
+    }
+
+    public void BuildEncounterInitiativeTable(Adventure adventure, StringBuilder builder, Encounter encounter)
+    {
+        // TODO Right now this is too wide to fit sensibly into a pin. I need to break this up into
+        // more rows. Use just 3 columns? Remember to truncate the names of combatants unambiguously
+        // (perhaps those truncated names should be written directly into the Combatant entities?)
+        List<IReadOnlyList<string>> data = new(encounter.Combatants.Count);
+        var columnCount = 4; // just a starting guess, rows are dynamically created (but must all match)
+        for (var i = 0; i < encounter.Combatants.Count; ++i)
         {
-            menuBuilder = null;
-            errorMessage = $"No property '{propertyName}' found in {Name}.";
-            return false;
+            List<string> row = new(columnCount);
+            row.Add(i == encounter.TurnIndex ? "-->" : string.Empty);
+            BuildEncounterInitiativeTableRow(adventure, encounter.Combatants[i], row);
+            row.Add(i == encounter.TurnIndex ? "<--" : string.Empty);
+            data.Add(row);
+
+            columnCount = row.Count;
         }
 
-        menuBuilder = new SelectMenuBuilder()
-            .WithCustomId(messageId)
-            .WithMinValues(1)
-            .WithMaxValues(1)
-            .WithPlaceholder($"-- {property.Name} --");
+        DiscordUtil.BuildTable(builder, columnCount, data, 1);
+    }
 
-        property.AddPropertyValueChoiceOptions(menuBuilder, sheet);
-        errorMessage = null;
+    protected virtual void BuildEncounterInitiativeTableRow(Adventure adventure, CombatantBase combatant, List<string> row)
+    {
+        row.Add($"{combatant.Initiative}");
+        row.Add(combatant.Name);
+    }
+
+    protected static string BuildPointsEncounterTableCell(Adventure adventure, CombatantBase combatant,
+        GameCounter counter)
+    {
+        if (!combatant.TryGetAdventurer(adventure, out var adventurer)) return "???";
+
+        var currentPoints = counter.GetVariableValue(adventurer);
+        var maxPoints = counter.GetValue(adventurer.Sheet);
+
+        var currentPointsString = currentPoints.HasValue ? $"{currentPoints.Value}" : "???";
+        var maxPointsString = maxPoints.HasValue ? $"{maxPoints.Value}" : "???";
+        return $"{counter.Alias} {currentPointsString}/{maxPointsString}";
+    }
+
+    protected virtual bool EncounterNextRound(Encounter encounter, IRandomWrapper random)
+    {
         return true;
+    }
+
+    public readonly struct DamageCounter
+    {
+        public GameCounter Counter { get; init; }
+        public int Multiplier { get; init; }
     }
 }
 

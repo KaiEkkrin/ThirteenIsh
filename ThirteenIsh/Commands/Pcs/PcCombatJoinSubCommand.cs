@@ -35,7 +35,7 @@ internal sealed class PcCombatJoinSubCommand() : SubCommandBase("join", "Joins t
         if (output is null) throw new InvalidOperationException(nameof(output));
 
         // Update the encounter table
-        var encounterTable = output.GameSystem.Logic.EncounterTable(output.Adventure, output.Encounter);
+        var encounterTable = output.GameSystem.EncounterTable(output.Adventure, output.Encounter);
         var pinnedMessageService = serviceProvider.GetRequiredService<PinnedMessageService>();
         await pinnedMessageService.SetEncounterMessageAsync(command.Channel, output.Encounter.AdventureName, guildId,
             encounterTable, cancellationToken);
@@ -67,7 +67,7 @@ internal sealed class PcCombatJoinSubCommand() : SubCommandBase("join", "Joins t
             }
 
             var gameSystem = GameSystem.Get(adventure.GameSystem);
-            var result = gameSystem.Logic.EncounterJoin(adventurer, encounter, random, rerolls, userId);
+            var result = gameSystem.EncounterJoin(adventurer, encounter, random, rerolls, userId);
             if (!result.HasValue) return new MessageEditResult<EditOutput>(
                 null, "You are not able to join this encounter at this time.");
 

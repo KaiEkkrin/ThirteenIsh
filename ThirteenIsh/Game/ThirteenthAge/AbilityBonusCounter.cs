@@ -4,10 +4,8 @@ using ThirteenIsh.Parsing;
 namespace ThirteenIsh.Game.ThirteenthAge;
 
 internal class AbilityBonusCounter(GameCounter levelCounter, GameCounter scoreCounter)
-    : GameCounter($"{scoreCounter.Name} {Suffix}", options: GameCounterOptions.CanRoll | GameCounterOptions.IsHidden)
+    : GameCounter(GetBonusCounterName(scoreCounter.Name), options: GameCounterOptions.CanRoll | GameCounterOptions.IsHidden)
 {
-    public const string Suffix = "Bonus";
-
     public override bool CanStore => false;
 
     public override int? GetValue(CharacterSheet characterSheet)
@@ -54,4 +52,6 @@ internal class AbilityBonusCounter(GameCounter levelCounter, GameCounter scoreCo
             Working = working
         };
     }
+
+    public static string GetBonusCounterName(string counterName) => $"{counterName} Bonus";
 }

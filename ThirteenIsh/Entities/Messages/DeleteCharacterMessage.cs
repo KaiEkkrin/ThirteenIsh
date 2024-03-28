@@ -7,6 +7,11 @@ namespace ThirteenIsh.Entities.Messages;
 public class DeleteCharacterMessage : MessageBase
 {
     /// <summary>
+    /// The character type.
+    /// </summary>
+    public CharacterType CharacterType { get; set; }
+
+    /// <summary>
     /// The character name to delete.
     /// </summary>
     public string Name { get; set; } = string.Empty;
@@ -15,18 +20,18 @@ public class DeleteCharacterMessage : MessageBase
         IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
     {
         var dataService = serviceProvider.GetRequiredService<DataService>();
-        var deleted = await dataService.DeleteCharacterAsync(Name, NativeUserId, cancellationToken);
+        var deleted = await dataService.DeleteCharacterAsync(Name, NativeUserId, CharacterType, cancellationToken);
         if (deleted is null)
         {
             await component.RespondAsync(
-                $"Cannot delete a character named '{Name}'. Perhaps they were already deleted, or there is more than one character matching that name.",
+                $"Cannot delete a {CharacterType.FriendlyName()} named '{Name}'. Perhaps they were already deleted, or there is more than one character or monster matching that name.",
                 ephemeral: true);
             return true;
         }
 
         EmbedBuilder embedBuilder = new();
         embedBuilder.WithAuthor(component.User);
-        embedBuilder.WithTitle($"Deleted character: {deleted.Name}");
+        embedBuilder.WithTitle($"Deleted {CharacterType.FriendlyName()} '{deleted.Name}'");
 
         await component.RespondAsync(embed: embedBuilder.Build());
         return true;

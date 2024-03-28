@@ -1,22 +1,40 @@
-﻿namespace ThirteenIsh.Game.ThirteenthAge;
+﻿using ThirteenIsh.Entities;
+
+namespace ThirteenIsh.Game.ThirteenthAge;
 
 /// <summary>
 /// Describes the 13th Age game system.
 /// </summary>
-internal static class ThirteenthAgeSystem
+internal sealed class ThirteenthAgeSystem : GameSystem
 {
+    public const string SystemName = "13th Age";
+
     public const string Basics = "Basics";
     public const string AbilityScores = "Ability Scores";
     public const string General = "General";
+    public const string MonsterStats = "Monster Stats";
 
-    private const string Level = "Level";
+    public const string Class = "Class";
+    public const string Level = "Level";
 
-    private const string Strength = "Strength";
-    private const string Dexterity = "Dexterity";
-    private const string Constitution = "Constitution";
-    private const string Intelligence = "Intelligence";
-    private const string Wisdom = "Wisdom";
-    private const string Charisma = "Charisma";
+    public const string Strength = "Strength";
+    public const string Dexterity = "Dexterity";
+    public const string Constitution = "Constitution";
+    public const string Intelligence = "Intelligence";
+    public const string Wisdom = "Wisdom";
+    public const string Charisma = "Charisma";
+
+    public const string HitPoints = "Hit Points";
+    public const string HitPointsAlias = "HP";
+
+    public const string ArmorClass = "Armor Class";
+    public const string ArmorClassAlias = "AC";
+
+    public const string PhysicalDefense = "Physical Defense";
+    public const string PhysicalDefenseAlias = "PD";
+
+    public const string MentalDefense = "Mental Defense";
+    public const string MentalDefenseAlias = "MD";
 
     public const string Barbarian = "Barbarian";
     public const string Bard = "Bard";
@@ -28,9 +46,15 @@ internal static class ThirteenthAgeSystem
     public const string Sorcerer = "Sorcerer";
     public const string Wizard = "Wizard";
 
+    private const string EscalationDie = "EscalationDie";
+
+    private ThirteenthAgeSystem(params CharacterSystem[] characterSystems) : base(SystemName, characterSystems)
+    {
+    }
+
     public static GameSystem Build()
     {
-        GameProperty classProperty = new("Class",
+        GameProperty classProperty = new(Class,
                 [Barbarian, Bard, Cleric, Fighter, Paladin, Ranger, Rogue, Sorcerer, Wizard],
                 true);
 
@@ -60,11 +84,25 @@ internal static class ThirteenthAgeSystem
             .AddProperty(new RecoveriesCounter())
             .AddProperty(new RecoveryDieCounter(classProperty));
 
-        return new GameSystemBuilder("13th Age")
+        var playerCharacterSystem = new CharacterSystemBuilder(CharacterType.PlayerCharacter, SystemName)
             .AddPropertyGroup(basicsBuilder)
             .AddPropertyGroup(abilityScoresBuilder)
             .AddPropertyGroup(generalBuilder)
-            .Build(new ThirteenthAgeLogic(classProperty, dexterityBonusCounter, hitPointsCounter, levelCounter));
+            .Build();
+
+        // The monster counters are set directly in the sheet rather than being the derived counters that
+        // they are for players
+        var monsterStatsBuilder = new GamePropertyGroupBuilder(MonsterStats)
+            .AddProperty(new GameCounter(HitPoints, HitPointsAlias, options: GameCounterOptions.HasVariable))
+            .AddProperty(new GameCounter(ArmorClass, ArmorClassAlias))
+            .AddProperty(new GameCounter(PhysicalDefense, PhysicalDefenseAlias))
+            .AddProperty(new GameCounter(MentalDefense, MentalDefenseAlias));
+
+        var monsterSystem = new CharacterSystemBuilder(CharacterType.Monster, SystemName)
+            .AddPropertyGroup(monsterStatsBuilder)
+            .Build();
+
+        return new ThirteenthAgeSystem(playerCharacterSystem, monsterSystem);
     }
 
     private static AbilityBonusCounter BuildAbility(GamePropertyGroupBuilder builder, string abilityName,
@@ -74,5 +112,75 @@ internal static class ThirteenthAgeSystem
         AbilityBonusCounter bonusCounter = new(levelCounter, counter);
         builder.AddProperty(counter).AddProperty(bonusCounter);
         return bonusCounter;
+    }
+
+    public override void EncounterBegin(Encounter encounter)
+    {
+        encounter.Variables[EscalationDie] = 0;
+    }
+
+    public override GameCounterRollResult? EncounterJoin(
+        Adventurer adventurer,
+        Encounter encounter,
+        IRandomWrapper random,
+        int rerolls,
+        ulong userId)
+    {
+        var dexterityBonusCounter = GetCharacterSystem(CharacterType.PlayerCharacter)
+            .GetProperty<GameCounter>(AbilityBonusCounter.GetBonusCounterName(ThirteenthAgeSystem.Dexterity));
+
+        int? targetValue = null;
+        var initiative = dexterityBonusCounter.Roll(adventurer, null, random, rerolls, ref targetValue);
+        encounter.AddCombatant(new AdventurerCombatant
+        {
+            Initiative = initiative.Roll,
+            Name = adventurer.Name,
+            UserId = (long)userId
+        });
+
+        return initiative;
+    }
+
+    public override string GetCharacterSummary(CharacterSheet sheet, CharacterType type)
+    {
+        var characterSystem = GetCharacterSystem(type);
+        switch (type)
+        {
+            case CharacterType.PlayerCharacter:
+                var characterClass = characterSystem.GetProperty<GameProperty>(Class).GetValue(sheet);
+                var level = characterSystem.GetProperty<GameCounter>(Level).GetValue(sheet);
+                return $"Level {level} {characterClass}";
+
+            case CharacterType.Monster:
+                // TODO Add a monster type and level or what have you to display here
+                return "TODO Monster";
+
+            default:
+                throw new ArgumentException("Unrecognised character type", nameof(type));
+        }
+    }
+
+    protected override void AddEncounterHeadingRow(List<string[]> data, Encounter encounter)
+    {
+        base.AddEncounterHeadingRow(data, encounter);
+        data.Add(["Escalation Die", $"{encounter.Variables[EscalationDie]}"]);
+    }
+
+    protected override void BuildEncounterInitiativeTableRow(Adventure adventure,
+        CombatantBase combatant, List<string> row)
+    {
+        base.BuildEncounterInitiativeTableRow(adventure, combatant, row);
+
+        var hitPointsCounter = GetCharacterSystem(combatant.CharacterType).GetProperty<GameCounter>(HitPoints);
+        var hitPointsCell = BuildPointsEncounterTableCell(adventure, combatant, hitPointsCounter);
+        row.Add(hitPointsCell);
+    }
+
+    protected override bool EncounterNextRound(Encounter encounter, IRandomWrapper random)
+    {
+        // When we roll over to the next round, increase the escalation die, to a maximum of 6.
+        // TODO Add commands to explicitly set and modify an encounter variable?
+        encounter.Variables[EscalationDie] = Math.Min(6, encounter.Variables[EscalationDie] + 1);
+        return true;
     }
 }

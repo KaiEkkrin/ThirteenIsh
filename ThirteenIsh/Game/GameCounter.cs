@@ -19,8 +19,8 @@ internal enum GameCounterOptions
 /// with an adventurer variable.
 /// The corresponding entities are a CharacterCounter and an AdventurerVariable.
 /// </summary>
-internal class GameCounter(string name, string? alias = null, int defaultValue = 0, int minValue = 0,
-    int? maxValue = null, GameCounterOptions options = GameCounterOptions.None)
+internal class GameCounter(string name, string? alias = null,
+    int defaultValue = 0, int minValue = 0, int? maxValue = null, GameCounterOptions options = GameCounterOptions.None)
     : GamePropertyBase(name, alias, options.HasFlag(GameCounterOptions.IsHidden))
 {
     /// <summary>
@@ -89,9 +89,9 @@ internal class GameCounter(string name, string? alias = null, int defaultValue =
         }
     }
 
-    public override string GetDisplayValue(Adventurer adventurer)
+    public override string GetDisplayValue(ITrackedCharacter character)
     {
-        return (GetValue(adventurer.Sheet), GetVariableValue(adventurer)) switch
+        return (GetValue(character.Sheet), GetVariableValue(character)) switch
         {
             ({ } maxValue, { } varValue) => $"{varValue}/{maxValue}",
             ({ } maxValue, null) => $"{maxValue}",
@@ -131,11 +131,11 @@ internal class GameCounter(string name, string? alias = null, int defaultValue =
     }
 
     /// <summary>
-    /// Gets the value of this counter's variable from the adventurer, if there is a variable.
+    /// Gets the value of this counter's variable from the character, if there is a variable.
     /// </summary>
-    public virtual int? GetVariableValue(Adventurer adventurer)
+    public virtual int? GetVariableValue(ITrackedCharacter character)
     {
-        return adventurer.Variables.TryGetValue(Name, out var value) ? value : null;
+        return character.Variables.TryGetValue(Name, out var value) ? value : null;
     }
 
     /// <summary>

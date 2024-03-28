@@ -39,7 +39,7 @@ internal sealed class PcCombatNextSubCommand() : SubCommandBase("next", "Moves o
         if (output is null) throw new InvalidOperationException(nameof(output));
 
         // Update the encounter table
-        var encounterTable = output.GameSystem.Logic.EncounterTable(output.Adventure, output.Encounter);
+        var encounterTable = output.GameSystem.EncounterTable(output.Adventure, output.Encounter);
         var pinnedMessageService = serviceProvider.GetRequiredService<PinnedMessageService>();
         await pinnedMessageService.SetEncounterMessageAsync(command.Channel, output.Encounter.AdventureName, guildId,
             encounterTable, cancellationToken);
@@ -77,7 +77,7 @@ internal sealed class PcCombatNextSubCommand() : SubCommandBase("next", "Moves o
                 : null;
 
             var gameSystem = GameSystem.Get(adventure.GameSystem);
-            if (gameSystem.Logic.EncounterNext(encounter, random) is not { } turnIndex)
+            if (gameSystem.EncounterNext(encounter, random) is not { } turnIndex)
                 return new MessageEditResult<EditOutput>(null, "This encounter cannot be progressed at this time.");
 
             return new MessageEditResult<EditOutput>(new EditOutput(

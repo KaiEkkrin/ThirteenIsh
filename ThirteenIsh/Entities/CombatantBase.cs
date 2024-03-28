@@ -5,10 +5,18 @@ namespace ThirteenIsh.Entities;
 /// <summary>
 /// This entity describes a combatant in an encounter.
 /// Specialise for different combatant types.
+/// TODO Make a MonsterCombatant type, which would have the monster stats copied from the
+/// monster record, plus variables.
 /// </summary>
 [BsonKnownTypes(typeof(AdventurerCombatant))]
 public abstract class CombatantBase
 {
+    /// <summary>
+    /// This combatant's character type.
+    /// </summary>
+    [BsonIgnore]
+    public abstract CharacterType CharacterType { get; }
+
     /// <summary>
     /// This combatant's place in the initiative order.
     /// </summary>

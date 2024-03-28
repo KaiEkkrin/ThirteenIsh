@@ -17,6 +17,11 @@ public class Character : UserEntityBase
     public string NameUpper => Name.ToUpperInvariant();
 
     /// <summary>
+    /// The character type.
+    /// </summary>
+    public CharacterType CharacterType { get; set; }
+
+    /// <summary>
     /// The game system this character uses.
     /// </summary>
     public string GameSystem { get; set; } = string.Empty;

@@ -1,17 +1,33 @@
-﻿namespace ThirteenIsh.Game.Dragonbane;
+﻿using ThirteenIsh.Entities;
+
+namespace ThirteenIsh.Game.Dragonbane;
 
 /// <summary>
 /// Describes the Dragonbane game system.
 /// </summary>
-internal static class DragonbaneSystem
+internal sealed class DragonbaneSystem : GameSystem
 {
+    public const string SystemName = "Dragonbane";
+
     public const string Basics = "Basics";
+    public const string Kin = "Kin";
+    public const string Profession = "Profession";
+
     public const string Attributes = "Attributes";
     public const string DerivedRatings = "Derived Ratings";
     public const string CoreSkills = "Core Skills";
     public const string WeaponSkills = "Weapon Skills";
     public const string SecondarySkills = "Secondary Skills";
     public const string Equipment = "Equipment";
+
+    public const string HitPoints = "Hit Points";
+    public const string HitPointsAlias = "HP";
+
+    public const string WillpowerPoints = "Willpower Points";
+    public const string WillpowerPointsAlias = "WP";
+
+    public const string StrengthDamageBonus = "Strength Damage Bonus";
+    public const string AgilityDamageBonus = "Agility Damage Bonus";
 
     public const string Human = "Human";
     public const string Halfling = "Halfling";
@@ -38,12 +54,19 @@ internal static class DragonbaneSystem
     public const string Willpower = "Willpower";
     public const string Charisma = "Charisma";
 
+    // We store the un-drawn cards of the initiative deck as a bit field in this encounter variable
+    private const string InitiativeDeck = "InitiativeDeck";
+
+    private DragonbaneSystem(params CharacterSystem[] characterSystems) : base(SystemName, characterSystems)
+    {
+    }
+
     public static GameSystem Build()
     {
         GamePropertyGroupBuilder basicsBuilder = new(Basics);
 
-        GameProperty kinProperty = new("Kin", [Human, Halfling, Dwarf, Elf, Mallard, Wolfkin], true);
-        GameProperty professionProperty = new("Profession", [Artisan, Bard, Fighter, Hunter, Knight,
+        GameProperty kinProperty = new(Kin, [Human, Halfling, Dwarf, Elf, Mallard, Wolfkin], true);
+        GameProperty professionProperty = new(Profession, [Artisan, Bard, Fighter, Hunter, Knight,
             Mage, Mariner, Merchant, Scholar, Thief], true);
 
         basicsBuilder.AddProperties(kinProperty, professionProperty);
@@ -63,11 +86,11 @@ internal static class DragonbaneSystem
         GamePropertyGroupBuilder derivedRatingsBuilder = new(DerivedRatings);
 
         MovementCounter movementCounter = new(kinProperty, agilityCounter);
-        PointsCounter hitPointsCounter = new("Hit Points", "HP", constitutionCounter);
-        PointsCounter willpowerPointsCounter = new("Willpower Points", "WP", willpowerCounter);
+        PointsCounter hitPointsCounter = new(HitPoints, HitPointsAlias, constitutionCounter);
+        PointsCounter willpowerPointsCounter = new(WillpowerPoints, WillpowerPointsAlias, willpowerCounter);
 
-        DamageBonusCounter strengthDamageBonusCounter = new("Strength Damage Bonus", strengthCounter);
-        DamageBonusCounter agilityDamageBonusCounter = new("Agility Damage Bonus", agilityCounter);
+        DamageBonusCounter strengthDamageBonusCounter = new(StrengthDamageBonus, strengthCounter);
+        DamageBonusCounter agilityDamageBonusCounter = new(AgilityDamageBonus, agilityCounter);
 
         derivedRatingsBuilder.AddProperties(movementCounter,
             hitPointsCounter, willpowerPointsCounter, strengthDamageBonusCounter, agilityDamageBonusCounter);
@@ -118,7 +141,7 @@ internal static class DragonbaneSystem
             .AddProperty(new GameCounter("Armor", options: GameCounterOptions.HasVariable))
             .AddProperty(new GameCounter("Helmet", options: GameCounterOptions.HasVariable));
 
-        return new GameSystemBuilder("Dragonbane")
+        var playerCharacterSystem = new CharacterSystemBuilder(CharacterType.PlayerCharacter, SystemName)
             .AddPropertyGroup(basicsBuilder)
             .AddPropertyGroup(attributesBuilder)
             .AddPropertyGroup(derivedRatingsBuilder)
@@ -126,7 +149,11 @@ internal static class DragonbaneSystem
             .AddPropertyGroup(weaponSkillsBuilder)
             .AddPropertyGroup(secondarySkillsBuilder)
             .AddPropertyGroup(equipmentBuilder)
-            .Build(new DragonbaneLogic(kinProperty, professionProperty, hitPointsCounter, willpowerPointsCounter));
+            .Build();
+
+        // TODO declare monster system here
+
+        return new DragonbaneSystem(playerCharacterSystem);
     }
 
     private static void BuildSkill(GamePropertyGroupBuilder builder, string name, GameAbilityCounter attributeCounter,
@@ -135,5 +162,102 @@ internal static class DragonbaneSystem
         GameCounter skillCounter = new(name, maxValue: 13);
         SkillLevelCounter skillLevelCounter = new(attributeCounter, skillCounter, secondary);
         builder.AddProperties(skillCounter, skillLevelCounter);
+    }
+
+    public override void EncounterBegin(Encounter encounter)
+    {
+        ResetInitiativeDeck(encounter);
+    }
+
+    public override GameCounterRollResult? EncounterJoin(
+        Adventurer adventurer,
+        Encounter encounter,
+        IRandomWrapper random,
+        int rerolls,
+        ulong userId)
+    {
+        // TODO -- support surprise
+        var card = DrawInitiativeDeck(encounter, random, out var working);
+        if (!card.HasValue) return null;
+
+        encounter.AddCombatant(new AdventurerCombatant
+        {
+            Initiative = card.Value,
+            Name = adventurer.Name,
+            UserId = (long)userId
+        });
+
+        return new GameCounterRollResult { Roll = card.Value, Working = working };
+    }
+
+    public override string GetCharacterSummary(CharacterSheet sheet, CharacterType type)
+    {
+        var characterSystem = GetCharacterSystem(type);
+        var kin = characterSystem.GetProperty<GameProperty>(Kin).GetValue(sheet);
+        var profession = characterSystem.GetProperty<GameProperty>(Profession).GetValue(sheet);
+        return $"{kin} {profession}";
+    }
+
+    protected override void BuildEncounterInitiativeTableRow(Adventure adventure, CombatantBase combatant, List<string> row)
+    {
+        base.BuildEncounterInitiativeTableRow(adventure, combatant, row);
+
+        var characterSystem = GetCharacterSystem(combatant.CharacterType);
+
+        var hitPointsCounter = characterSystem.GetProperty<GameCounter>(HitPoints);
+        var hitPointsCell = BuildPointsEncounterTableCell(adventure, combatant, hitPointsCounter);
+        row.Add(hitPointsCell);
+
+        var willpowerPointsCounter = characterSystem.GetProperty<GameCounter>(WillpowerPoints);
+        var willpowerPointsCell = BuildPointsEncounterTableCell(adventure, combatant, willpowerPointsCounter);
+        row.Add(willpowerPointsCell);
+    }
+
+    protected override bool EncounterNextRound(Encounter encounter, IRandomWrapper random)
+    {
+        // When we roll over to the next round, re-draw the initiative.
+        var oldCombatants = new CombatantBase[encounter.Combatants.Count];
+        encounter.Combatants.CopyTo(oldCombatants);
+        encounter.Combatants.Clear();
+
+        ResetInitiativeDeck(encounter);
+        foreach (var combatant in oldCombatants)
+        {
+            var card = DrawInitiativeDeck(encounter, random, out _);
+            if (!card.HasValue) return false;
+
+            combatant.Initiative = card.Value;
+            encounter.AddCombatant(combatant);
+        }
+
+        return true;
+    }
+
+    private static int? DrawInitiativeDeck(Encounter encounter, IRandomWrapper random, out string working)
+    {
+        var deck = encounter.Variables[InitiativeDeck];
+        List<int> cards = [];
+        for (var i = 0; i < 10; ++i)
+        {
+            if ((deck & (1 << i)) != 0) cards.Add(i);
+        }
+
+        if (cards.Count == 0)
+        {
+            working = string.Empty;
+            return null;
+        }
+
+        var cardIndex = random.NextInteger(0, cards.Count);
+        var card = cards[cardIndex];
+        working = "🎲 " + string.Join(", ", cards.Select((c, i) => i == cardIndex ? $"{c}" : $"~~{c}~~"));
+
+        encounter.Variables[InitiativeDeck] = deck & ~(1 << cardIndex);
+        return card;
+    }
+
+    private static void ResetInitiativeDeck(Encounter encounter)
+    {
+        encounter.Variables[InitiativeDeck] = (1 << 10) - 1;
     }
 }

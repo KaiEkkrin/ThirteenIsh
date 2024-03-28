@@ -61,8 +61,8 @@ public class ResetAdventurerMessage : MessageBase
             if (!adventure.Adventurers.TryGetValue(userId, out var adventurer))
                 return new MessageEditResult<Adventure>(null, $"You do not have a character in the adventure '{adventureName}'.");
 
-            var gameSystem = GameSystem.Get(adventure.GameSystem);
-            gameSystem.ResetVariables(adventurer);
+            var characterSystem = GameSystem.Get(adventure.GameSystem).GetCharacterSystem(CharacterType.PlayerCharacter);
+            characterSystem.ResetVariables(adventurer);
 
             return new MessageEditResult<Adventure>(adventure);
         }

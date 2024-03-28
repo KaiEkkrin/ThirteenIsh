@@ -1,16 +1,18 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using ThirteenIsh.Entities;
 using ThirteenIsh.Entities.Messages;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Character;
 
-internal sealed class CharacterRemoveSubCommand() : SubCommandBase("remove", "Deletes a character.")
+internal sealed class CharacterRemoveSubCommand(CharacterType characterType)
+    : SubCommandBase("remove", $"Deletes a {characterType.FriendlyName()}.")
 {
     public override SlashCommandOptionBuilder CreateBuilder()
     {
         return base.CreateBuilder()
-            .AddOption("name", ApplicationCommandOptionType.String, "The character name.",
+            .AddOption("name", ApplicationCommandOptionType.String, $"The {characterType.FriendlyName()} name.",
                 isRequired: true);
     }
 
@@ -19,15 +21,18 @@ internal sealed class CharacterRemoveSubCommand() : SubCommandBase("remove", "De
     {
         if (!CommandUtil.TryGetCanonicalizedMultiPartOption(option, "name", out var name))
         {
-            await command.RespondAsync("Character names must contain only letters and spaces", ephemeral: true);
+            await command.RespondAsync(
+                $"{characterType.FriendlyName(FriendlyNameOptions.CapitalizeFirstCharacter)} names must contain only letters and spaces",
+                ephemeral: true);
             return;
         }
 
         var dataService = serviceProvider.GetRequiredService<DataService>();
-        var character = await dataService.GetCharacterAsync(name, command.User.Id, cancellationToken);
+        var character = await dataService.GetCharacterAsync(name, command.User.Id, characterType, cancellationToken);
         if (character == null)
         {
-            await command.RespondAsync($"Cannot find a character named '{name}'. Perhaps they were already deleted?");
+            await command.RespondAsync(
+                $"Cannot find a {characterType.FriendlyName()} named '{name}'. Perhaps they were already deleted?");
             return;
         }
 
@@ -42,7 +47,8 @@ internal sealed class CharacterRemoveSubCommand() : SubCommandBase("remove", "De
         var builder = new ComponentBuilder()
             .WithButton("Delete", message.GetMessageId(), ButtonStyle.Danger);
 
-        await command.RespondAsync($"Do you really want to delete the character named '{name}'? This cannot be undone.",
+        await command.RespondAsync(
+            $"Do you really want to delete the {characterType.FriendlyName()} named '{name}'? This cannot be undone.",
             ephemeral: true, components: builder.Build());
     }
 }

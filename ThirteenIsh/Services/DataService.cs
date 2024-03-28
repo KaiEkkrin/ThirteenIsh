@@ -69,12 +69,13 @@ public sealed class DataService : IDisposable
         await collection.InsertOneAsync(message, cancellationToken: cancellationToken);
     }
 
-    public async Task<Character?> CreateCharacterAsync(string name, string gameSystem, ulong userId,
-        CancellationToken cancellationToken = default)
+    public async Task<Character?> CreateCharacterAsync(string name, CharacterType characterType,
+        string gameSystem, ulong userId, CancellationToken cancellationToken = default)
     {
         Character character = new()
         {
             Name = name,
+            CharacterType = characterType,
             GameSystem = gameSystem,
             LastEdited = DateTimeOffset.Now,
             Sheet = new CharacterSheet(),
@@ -95,10 +96,10 @@ public sealed class DataService : IDisposable
         }
     }
 
-    public async Task<Character?> DeleteCharacterAsync(string name, ulong userId,
+    public async Task<Character?> DeleteCharacterAsync(string name, ulong userId, CharacterType characterType,
         CancellationToken cancellationToken = default)
     {
-        var character = await GetCharacterAsync(name, userId, cancellationToken);
+        var character = await GetCharacterAsync(name, userId, characterType, cancellationToken);
         if (character is null) return null;
 
         var collection = await GetCharactersCollectionAsync(cancellationToken);
@@ -138,14 +139,14 @@ public sealed class DataService : IDisposable
     }
 
     public async Task<T?> EditCharacterAsync<T, TResult>(
-        string name, EditOperation<T, Character, TResult> operation, ulong userId,
+        string name, EditOperation<T, Character, TResult> operation, ulong userId, CharacterType characterType,
         CancellationToken cancellationToken = default)
         where TResult : EditResult<T>
     {
         var collection = await GetCharactersCollectionAsync(cancellationToken);
         return await _retryPolicy.ExecuteAsync(async () =>
         {
-            var character = await GetCharacterAsync(name, userId, cancellationToken);
+            var character = await GetCharacterAsync(name, userId, characterType, cancellationToken);
             if (character is null) return operation.CreateError($"Character '{name}' not found.").Value;
 
             var editResult = await operation.DoEditAsync(character, cancellationToken);
@@ -206,11 +207,13 @@ public sealed class DataService : IDisposable
         return guild ?? throw new InvalidOperationException($"Failed to create guild record for {guildId}");
     }
 
-    public async Task<Character?> GetCharacterAsync(string name, ulong userId,
+    public async Task<Character?> GetCharacterAsync(string name, ulong userId, CharacterType characterType,
         CancellationToken cancellationToken = default)
     {
         // Only accept an exact match
-        var characters = await ListCharactersAsync(name, userId, cancellationToken).ToListAsync(cancellationToken);
+        var characters = await ListCharactersAsync(name, userId, characterType, cancellationToken)
+            .ToListAsync(cancellationToken);
+
         return characters.Count == 1 ? characters[0] : null;
     }
 
@@ -229,11 +232,11 @@ public sealed class DataService : IDisposable
     }
 
     public async IAsyncEnumerable<Character> ListCharactersAsync(
-        string? name, ulong userId,
+        string? name, ulong userId, CharacterType characterType,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var collection = await GetCharactersCollectionAsync(cancellationToken);
-        var filter = GetCharacterFilter(name, userId);
+        var filter = GetCharacterFilter(name, userId, characterType);
         using var cursor = await collection.FindAsync(
             filter,
             new FindOptions<Character, Character>
@@ -263,7 +266,8 @@ public sealed class DataService : IDisposable
 
     public void Dispose() => _indexCreationSemaphore.Dispose();
 
-    private static FilterDefinition<Character> GetCharacterFilter(string? name, ulong userId)
+    private static FilterDefinition<Character> GetCharacterFilter(string? name, ulong userId,
+        CharacterType characterType)
     {
         List<FilterDefinition<Character>> conditions = [];
         conditions.Add(Builders<Character>.Filter.Eq(nameof(UserEntityBase.UserId), userId));
@@ -275,12 +279,24 @@ public sealed class DataService : IDisposable
 #pragma warning restore CA1862
         }
 
-        return conditions.Count switch
+        conditions.Add(GetCharacterTypeFilter(characterType));
+        if (conditions.Count == 1) throw new NotSupportedException("Cannot filter all characters");
+        return Builders<Character>.Filter.And(conditions);
+    }
+
+    private static FilterDefinition<Character> GetCharacterTypeFilter(CharacterType characterType)
+    {
+        if (characterType == CharacterType.PlayerCharacter)
         {
-            0 => throw new NotSupportedException("Cannot filter all characters"),
-            1 => conditions[0],
-            _ => Builders<Character>.Filter.And(conditions)
-        };
+            // This is the default character type and we accept the property being absent.
+            return Builders<Character>.Filter.Or(
+                Builders<Character>.Filter.Not(Builders<Character>.Filter.Exists(o => o.CharacterType)),
+                Builders<Character>.Filter.Eq(o => o.CharacterType, characterType));
+        }
+        else
+        {
+            return Builders<Character>.Filter.Eq(o => o.CharacterType, characterType);
+        }
     }
 
     private static FilterDefinition<Guild> GetGuildFilter(ulong? guildId, long? version)

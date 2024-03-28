@@ -32,7 +32,7 @@ internal abstract class GamePropertyBase(string name, string? alias = null, bool
 
     public abstract void AddPropertyValueChoiceOptions(SelectMenuBuilder builder, CharacterSheet sheet);
 
-    public abstract string GetDisplayValue(Adventurer adventurer);
+    public abstract string GetDisplayValue(ITrackedCharacter character);
 
     public abstract string GetDisplayValue(CharacterSheet sheet);
 

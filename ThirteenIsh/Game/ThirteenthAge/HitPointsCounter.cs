@@ -6,7 +6,8 @@ internal class HitPointsCounter(
     GameProperty classProperty,
     GameCounter levelCounter,
     AbilityBonusCounter constitutionBonusCounter)
-    : GameCounter("Hit Points", "HP", options: GameCounterOptions.HasVariable)
+    : GameCounter(ThirteenthAgeSystem.HitPoints, ThirteenthAgeSystem.HitPointsAlias,
+        options: GameCounterOptions.HasVariable)
 {
     public override bool CanStore => false;
 

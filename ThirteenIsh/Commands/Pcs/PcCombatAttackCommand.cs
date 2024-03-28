@@ -11,6 +11,8 @@ namespace ThirteenIsh.Commands.Pcs;
 
 // This is like `pc-roll`, but instead of rolling against a specified DC, here we roll against
 // the attribute of another player (or monster) in the current encounter
+// TODO Make an equivalent for attacking with a monster? (with an optional property name, since
+// monsters often have ad hoc attacks?)
 internal sealed class PcCombatAttackCommand()
     : SubCommandBase("attack", "Rolls against a player or monster in the encounter.")
 {
@@ -72,7 +74,8 @@ internal sealed class PcCombatAttackCommand()
         }
 
         var gameSystem = GameSystem.Get(adventure.GameSystem);
-        var counter = gameSystem.FindCounter(namePart, c => c.Options.HasFlag(GameCounterOptions.CanRoll));
+        var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
+        var counter = characterSystem.FindCounter(namePart, c => c.Options.HasFlag(GameCounterOptions.CanRoll));
         if (counter is null)
         {
             await command.RespondAsync($"'{namePart}' does not uniquely match a rollable property.",
@@ -87,10 +90,10 @@ internal sealed class PcCombatAttackCommand()
             return;
         }
 
-        var vsCounter = gameSystem.FindCounter(vsNamePart, _ => true);
-        if (vsCounter is null)
+        var vsCounterByType = CommandUtil.FindCounterByType(gameSystem, vsNamePart, _ => true, targetCombatants);
+        if (vsCounterByType.Count == 0)
         {
-            await command.RespondAsync($"'{vsNamePart}' does not uniquely match a counter property.", ephemeral: true);
+            await command.RespondAsync($"'{vsNamePart}' does not uniquely match a variable property.", ephemeral: true);
             return;
         }
 
@@ -104,7 +107,7 @@ internal sealed class PcCombatAttackCommand()
 
         var embedBuilder = new EmbedBuilder()
             .WithAuthor(command.User)
-            .WithTitle($"{adventurer.Name} : Rolled {counter.Name} vs {vsCounter.Name}")
+            .WithTitle($"{adventurer.Name} : Rolled {counter.Name} vs {vsCounterByType.Values.First().Name}")
             .WithDescription(stringBuilder.ToString());
 
         await command.RespondAsync(embed: embedBuilder.Build());
@@ -119,6 +122,7 @@ internal sealed class PcCombatAttackCommand()
                 case AdventurerCombatant adventurerCombatant when adventure.Adventurers.TryGetValue(
                     adventurerCombatant.NativeUserId, out var targetAdventurer):
                     {
+                        var vsCounter = vsCounterByType[CharacterType.PlayerCharacter];
                         var dc = vsCounter.GetValue(targetAdventurer.Sheet);
                         if (!dc.HasValue)
                         {

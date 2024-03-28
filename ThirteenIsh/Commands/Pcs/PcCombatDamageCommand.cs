@@ -11,6 +11,7 @@ using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Pcs;
 
+// TODO Make an equivalent for dealing damage with a monster?
 internal sealed class PcCombatDamageCommand()
     : SubCommandBase("damage", "Deals damage to a player or monster in the encounter.")
 {
@@ -71,6 +72,8 @@ internal sealed class PcCombatDamageCommand()
 
         var dataService = serviceProvider.GetRequiredService<DataService>();
         var guild = await dataService.EnsureGuildAsync(guildId, cancellationToken);
+
+        // TODO TryGetCurrentCombatant should be able to change to handle the current monster, too (?)
         if (!CommandUtil.TryGetCurrentCombatant(guild, channelId, command.User.Id, out var adventure,
             out var adventurer, out var encounter, out var errorMessage))
         {
@@ -79,7 +82,8 @@ internal sealed class PcCombatDamageCommand()
         }
 
         var gameSystem = GameSystem.Get(adventure.GameSystem);
-        if (!TryGetCounter(gameSystem, option, out var counter, out errorMessage))
+        var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
+        if (!TryGetCounter(characterSystem, option, out var counter, out errorMessage))
         {
             await command.RespondAsync(errorMessage);
             return;
@@ -102,8 +106,10 @@ internal sealed class PcCombatDamageCommand()
             return;
         }
 
-        var vsCounter = gameSystem.FindCounter(vsNamePart, c => c.Options.HasFlag(GameCounterOptions.HasVariable));
-        if (vsCounter is null)
+        var vsCounterByType = CommandUtil.FindCounterByType(gameSystem, vsNamePart,
+            c => c.Options.HasFlag(GameCounterOptions.HasVariable), targetCombatants);
+
+        if (vsCounterByType.Count == 0)
         {
             await command.RespondAsync($"'{vsNamePart}' does not uniquely match a variable property.", ephemeral: true);
             return;
@@ -142,7 +148,7 @@ internal sealed class PcCombatDamageCommand()
 
         var embedBuilder = new EmbedBuilder()
             .WithAuthor(command.User)
-            .WithTitle($"{adventure.Name} : Rolled damage to {vsCounter.Name}")
+            .WithTitle($"{adventure.Name} : Rolled damage to {vsCounterByType.Values.First().Name}")
             .WithDescription(stringBuilder.ToString());
 
         await command.ModifyOriginalResponseAsync(properties => properties.Embed = embedBuilder.Build());
@@ -164,6 +170,7 @@ internal sealed class PcCombatDamageCommand()
 
                         // TODO Append the message to go to the target's player to acknowledge the damage
                         var targetUser = await discordService.GetGuildUserAsync(guildId, adventurerCombatant.NativeUserId);
+                        var vsCounter = vsCounterByType[CharacterType.PlayerCharacter];
                         EncounterDamageMessage message = new()
                         {
                             Damage = -result.Roll,
@@ -195,7 +202,7 @@ internal sealed class PcCombatDamageCommand()
         }
     }
 
-    private static bool TryGetCounter(GameSystem gameSystem, SocketSlashCommandDataOption option,
+    private static bool TryGetCounter(CharacterSystem characterSystem, SocketSlashCommandDataOption option,
         out GameCounter? counter, [MaybeNullWhen(true)] out string errorMessage)
     {
         if (!CommandUtil.TryGetOption<string>(option, "counter", out var namePart))
@@ -206,7 +213,7 @@ internal sealed class PcCombatDamageCommand()
             return true;
         }
 
-        counter = gameSystem.FindCounter(namePart, c => c.Options.HasFlag(GameCounterOptions.CanRoll));
+        counter = characterSystem.FindCounter(namePart, c => c.Options.HasFlag(GameCounterOptions.CanRoll));
         if (counter is null)
         {
             errorMessage = $"'{namePart}' does not uniquely match a rollable property.";

@@ -8,6 +8,9 @@ namespace ThirteenIsh.Entities;
 /// </summary>
 public class AdventurerCombatant : CombatantBase
 {
+    [BsonIgnore]
+    public override CharacterType CharacterType => CharacterType.PlayerCharacter;
+
     /// <summary>
     /// The owning user ID.
     /// </summary>

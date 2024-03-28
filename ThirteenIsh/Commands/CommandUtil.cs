@@ -45,33 +45,7 @@ internal static class CommandUtil
             embedBuilder.AddField(new EmbedFieldBuilder()
                 .WithIsInline(true)
                 .WithName($"{adventurer.Name} [{guildUser.DisplayName}]")
-                .WithValue(gameSystem.Logic.GetCharacterSummary(adventurer.Sheet)));
-        }
-
-        return embedBuilder.Build();
-    }
-
-    public static Embed BuildAdventurerSummaryEmbed(
-        IDiscordInteraction command,
-        Adventurer adventurer,
-        GameSystem gameSystem,
-        AdventurerSummaryOptions options)
-    {
-        EmbedBuilder embedBuilder = new();
-        embedBuilder.WithAuthor(command.User);
-        embedBuilder.WithTitle(options.Title);
-
-        embedBuilder = options.OnlyVariables
-            ? gameSystem.AddAdventurerVariableFields(embedBuilder, adventurer, options.OnlyTheseProperties)
-            : gameSystem.AddAdventurerFields(embedBuilder, adventurer, options.OnlyTheseProperties);
-
-        if (!options.OnlyVariables) embedBuilder.AddField("Last Updated", $"{adventurer.LastUpdated:F}");
-        if (options.ExtraFields is not null)
-        {
-            foreach (var extraFieldBuilder in options.ExtraFields)
-            {
-                embedBuilder.AddField(extraFieldBuilder);
-            }
+                .WithValue(gameSystem.GetCharacterSummary(adventurer.Sheet, CharacterType.PlayerCharacter)));
         }
 
         return embedBuilder.Build();
@@ -89,10 +63,37 @@ internal static class CommandUtil
         embedBuilder.WithTitle(title);
         embedBuilder.AddField("Game System", character.GameSystem);
 
-        var gameSystem = GameSystem.Get(character.GameSystem);
-        embedBuilder = gameSystem.AddCharacterSheetFields(embedBuilder, character.Sheet, onlyTheseProperties);
+        var characterSystem = GameSystem.Get(character.GameSystem).GetCharacterSystem(character.CharacterType);
+        embedBuilder = characterSystem.AddCharacterSheetFields(embedBuilder, character.Sheet, onlyTheseProperties);
 
         embedBuilder.AddField("Last Edited", $"{character.LastEdited:F}");
+        return embedBuilder.Build();
+    }
+
+    public static Embed BuildTrackedCharacterSummaryEmbed(
+        IDiscordInteraction command,
+        ITrackedCharacter character,
+        GameSystem gameSystem,
+        AdventurerSummaryOptions options)
+    {
+        EmbedBuilder embedBuilder = new();
+        embedBuilder.WithAuthor(command.User);
+        embedBuilder.WithTitle(options.Title);
+
+        var characterSystem = gameSystem.GetCharacterSystem(character.Type);
+        embedBuilder = options.OnlyVariables
+            ? characterSystem.AddTrackedCharacterVariableFields(embedBuilder, character, options.OnlyTheseProperties)
+            : characterSystem.AddTrackedCharacterFields(embedBuilder, character, options.OnlyTheseProperties);
+
+        if (!options.OnlyVariables) embedBuilder.AddField("Last Updated", $"{character.LastUpdated:F}");
+        if (options.ExtraFields is not null)
+        {
+            foreach (var extraFieldBuilder in options.ExtraFields)
+            {
+                embedBuilder.AddField(extraFieldBuilder);
+            }
+        }
+
         return embedBuilder.Build();
     }
 
@@ -113,7 +114,7 @@ internal static class CommandUtil
         GameSystem gameSystem,
         AdventurerSummaryOptions options)
     {
-        var embed = BuildAdventurerSummaryEmbed(command, adventurer, gameSystem, options);
+        var embed = BuildTrackedCharacterSummaryEmbed(command, adventurer, gameSystem, options);
         return command.RespondAsync(embed: embed);
     }
 
@@ -125,6 +126,22 @@ internal static class CommandUtil
     {
         var embed = BuildCharacterSheetEmbed(command, character, title, onlyTheseProperties);
         return command.RespondAsync(embed: embed);
+    }
+
+    public static Dictionary<CharacterType, GameCounter> FindCounterByType(
+        GameSystem gameSystem, string namePart, Func<GameCounter, bool> predicate, IEnumerable<CombatantBase> targets)
+    {
+        Dictionary<CharacterType, GameCounter> dictionary = [];
+        foreach (var target in targets)
+        {
+            if (dictionary.ContainsKey(target.CharacterType)) continue;
+
+            var characterSystem = gameSystem.GetCharacterSystem(target.CharacterType);
+            var counter = characterSystem.FindCounter(namePart, predicate);
+            if (counter is not null) dictionary.Add(target.CharacterType, counter);
+        }
+
+        return dictionary;
     }
 
     public static bool TryConvertTo<T>(object? value, [MaybeNullWhen(false)] out T result)

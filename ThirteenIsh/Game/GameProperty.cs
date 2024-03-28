@@ -46,9 +46,9 @@ internal class GameProperty(string name, string[] possibleValues, bool showOnAdd
         }
     }
 
-    public override string GetDisplayValue(Adventurer adventurer)
+    public override string GetDisplayValue(ITrackedCharacter character)
     {
-        return GetValue(adventurer.Sheet) is { Length: > 0 } value ? value : Unset;
+        return GetValue(character.Sheet) is { Length: > 0 } value ? value : Unset;
     }
 
     public override string GetDisplayValue(CharacterSheet sheet)

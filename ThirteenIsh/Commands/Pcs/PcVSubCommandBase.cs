@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using ThirteenIsh.EditOperations;
+using ThirteenIsh.Entities;
 using ThirteenIsh.Game;
 using ThirteenIsh.Parsing;
 using ThirteenIsh.Services;
@@ -9,6 +10,8 @@ namespace ThirteenIsh.Commands.Pcs;
 
 /// <summary>
 /// Extend this to make the vset and vmod commands since they're extremely similar
+/// These, of course, don't apply to monsters, which don't have an equivalent to "player character" sheets
+/// copied into the adventure
 /// </summary>
 internal abstract class PcVSubCommandBase(string name, string description,
     string nameOptionDescription, string valueOptionDescription)
@@ -56,7 +59,8 @@ internal abstract class PcVSubCommandBase(string name, string description,
         }
 
         var gameSystem = GameSystem.Get(guild.CurrentAdventure.GameSystem);
-        var counter = gameSystem.FindCounter(namePart, c => c.Options.HasFlag(GameCounterOptions.HasVariable));
+        var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
+        var counter = characterSystem.FindCounter(namePart, c => c.Options.HasFlag(GameCounterOptions.HasVariable));
         if (counter is null)
         {
             await command.RespondAsync($"'{namePart}' does not uniquely match a variable name.",

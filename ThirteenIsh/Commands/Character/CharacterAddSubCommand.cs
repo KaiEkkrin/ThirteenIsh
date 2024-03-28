@@ -1,17 +1,19 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using ThirteenIsh.Entities;
 using ThirteenIsh.Entities.Messages;
 using ThirteenIsh.Game;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Character;
 
-internal sealed class CharacterAddSubCommand() : SubCommandBase("add", "Adds a new character.")
+internal sealed class CharacterAddSubCommand(CharacterType characterType)
+    : SubCommandBase("add", $"Adds a new {characterType.FriendlyName()}.")
 {
     public override SlashCommandOptionBuilder CreateBuilder()
     {
         return base.CreateBuilder()
-            .AddOption("name", ApplicationCommandOptionType.String, "The character name.",
+            .AddOption("name", ApplicationCommandOptionType.String, $"The {characterType.FriendlyName()} name.",
                 isRequired: true)
             .AddOption(GameSystem.BuildGameSystemChoiceOption("game-system"));
     }
@@ -21,7 +23,9 @@ internal sealed class CharacterAddSubCommand() : SubCommandBase("add", "Adds a n
     {
         if (!CommandUtil.TryGetCanonicalizedMultiPartOption(option, "name", out var name))
         {
-            await command.RespondAsync("Character names must contain only letters and spaces", ephemeral: true);
+            await command.RespondAsync(
+                $"{characterType.FriendlyName(FriendlyNameOptions.CapitalizeFirstCharacter)} names must contain only letters and spaces",
+                ephemeral: true);
             return;
         }
 
@@ -34,26 +38,38 @@ internal sealed class CharacterAddSubCommand() : SubCommandBase("add", "Adds a n
 
         // Add the character
         var dataService = serviceProvider.GetRequiredService<DataService>();
-        var character = await dataService.CreateCharacterAsync(name, gameSystemName, command.User.Id, cancellationToken);
+        var character = await dataService.CreateCharacterAsync(name, characterType, gameSystemName,
+            command.User.Id, cancellationToken);
         if (character is null)
         {
-            await command.RespondAsync($"Error creating character '{name}'. Perhaps a character with that name already exists.",
+            await command.RespondAsync(
+                $"Error creating {characterType.FriendlyName()} '{name}'. Perhaps a character or monster with that name already exists.",
                 ephemeral: true);
             return;
+        }
+
+        // If we don't have show-on-add properties, we've finished
+        var characterSystem = gameSystem.GetCharacterSystem(characterType);
+        var showOnAddProperties = characterSystem.GetShowOnAddProperties().ToList();
+        if (showOnAddProperties.Count == 0)
+        {
+            await CommandUtil.RespondWithCharacterSheetAsync(command, character,
+                $"Added {characterType.FriendlyName()} '{character.Name}'");
         }
 
         // This will prompt the user to select the show-on-add properties
         AddCharacterMessage message = new()
         {
+            CharacterType = characterType,
             Name = name,
             UserId = (long)command.User.Id
         };
         await dataService.AddMessageAsync(message, cancellationToken);
 
         ComponentBuilder componentBuilder = new();
-        foreach (var property in gameSystem.ShowOnAddProperties)
+        foreach (var property in showOnAddProperties)
         {
-            if (!gameSystem.TryBuildPropertyValueChoiceComponent(
+            if (!characterSystem.TryBuildPropertyValueChoiceComponent(
                 message.GetMessageId(property.Name), property.Name, character.Sheet, out var menuBuilder, out var errorMessage))
             {
                 // The rest of the logic assumes this won't happen
@@ -66,7 +82,7 @@ internal sealed class CharacterAddSubCommand() : SubCommandBase("add", "Adds a n
         componentBuilder.WithButton("Done", message.GetMessageId(AddCharacterMessage.DoneControlId))
             .WithButton("Cancel", message.GetMessageId(AddCharacterMessage.CancelControlId), ButtonStyle.Secondary);
 
-        await command.RespondAsync($"Adding '{name}'", ephemeral: true,
+        await command.RespondAsync($"Adding {characterType.FriendlyName()} '{name}'", ephemeral: true,
             components: componentBuilder.Build());
     }
 }

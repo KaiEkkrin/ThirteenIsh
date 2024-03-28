@@ -25,7 +25,9 @@ internal sealed class PcJoinSubCommand() : SubCommandBase("join", "Joins the cur
         }
 
         var dataService = serviceProvider.GetRequiredService<DataService>();
-        var character = await dataService.GetCharacterAsync(characterName, command.User.Id, cancellationToken);
+        var character = await dataService.GetCharacterAsync(characterName, command.User.Id, CharacterType.PlayerCharacter,
+            cancellationToken);
+
         if (character is null)
         {
             await command.RespondAsync("Character not found", ephemeral: true);
@@ -72,7 +74,8 @@ internal sealed class PcJoinSubCommand() : SubCommandBase("join", "Joins the cur
                 };
 
                 var gameSystem = GameSystem.Get(character.GameSystem);
-                gameSystem.ResetVariables(adventurer);
+                var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
+                characterSystem.ResetVariables(adventurer);
                 currentAdventure.Adventurers.Add(command.User.Id, adventurer);
 
                 return new MessageEditResult<Adventure>(currentAdventure);

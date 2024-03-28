@@ -2,12 +2,14 @@
 using Discord.WebSocket;
 using System.Globalization;
 using System.Text;
+using ThirteenIsh.Entities;
 using ThirteenIsh.Game;
 using ThirteenIsh.Parsing;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Pcs;
 
+// TODO Make an equivalent for rolling with a monster?
 internal sealed class PcRollSubCommand() : SubCommandBase("roll", "Rolls against a player character property.")
 {
     public override SlashCommandOptionBuilder CreateBuilder()
@@ -52,7 +54,8 @@ internal sealed class PcRollSubCommand() : SubCommandBase("roll", "Rolls against
         }
 
         var gameSystem = GameSystem.Get(guild.CurrentAdventure.GameSystem);
-        var counter = gameSystem.FindCounter(namePart, c => c.Options.HasFlag(GameCounterOptions.CanRoll));
+        var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
+        var counter = characterSystem.FindCounter(namePart, c => c.Options.HasFlag(GameCounterOptions.CanRoll));
         if (counter is null)
         {
             await command.RespondAsync($"'{namePart}' does not uniquely match a rollable property.",

@@ -8,7 +8,7 @@ internal class MentalDefenseCounter(
     AbilityBonusCounter intelligenceBonusCounter,
     AbilityBonusCounter wisdomBonusCounter,
     AbilityBonusCounter charismaBonusCounter)
-    : GameCounter("Mental Defense", "MD")
+    : GameCounter(ThirteenthAgeSystem.MentalDefense, ThirteenthAgeSystem.MentalDefenseAlias)
 {
     public override bool CanStore => false;
 

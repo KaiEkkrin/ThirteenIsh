@@ -13,12 +13,13 @@ internal class GamePropertyGroup<TProperty>(string groupName, ImmutableList<TPro
 
     public ImmutableList<TProperty> Properties => properties;
 
-    public EmbedFieldBuilder? BuildEmbedField(Adventurer adventurer, IReadOnlyCollection<string>? onlyTheseProperties)
+    public EmbedFieldBuilder? BuildEmbedField(ITrackedCharacter character,
+        IReadOnlyCollection<string>? onlyTheseProperties)
     {
         var rows = properties
             .Where(property => !property.IsHidden &&
                     (onlyTheseProperties is not { Count: > 0 } || onlyTheseProperties.Contains(property.Name)))
-            .Select(property => new[] { property.Name, property.GetDisplayValue(adventurer) })
+            .Select(property => new[] { property.Name, property.GetDisplayValue(character) })
             .ToList();
 
         if (rows.Count == 0) return null;
@@ -29,7 +30,8 @@ internal class GamePropertyGroup<TProperty>(string groupName, ImmutableList<TPro
             .WithValue(table);
     }
 
-    public EmbedFieldBuilder? BuildEmbedField(CharacterSheet sheet, IReadOnlyCollection<string>? onlyTheseProperties)
+    public EmbedFieldBuilder? BuildEmbedField(CharacterSheet sheet,
+        IReadOnlyCollection<string>? onlyTheseProperties)
     {
         var rows = properties
             .Where(property => !property.IsHidden &&
