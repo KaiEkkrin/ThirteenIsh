@@ -4,12 +4,8 @@ using Xunit.Abstractions;
 
 namespace ThirteenIsh.Tests;
 
-// TODO Fix it so that:
-// - (Harder) Every unique name always maps to the same alias prefix where possible, and every time we see
-// a new name, it is mapped to a different alias prefix if possible. (E.g. "Kobold Archer", "Kobold Alchemist",
-// "Kobold Archer", "Kobold Alchemist" with alias length 4 should map to e.g. KobA1, KoAl1, KobA2, KoAl2.)
-// Means I need to initialise the NameAliasCollection with the name for each alias, and reconstruct the mapping
-// as best I can on construction (using mappings with least ambiguity where no unambiguous mapping exists.)
+// TODO An improvement to NameAliasCollection, if it's still generating overly ambiguous aliases,
+// would be to have it try generating a longer alias if the given-length one is too ambiguous.
 public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
 {
     public static TheoryData<int, bool, int, string[]> NameAliasData
@@ -41,7 +37,8 @@ public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
                 "Olfactory Gorgon",
                 "Olfactory Gargoyle");
 
-            // "Ol G" can't help but be ambiguous
+            // This one necessarily has lots of ambiguity because "Ol G" is short enough that it overlaps with
+            // most of the other aliases
             AddData(4, true, 6,
                 "Old Golem",
                 "Oiled Golem",
@@ -52,10 +49,7 @@ public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
                 "Olfactory Gargoyle",
                 "Ol G");
 
-            // TODO can I use a heuristic (try to spread the characters evenly between name parts rather
-            // than preferring to grab many characters from the first one...?) to make this pass?
-            // Nearly there...
-            AddData(5, true, 1,
+            AddData(5, true, 2,
                 "Old Golem",
                 "Oiled Golem",
                 "Old Gargoyle",
@@ -100,11 +94,7 @@ public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
             var alias = collection.Add(name, prefixLength, alwaysAddNumber);
             namesByAlias.ShouldNotContainKey(alias, name);
             namesByAlias.Add(alias, name);
-        }
-
-        foreach (var (alias, name) in namesByAlias)
-        {
-            testOutputHelper.WriteLine($"'{alias,20}' <- '{name}'");
+            testOutputHelper.WriteLine($"'{alias,10}' <- '{name}'");
         }
 
         collection.ShouldNotBeNull(); // sanity check -- should have some input!
@@ -131,11 +121,7 @@ public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
             var alias = collection.Add(name, prefixLength, alwaysAddNumber);
             namesByAlias.ShouldNotContainKey(alias, name);
             namesByAlias.Add(alias, name);
-        }
-
-        foreach (var (alias, name) in namesByAlias)
-        {
-            testOutputHelper.WriteLine($"'{alias,20}' <- '{name}'");
+            testOutputHelper.WriteLine($"'{alias,10}' <- '{name}'");
         }
 
         // TODO check output looks sane
@@ -170,6 +156,8 @@ public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
             namesByAlias.Add(persistentAlias, name);
 
             ephemeralAlias.ShouldBe(persistentAlias, name);
+
+            testOutputHelper.WriteLine($"'{persistentAlias,10}' <- '{name}'");
         }
 
         persistentCollection.Aliases.Order().ShouldBe(namesByAlias.Keys.Order());

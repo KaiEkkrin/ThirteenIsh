@@ -169,15 +169,32 @@ internal sealed partial class NameAliasCollection
             if (remainingPartsCount > remainingPrefixLength) throw new InvalidOperationException(
                 $"At {index}: found {remainingPartsCount} remaining parts but only {remainingPrefixLength} prefix length remaining");
 
-            var startingLength = Math.Min(remainingPrefixLength - remainingPartsCount, nameParts[index].Length);
-            for (var length = startingLength; length >= 1; --length)
-            {
-                // If this length is too short to be able to fill the rest of the prefix to the required
-                // length from the remaining name parts, stop
-                if (length + cumulativeLengths[index] < remainingPrefixLength) break;
+            var lengthMaxBound = Math.Min(remainingPrefixLength - remainingPartsCount, nameParts[index].Length);
 
-                var prefix = nameParts[index][..length];
-                if (!AddPossiblePrefixParts(index + 1, acc + prefix)) return false;
+            // The length of this part's alias must always be long enough that the remaining name parts
+            // could be aliased to a string that fills the rest of the alias up to the prefix length
+            var lengthMinBound = Math.Max(1, remainingPrefixLength - cumulativeLengths[index]);
+            if (lengthMinBound > lengthMaxBound)
+                throw new InvalidOperationException($"At {index}: got bad length bounds {lengthMinBound}, {lengthMaxBound}");
+
+            // Rather than starting at one of the bounds, try the midpoint between them first and work
+            // outwards in both directions
+            var lengthBoundsMidpoint = (lengthMaxBound + lengthMinBound) / 2;
+            for (int i = lengthBoundsMidpoint, j = lengthBoundsMidpoint + 1;
+                 i >= lengthMinBound || j <= lengthMaxBound;
+                 --i, ++j)
+            {
+                if (i >= lengthMinBound)
+                {
+                    var prefix = nameParts[index][..i];
+                    if (!AddPossiblePrefixParts(index + 1, acc + prefix)) return false;
+                }
+
+                if (j <= lengthMaxBound)
+                {
+                    var prefix = nameParts[index][..j];
+                    if (!AddPossiblePrefixParts(index + 1, acc + prefix)) return false;
+                }
             }
 
             return true;
