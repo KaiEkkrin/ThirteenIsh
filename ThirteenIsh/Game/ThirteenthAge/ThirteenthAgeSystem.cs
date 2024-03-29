@@ -24,6 +24,8 @@ internal sealed class ThirteenthAgeSystem : GameSystem
     public const string Wisdom = "Wisdom";
     public const string Charisma = "Charisma";
 
+    public const string Initiative = "Initiative"; // only for monsters :)
+
     public const string HitPoints = "Hit Points";
     public const string HitPointsAlias = "HP";
 
@@ -93,6 +95,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         // The monster counters are set directly in the sheet rather than being the derived counters that
         // they are for players
         var monsterStatsBuilder = new GamePropertyGroupBuilder(MonsterStats)
+            .AddProperty(new MonsterInitiativeCounter())
             .AddProperty(new GameCounter(HitPoints, HitPointsAlias, options: GameCounterOptions.HasVariable))
             .AddProperty(new GameCounter(ArmorClass, ArmorClassAlias))
             .AddProperty(new GameCounter(PhysicalDefense, PhysicalDefenseAlias))
@@ -112,6 +115,41 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         AbilityBonusCounter bonusCounter = new(levelCounter, counter);
         builder.AddProperty(counter).AddProperty(bonusCounter);
         return bonusCounter;
+    }
+
+    public override GameCounterRollResult? EncounterAdd(
+        Character character,
+        Encounter encounter,
+        NameAliasCollection nameAliasCollection,
+        IRandomWrapper random,
+        int rerolls,
+        ulong userId,
+        out string alias)
+    {
+        if (character.CharacterType != CharacterType.Monster)
+            throw new ArgumentException("EncounterAdd requires a monster", nameof(character));
+
+        // Set up a new combatant for this monster. We'll assign the initiative values in a moment.
+        MonsterCombatant combatant = new()
+        {
+            Alias = nameAliasCollection.Add(character.Name, 5, true),
+            Name = character.Name,
+            Sheet = character.Sheet
+        };
+
+        var characterSystem = GetCharacterSystem(CharacterType.Monster);
+        characterSystem.ResetVariables(combatant);
+
+        // Roll its initiative
+        var initiative = RollMonsterInitiative(characterSystem, combatant, encounter, random, rerolls, userId);
+
+        // Add it to the encounter
+        combatant.Initiative = initiative.Roll;
+        combatant.InitiativeRollWorking = initiative.Working;
+        encounter.AddCombatant(combatant);
+
+        alias = combatant.Alias;
+        return initiative;
     }
 
     public override void EncounterBegin(Encounter encounter)
@@ -136,6 +174,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         {
             Alias = nameAliasCollection.Add(adventurer.Name, 10, false),
             Initiative = initiative.Roll,
+            InitiativeRollWorking = initiative.Working,
             Name = adventurer.Name,
             UserId = (long)userId
         });
@@ -184,5 +223,22 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         // TODO Add commands to explicitly set and modify an encounter variable?
         encounter.Variables[EscalationDie] = Math.Min(6, encounter.Variables[EscalationDie] + 1);
         return true;
+    }
+
+    private static GameCounterRollResult RollMonsterInitiative(CharacterSystem characterSystem, MonsterCombatant combatant,
+        Encounter encounter, IRandomWrapper random, int rerolls, ulong userId)
+    {
+        var matchingMonster = encounter.Combatants.OfType<MonsterCombatant>()
+            .FirstOrDefault(c => c.Name == combatant.Name && c.NativeUserId == userId);
+        if (matchingMonster is { Initiative: { } roll, InitiativeRollWorking: { } working })
+        {
+            // We have already rolled for this monster type -- re-use the same one.
+            return new GameCounterRollResult { Roll = roll, Working = working };
+        }
+
+        var initiativeCounter = characterSystem.GetProperty<GameCounter>(Initiative);
+        int? targetValue = null;
+        var initiative = initiativeCounter.Roll(combatant, null, random, rerolls, ref targetValue);
+        return initiative;
     }
 }

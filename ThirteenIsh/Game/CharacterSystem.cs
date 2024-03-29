@@ -217,18 +217,18 @@ internal class CharacterSystem
     }
 
     /// <summary>
-    /// Resets all this adventurer's variables to default values.
+    /// Resets all this tracked character's variables to default values.
     /// </summary>
-    public void ResetVariables(Adventurer adventurer)
+    public void ResetVariables(ITrackedCharacter character)
     {
         // TODO support custom counters (I'll need to declare information about those somewhere)
-        adventurer.Variables.Clear();
+        character.Variables.Clear();
         foreach (var group in VariableCounterGroups)
         {
             foreach (var counter in group.Properties)
             {
-                if (counter.GetValue(adventurer.Sheet) is { } counterValue)
-                    adventurer.Variables[counter.Name] = counterValue;
+                if (counter.GetValue(character.Sheet) is { } counterValue)
+                    character.Variables[counter.Name] = counterValue;
             }
         }
     }

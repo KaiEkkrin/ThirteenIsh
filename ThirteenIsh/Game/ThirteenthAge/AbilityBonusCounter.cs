@@ -19,17 +19,17 @@ internal class AbilityBonusCounter(GameCounter levelCounter, GameCounter scoreCo
     }
 
     public override GameCounterRollResult Roll(
-        Adventurer adventurer,
+        ITrackedCharacter character,
         ParseTreeBase? bonus,
         IRandomWrapper random,
         int rerolls,
         ref int? targetValue)
     {
-        var value = GetValue(adventurer.Sheet);
+        var value = GetValue(character.Sheet);
         if (!value.HasValue) throw new GamePropertyException(Name);
 
         // In 13th Age we always add the character's level bonus to rolls like this
-        IntegerParseTree levelBonus = new(0, levelCounter.GetValue(adventurer.Sheet) ?? 0, "level");
+        IntegerParseTree levelBonus = new(0, levelCounter.GetValue(character.Sheet) ?? 0, "level");
         ParseTreeBase parseTree =
             new BinaryOperationParseTree(0,
                 new BinaryOperationParseTree(0,

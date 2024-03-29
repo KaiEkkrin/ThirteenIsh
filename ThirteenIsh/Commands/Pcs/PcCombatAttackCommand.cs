@@ -15,6 +15,9 @@ namespace ThirteenIsh.Commands.Pcs;
 // monsters often have ad hoc attacks?)
 // (or move this stuff to just `13-combat` and have it work off of the current combatant,
 // or a named one, without necessarily being bound to the PC?)
+// TODO maybe change this to `13-combat attack`, have it use the current combatant (if it's
+// added with your user ID) or the named combatant if an optional name is supplied (again if it's
+// added with your user ID.)
 internal sealed class PcCombatAttackCommand()
     : SubCommandBase("attack", "Rolls against a player or monster in the encounter.")
 {

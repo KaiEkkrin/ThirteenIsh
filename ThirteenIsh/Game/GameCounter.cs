@@ -141,7 +141,7 @@ internal class GameCounter(string name, string? alias = null,
     /// <summary>
     /// Makes a roll based on this counter.
     /// </summary>
-    /// <param name="adventurer">The adventurer to roll for.</param>
+    /// <param name="character">The character to roll for.</param>
     /// <param name="bonus">An optional bonus to add.</param>
     /// <param name="random">The random provider.</param>
     /// <param name="rerolls">The number of times to reroll and take highest, or
@@ -151,7 +151,7 @@ internal class GameCounter(string name, string? alias = null,
     /// <returns>The roll result.</returns>
     /// <exception cref="NotSupportedException">If this counter cannot be rolled.</exception>
     public virtual GameCounterRollResult Roll(
-        Adventurer adventurer,
+        ITrackedCharacter character,
         ParseTreeBase? bonus,
         IRandomWrapper random,
         int rerolls,

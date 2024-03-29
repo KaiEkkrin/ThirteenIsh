@@ -8,7 +8,7 @@ namespace ThirteenIsh.Entities;
 /// TODO Make a MonsterCombatant type, which would have the monster stats copied from the
 /// monster record, plus variables.
 /// </summary>
-[BsonKnownTypes(typeof(AdventurerCombatant))]
+[BsonKnownTypes(typeof(AdventurerCombatant), typeof(MonsterCombatant))]
 public abstract class CombatantBase
 {
     /// <summary>
@@ -29,17 +29,18 @@ public abstract class CombatantBase
     public int Initiative { get; set; }
 
     /// <summary>
+    /// The initiative roll working, in case we want to display it again.
+    /// </summary>
+    public string InitiativeRollWorking { get; set; } = string.Empty;
+
+    /// <summary>
     /// This combatant's name.
     /// </summary>
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets an adventurer record for this combatant.
-    /// TODO how to handle monsters correctly? Perhaps I should wrap this stuff in an interface.
-    /// The goal here is to be able to return the storage of counters and variables.
-    /// GameCounter should be the class that knows how to read the storage content.
-    /// - Make it return an ITrackedCharacter instead?
+    /// Gets a character record for this combatant.
     /// </summary>
-    public abstract bool TryGetAdventurer(Adventure adventure, [MaybeNullWhen(false)] out Adventurer adventurer);
+    public abstract bool TryGetCharacter(Adventure adventure, [MaybeNullWhen(false)] out ITrackedCharacter character);
 }
 

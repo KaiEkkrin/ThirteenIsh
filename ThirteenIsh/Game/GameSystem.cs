@@ -51,6 +51,20 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
     }
 
     /// <summary>
+    /// Adds a monster to the encounter. Returns the roll result and emits the working;
+    /// also populates the string out parameter with the new alias for the monster.
+    /// If this monster cannot join the encounter, returns null.
+    /// </summary>
+    public abstract GameCounterRollResult? EncounterAdd(
+        Character character,
+        Encounter encounter,
+        NameAliasCollection nameAliasCollection,
+        IRandomWrapper random,
+        int rerolls,
+        ulong userId,
+        out string alias);
+
+    /// <summary>
     /// Sets up the beginning of an encounter.
     /// </summary>
     public abstract void EncounterBegin(Encounter encounter);
@@ -155,10 +169,10 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
     protected static string BuildPointsEncounterTableCell(Adventure adventure, CombatantBase combatant,
         GameCounter counter)
     {
-        if (!combatant.TryGetAdventurer(adventure, out var adventurer)) return "???";
+        if (!combatant.TryGetCharacter(adventure, out var character)) return "???";
 
-        var currentPoints = counter.GetVariableValue(adventurer);
-        var maxPoints = counter.GetValue(adventurer.Sheet);
+        var currentPoints = counter.GetVariableValue(character);
+        var maxPoints = counter.GetValue(character.Sheet);
 
         var currentPointsString = currentPoints.HasValue ? $"{currentPoints.Value}" : "???";
         var maxPointsString = maxPoints.HasValue ? $"{maxPoints.Value}" : "???";

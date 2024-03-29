@@ -19,8 +19,15 @@ public class AdventurerCombatant : CombatantBase
     [BsonIgnore]
     public ulong NativeUserId => (ulong)UserId;
 
-    public override bool TryGetAdventurer(Adventure adventure, [MaybeNullWhen(false)] out Adventurer adventurer)
+    public override bool TryGetCharacter(Adventure adventure, [MaybeNullWhen(false)] out ITrackedCharacter character)
     {
-        return adventure.Adventurers.TryGetValue(NativeUserId, out adventurer);
+        if (adventure.Adventurers.TryGetValue(NativeUserId, out var adventurer))
+        {
+            character = adventurer;
+            return true;
+        }
+
+        character = null;
+        return false;
     }
 }

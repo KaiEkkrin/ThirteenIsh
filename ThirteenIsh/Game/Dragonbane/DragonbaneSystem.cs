@@ -164,6 +164,19 @@ internal sealed class DragonbaneSystem : GameSystem
         builder.AddProperties(skillCounter, skillLevelCounter);
     }
 
+    public override GameCounterRollResult? EncounterAdd(
+        Character character,
+        Encounter encounter,
+        NameAliasCollection nameAliasCollection,
+        IRandomWrapper random,
+        int rerolls,
+        ulong userId,
+        out string alias)
+    {
+        // TODO implement this
+        throw new NotImplementedException();
+    }
+
     public override void EncounterBegin(Encounter encounter)
     {
         ResetInitiativeDeck(encounter);

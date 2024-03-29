@@ -331,12 +331,9 @@ internal static class CommandUtil
         [MaybeNullWhen(false)] out Encounter encounter,
         [MaybeNullWhen(true)] out string errorMessage)
     {
-        adventure = guild.CurrentAdventure;
-        if (adventure is null)
+        if (!TryGetCurrentEncounter(guild, channelId, userId, out adventure, out encounter, out errorMessage))
         {
             adventurer = null;
-            encounter = null;
-            errorMessage = "There is no current adventure.";
             return false;
         }
 
@@ -347,9 +344,25 @@ internal static class CommandUtil
             return false;
         }
 
+        errorMessage = null;
+        return true;
+    }
+
+    public static bool TryGetCurrentEncounter(Guild guild, ulong channelId, ulong userId,
+        [MaybeNullWhen(false)] out Adventure adventure,
+        [MaybeNullWhen(false)] out Encounter encounter,
+        [MaybeNullWhen(true)] out string errorMessage)
+    {
+        adventure = guild.CurrentAdventure;
+        if (adventure is null)
+        {
+            encounter = null;
+            errorMessage = "There is no current adventure.";
+            return false;
+        }
+
         if (!guild.Encounters.TryGetValue(channelId, out encounter))
         {
-            adventurer = null;
             errorMessage = "No encounter is currently in progress in this channel.";
             return false;
         }
