@@ -20,12 +20,6 @@ internal sealed partial class NameAliasCollection
     // I'll always prefer a lower number (if there needs to be one at all.)
     private readonly Dictionary<string, NumbersInUse> _numbersInUseDictionary = [];
 
-    // We map each prefix to the original name(s) that it came from, so that
-    // we can re-use prefixes for identical names (which makes the aliasing much
-    // less ambiguous.)
-    // TODO I don't think I need this one...?
-    private readonly Dictionary<string, HashSet<string>> _namesByPrefixDictionary = [];
-
     // We also map each original name to the prefix we're using for it
     private readonly Dictionary<string, string> _prefixesByNameDictionary = [];
 
@@ -193,16 +187,6 @@ internal sealed partial class NameAliasCollection
         {
             throw new InvalidOperationException(
                 $"Saw '{name}' with an alias starting '{prefix}' but have already tracked it using the prefix '{currentPrefix}'");
-        }
-
-        if (_namesByPrefixDictionary.TryGetValue(prefix, out var nameSet))
-        {
-            nameSet.Add(name);
-        }
-        else
-        {
-            nameSet = [name];
-            _namesByPrefixDictionary.Add(prefix, nameSet);
         }
 
         if (_numbersInUseDictionary.TryGetValue(prefix, out var numbersInUse))
