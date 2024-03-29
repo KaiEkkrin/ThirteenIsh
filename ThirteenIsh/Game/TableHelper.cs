@@ -1,8 +1,8 @@
 ﻿using System.Text;
 
-namespace ThirteenIsh;
+namespace ThirteenIsh.Game;
 
-internal class TableHelper
+internal static class TableHelper
 {
     public static string BuildTable(
         int columnCount, IReadOnlyCollection<IReadOnlyList<string>> data, params int[] rightJustifiedColumns)
