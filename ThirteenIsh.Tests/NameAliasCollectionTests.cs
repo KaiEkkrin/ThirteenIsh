@@ -23,16 +23,46 @@ public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
             AddData(4, true, 1, "Kobold Archer", "Kobold Archer", "Kobold Warrior", "Kobold Archer", "Kobold Hero",
                 "Kobold Warrior");
 
-            AddData(4, true, 1, "Kobold Archer", "Kobold Archer", "Kobold Warrior", "Kobold Archer", "Kobold Hero",
+            AddData(4, true, 2, "Kobold Archer", "Kobold Archer", "Kobold Warrior", "Kobold Archer", "Kobold Hero",
                 "Kobold War Hero", "Kobold Alchemist", "Kobold Archer");
 
-            // This one necessarily has ambiguity because the identical name part prefixes
+            // This one necessarily has lots of ambiguity because the identical name part prefixes
             // are longer than the max prefix length for the aliases
-            AddData(4, true, 2, "Kobold Archer", "Kobold Archer", "Kobold Archmage", "Koboldkin Archer", "Komodo Archer",
+            AddData(4, true, 8, "Kobold Archer", "Kobold Archer", "Kobold Archmage", "Koboldkin Archer", "Komodo Archer",
                 "Komodo Arch Wizard", "Komodo Archmage", "Kobold Archmage", "Kobold Arch Wizard", "Koboldspawn Archer");
 
-            // TODO add more ambiguity test cases, and support min and max alias length to
-            // reduce ambiguity.
+            // Some more ambiguity
+            AddData(4, true, 3,
+                "Old Golem",
+                "Oiled Golem",
+                "Old Gargoyle",
+                "Oiled Gargoyle",
+                "Olfactory Golem",
+                "Olfactory Gorgon",
+                "Olfactory Gargoyle");
+
+            // "Ol G" can't help but be ambiguous
+            AddData(4, true, 6,
+                "Old Golem",
+                "Oiled Golem",
+                "Old Gargoyle",
+                "Oiled Gargoyle",
+                "Olfactory Golem",
+                "Olfactory Gorgon",
+                "Olfactory Gargoyle",
+                "Ol G");
+
+            // TODO can I use a heuristic (try to spread the characters evenly between name parts rather
+            // than preferring to grab many characters from the first one...?) to make this pass?
+            // Nearly there...
+            AddData(5, true, 1,
+                "Old Golem",
+                "Oiled Golem",
+                "Old Gargoyle",
+                "Oiled Gargoyle",
+                "Olfactory Golem",
+                "Olfactory Gorgon",
+                "Olfactory Gargoyle");
 
             AddDataRepeating(3, true, 10, 1, "Aaaaaa", "Aaaaab", "Aaaaac", "Aaaaaa", "Aaaaab", "Aaaaad");
             AddDataRepeating(3, true, 10, 1, "A B C D E", "A B C D F", "A B C D G", "A B D E F", "A B D E G");

@@ -23,6 +23,7 @@ internal sealed partial class NameAliasCollection
     // We map each prefix to the original name(s) that it came from, so that
     // we can re-use prefixes for identical names (which makes the aliasing much
     // less ambiguous.)
+    // TODO I don't think I need this one...?
     private readonly Dictionary<string, HashSet<string>> _namesByPrefixDictionary = [];
 
     // We also map each original name to the prefix we're using for it
@@ -260,9 +261,13 @@ internal sealed partial class NameAliasCollection
 
     private int GetAmbiguity(string prefix)
     {
-        return _namesByPrefixDictionary.TryGetValue(prefix, out var names)
-            ? names.Count
-            : 0;
+        var ambiguity = 0;
+        foreach (var name in _prefixesByNameDictionary.Keys)
+        {
+            if (CouldBeAliasFor(prefix, name.Split(' '))) ++ambiguity;
+        }
+
+        return ambiguity;
     }
 
     private sealed class NumbersInUse(int number)
