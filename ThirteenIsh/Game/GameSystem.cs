@@ -146,7 +146,7 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
             BuildEncounterInitiativeTableRows(adventure, combatant, tableBuilder);
         }
 
-        TableHelper.BuildTableEx(stringBuilder, 3, tableBuilder.Data, false);
+        TableHelper.BuildTableEx(stringBuilder, 3, tableBuilder.Data, false, ' ');
     }
 
     protected abstract void BuildEncounterInitiativeTableRows(Adventure adventure, CombatantBase combatant,
@@ -185,14 +185,14 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
         public void AddRow(TableCell label, TableCell value, bool withPointyBit = false)
         {
             _data.Add(new TableRow(
-                new TableCell(withPointyBit ? "-->" : "   "),
+                new TableCell(withPointyBit ? "-->" : string.Empty),
                 label,
                 value));
         }
 
         public void AddSpanningRow(string text, bool rightJustify)
         {
-            _data.Add(new SpanningTableRow(text, rightJustify, ' '));
+            _data.Add(new SpanningTableRow(text, rightJustify));
         }
     }
 }

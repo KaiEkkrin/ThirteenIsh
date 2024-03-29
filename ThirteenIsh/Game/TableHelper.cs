@@ -4,8 +4,8 @@ namespace ThirteenIsh.Game;
 
 internal static class TableHelper
 {
-    public const string CellPadding = "..";
-    public const string TablePadding = "   ";
+    public const int CellPaddingLength = 2;
+    public const int TablePaddingLength = 3;
 
     public static string BuildTable(int columnCount, IReadOnlyList<TableRowBase> data)
     {
@@ -16,7 +16,9 @@ internal static class TableHelper
 
     public static void BuildTableEx(
         StringBuilder builder, int columnCount, IReadOnlyList<TableRowBase> data,
-        bool drawAsTwoColumnsIfPossible = true)
+        bool drawAsTwoColumnsIfPossible = true,
+        char cellPaddingCharacter = '.',
+        char tablePaddingCharacter = ' ')
     {
         if (data.Count == 0) return;
 
@@ -29,19 +31,19 @@ internal static class TableHelper
 
         builder.AppendLine("```");
 
-        var tableWidth = maxCellSizes.Sum() + (maxCellSizes.Length - 1) * CellPadding.Length;
-        if (drawAsTwoColumnsIfPossible && tableWidth < 30 - TablePadding.Length)
+        var tableWidth = maxCellSizes.Sum() + (maxCellSizes.Length - 1) * CellPaddingLength;
+        if (drawAsTwoColumnsIfPossible && tableWidth < 30 - TablePaddingLength)
         {
             // Draw the table with two logical rows on each drawn row.
             var (halfRowsDiv, halfRowsRem) = Math.DivRem(data.Count, 2);
             var height = halfRowsDiv + halfRowsRem;
             for (var j = 0; j < height; ++j)
             {
-                data[j].Append(builder, maxCellSizes);
+                data[j].Append(builder, maxCellSizes, cellPaddingCharacter);
                 if (j + height < data.Count)
                 {
-                    builder.Append(TablePadding);
-                    data[j + height].Append(builder, maxCellSizes);
+                    for (var k = 0; k < TablePaddingLength; ++k) builder.Append(tablePaddingCharacter);
+                    data[j + height].Append(builder, maxCellSizes, cellPaddingCharacter);
                 }
 
                 builder.AppendLine();
@@ -52,7 +54,7 @@ internal static class TableHelper
             // Draw the table without rearranging like that.
             foreach (var row in data)
             {
-                row.Append(builder, maxCellSizes);
+                row.Append(builder, maxCellSizes, cellPaddingCharacter);
                 builder.AppendLine();
             }
         }
