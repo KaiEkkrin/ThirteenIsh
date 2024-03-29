@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 namespace ThirteenIsh.Game;
 
@@ -10,7 +9,10 @@ namespace ThirteenIsh.Game;
 internal sealed partial class NameAliasCollection
 {
     [GeneratedRegex(@"^(\p{L}+)([0-9]*)$", RegexOptions.Compiled)]
-    private static partial Regex AliasRegex();
+    internal static partial Regex AliasRegex();
+
+    [GeneratedRegex(@"\p{Lu}\p{Ll}*", RegexOptions.Compiled)]
+    private static partial Regex AliasPartRegex();
 
     // We split the existing aliases into a mapping of prefix => numbers in use.
     // I'll always prefer a lower number (if there needs to be one at all.)
@@ -57,8 +59,11 @@ internal sealed partial class NameAliasCollection
         // There could be a very large number of possible prefixes. We'll only
         // look at the top few. For each one, find the smallest number for this prefix.
         // Use the smallest number, using the earliest in the enumeration order if there was a tie.
-        var possibleResults = EnumeratePossiblePrefixes(name, prefixLength)
-            .Take(12)
+        List<string> prefixes = [];
+        AddPossiblePrefixes(name, prefixLength, prefixes, 12);
+
+        // TODO avoid the Linq here for better performance?
+        var possibleResults = prefixes
             .Select((prefix, index) =>
                 (Prefix: prefix, Number: FindSmallestNumberForPrefix(prefix, alwaysAddNumber), EnumerationOrder: index))
             .OrderBy(x => x.Number)
@@ -68,6 +73,94 @@ internal sealed partial class NameAliasCollection
         var alias = topNumber == 0 ? topPrefix : $"{topPrefix}{topNumber}";
         AddToDictionary(topPrefix, topNumber);
         return alias;
+    }
+
+    internal static bool CouldBeAliasFor(string alias, string name)
+    {
+        name = AttributeName.TryCanonicalizeMultiPart(name, out var canonicalizedName)
+            ? canonicalizedName
+            : throw new ArgumentException("Name cannot be canonicalized", nameof(name));
+
+        return CouldBeAliasFor(alias, name.Split(' '));
+    }
+
+    /// <summary>
+    /// Checks whether `alias` could be an alias for `nameParts`. Assumes that `nameParts` is a valid
+    /// canonicalized multi-part name that has been split into parts and that `alias` is a valid alias
+    /// (because we're likely to be calling this a lot.)
+    /// </summary>
+    private static bool CouldBeAliasFor(string alias, string[] nameParts)
+    {
+        if (alias.Length == 0 || nameParts.Length == 0) return false;
+
+        var i = 0;
+        foreach (var match in AliasPartRegex().EnumerateMatches(alias))
+        {
+            if (i >= nameParts.Length) return false; // too many alias parts
+            if (nameParts[i].Length < match.Length) return false; // this name part is too long so can't match
+            if (nameParts[i][..match.Length] != alias[match.Index..(match.Index + match.Length)]) return false;
+            ++i;
+        }
+
+        // Not enough alias parts is OK, some names are too long to fit
+        return true;
+    }
+
+    private static void AddPossiblePrefixes(string name, int prefixLength, List<string> list, int maxCount)
+    {
+        // Only take into account as many name parts as there is a prefix length (the minimum
+        // contribution from each is one character.) So long as `prefixLength` is reasonably
+        // short this serves as a cap on recursion
+        var nameParts = name.Split(' ');
+        if (nameParts.Length == 0) return;
+        if (nameParts.Length > prefixLength) nameParts = nameParts[..prefixLength];
+
+        // Work out the cumulative lengths of the following name parts, working backwards from the end.
+        var cumulativeLengths = new int[nameParts.Length];
+        cumulativeLengths[^1] = 0;
+        for (var i = nameParts.Length - 1; i >= 1; --i)
+        {
+            cumulativeLengths[i - 1] = cumulativeLengths[i] + nameParts[i].Length;
+        }
+
+        // Bound the prefix length to the total length of the name parts (otherwise we'll never
+        // find a solution for too-short names)
+        var totalPartsLength = nameParts.Length == 1 ? nameParts[0].Length : nameParts[0].Length + cumulativeLengths[0];
+        prefixLength = Math.Min(prefixLength, totalPartsLength);
+
+        // Start the recursive stage
+        AddPossiblePrefixParts(0, string.Empty);
+        return;
+
+        bool AddPossiblePrefixParts(int index, string acc)
+        {
+            if (index == nameParts.Length || prefixLength == 0)
+            {
+                // This is a possible prefix
+                list.Add(acc);
+                return list.Count < maxCount;
+            }
+
+            // Always leave room for the remaining name parts to contribute at least one character each
+            // to the alias:
+            var remainingPartsCount = nameParts.Length - (index + 1);
+            var remainingPrefixLength = prefixLength - acc.Length;
+            if (remainingPartsCount > remainingPrefixLength) throw new InvalidOperationException(
+                $"At {index}: found {remainingPartsCount} remaining parts but only {remainingPrefixLength} prefix length remaining");
+
+            var startingLength = Math.Min(remainingPrefixLength - remainingPartsCount, nameParts[index].Length);
+            for (var length = startingLength; length >= 1; --length)
+            {
+                // If this length is too short to be able to fill the rest of the prefix to the required
+                // length from the remaining name parts, stop
+                if (length + cumulativeLengths[index] < remainingPrefixLength) break;
+
+                var prefix = nameParts[index][..length];
+                if (!AddPossiblePrefixParts(index + 1, acc + prefix)) return false;
+            }
+
+            return true;
+        }
     }
 
     private void AddToDictionary(string prefix, int number)
@@ -80,44 +173,6 @@ internal sealed partial class NameAliasCollection
         {
             numbersInUse = new NumbersInUse(number);
             _aliasDictionary.Add(prefix, numbersInUse);
-        }
-    }
-
-    private static IEnumerable<string> EnumeratePossiblePrefixes(string name, int prefixLength)
-    {
-        // Only take into account as many name parts as there is a prefix length (the minimum
-        // contribution from each is one character.) So long as `prefixLength` is reasonably
-        // short this serves as a cap on recursion
-        var nameParts = name.Split(' ');
-        if (nameParts.Length > prefixLength) nameParts = nameParts[..prefixLength];
-
-        // TODO try to make the following logic non-recursive?
-        return EnumeratePossiblePrefixParts(nameParts, 0, prefixLength);
-    }
-
-    private static IEnumerable<string> EnumeratePossiblePrefixParts(string[] nameParts, int index, int prefixLength)
-    {
-        if (index == nameParts.Length || prefixLength == 0)
-        {
-            // I need to yield something in order for the higher recursions to do the same :)
-            yield return string.Empty;
-            yield break;
-        }
-
-        // Always leave room for the remaining name parts to contribute at least one character each
-        // to the alias:
-        var remainingPartsCount = nameParts.Length - (index + 1);
-        if (remainingPartsCount > prefixLength) throw new InvalidOperationException(
-            $"Found {remainingPartsCount} remaining parts but only {prefixLength} prefix length");
-
-        var startingLength = Math.Min(prefixLength - remainingPartsCount, nameParts[index].Length);
-        for (var length = startingLength; length >= 1; --length)
-        {
-            var prefix = nameParts[index][..length];
-            foreach (var suffix in EnumeratePossiblePrefixParts(nameParts, index + 1, prefixLength - length))
-            {
-                yield return prefix + suffix;
-            }
         }
     }
 

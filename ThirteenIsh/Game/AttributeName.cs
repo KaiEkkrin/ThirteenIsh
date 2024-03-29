@@ -1,14 +1,12 @@
 ﻿using Discord;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace ThirteenIsh.Game;
 
 internal static partial class AttributeName
 {
-    [GeneratedRegex(@"^(\p{L}+)([0-9]*)$", RegexOptions.Compiled)]
-    private static partial Regex AliasRegex();
-
     [GeneratedRegex(@"(\p{L})(\p{L}*)", RegexOptions.Compiled)]
     private static partial Regex NamePartRegex();
 
@@ -68,7 +66,8 @@ internal static partial class AttributeName
         }
 
         canonicalizedName = NamePartRegex().Replace(name, match =>
-            match.Groups[1].Value.ToUpperInvariant() + match.Groups[2].Value.ToLowerInvariant());
+            match.Groups[1].Value.ToUpper(CultureInfo.CurrentCulture) +
+            match.Groups[2].Value.ToLower(CultureInfo.CurrentCulture));
 
         return true;
     }

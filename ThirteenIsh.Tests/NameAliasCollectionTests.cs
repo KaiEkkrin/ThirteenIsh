@@ -1,6 +1,4 @@
-﻿using SharpCompress.Crypto;
-using Shouldly;
-using System.Text;
+﻿using Shouldly;
 using ThirteenIsh.Game;
 using Xunit.Abstractions;
 
@@ -20,7 +18,7 @@ public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
         {
             TheoryData<int, bool, string[]> data = [];
 
-            AddData(7, false, "Bard", "Cleric", "Warlock");
+            AddData(7, false, "Bard", "Ba rd", "Cleric", "Warlock");
             AddData(4, true, "Kobold Archer", "Kobold Warrior", "Kobold Hero");
             AddData(4, true, "Kobold Archer", "Kobold Archer", "Kobold Warrior", "Kobold Archer", "Kobold Hero",
                 "Kobold Warrior");
@@ -28,9 +26,8 @@ public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
             AddData(4, true, "Kobold Archer", "Kobold Archer", "Kobold Warrior", "Kobold Archer", "Kobold Hero",
                 "Kobold War Hero", "Kobold Alchemist", "Kobold Archer");
 
-            // TODO why do the repeating cases pass in the way that they do?
             AddDataRepeating(3, true, 10, "Aaaaaa", "Aaaaab", "Aaaaac", "Aaaaaa", "Aaaaab", "Aaaaad");
-            AddDataRepeating(3, true, 10, "A b c d e", "A b c d f", "A b c d g", "A b d e f", "A b d e g");
+            AddDataRepeating(3, true, 10, "A B C D E", "A B C D F", "A B C D G", "A B D E F", "A B D E G");
 
             return data;
             void AddData(int prefixLength, bool alwaysAddNumber, params string[] names)
@@ -40,10 +37,13 @@ public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
 
             void AddDataRepeating(int prefixLength, bool alwaysAddNumber, int repeatCount, params string[] names)
             {
+                var repeatingNames = new string[names.Length * repeatCount];
                 for (var i = 0; i < repeatCount; ++i)
                 {
-                    data.Add(prefixLength, alwaysAddNumber, names);
+                    names.CopyTo(repeatingNames, i * names.Length);
                 }
+
+                data.Add(prefixLength, alwaysAddNumber, repeatingNames);
             }
         }
     }
@@ -72,7 +72,7 @@ public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
         namesByAlias.Count.ShouldBe(names.Length);
         foreach (var (alias, name) in namesByAlias)
         {
-            AssertContainsFirstCharacterOfEachNamePart(alias, name, prefixLength);
+            AssertIsValidAliasForName(alias, name, prefixLength);
         }
     }
 
@@ -101,27 +101,48 @@ public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
         collection.Aliases.Order().ShouldBe(namesByAlias.Keys);
         foreach (var (alias, name) in namesByAlias)
         {
-            AssertContainsFirstCharacterOfEachNamePart(alias, name, prefixLength);
+            AssertIsValidAliasForName(alias, name, prefixLength);
         }
     }
 
-    private void AssertContainsFirstCharacterOfEachNamePart(string alias, string name, int prefixLength)
+    [Theory]
+    [InlineData("Bard", "Bard")]
+    [InlineData("B", "Bard")]
+    [InlineData("Bar", "Bard")]
+    [InlineData("Bar1", "Bard")]
+    [InlineData("KobHeWi1", "Kobold Hedge Wizard")]
+    [InlineData("KoboldHedgeWizard", "Kobold Hedge Wizard")]
+    [InlineData("KHW1", "Kobold Hedge Wizard")]
+    public void CouldBeAliasFor(string alias, string name)
     {
-        // Build a regex pattern this alias should match:
-        StringBuilder patternBuilder = new("^");
+        var couldBeAliasForName = NameAliasCollection.CouldBeAliasFor(alias, name);
+        couldBeAliasForName.ShouldBeTrue();
+    }
 
-        AttributeName.TryCanonicalizeMultiPart(name, out var canonicalizedName).ShouldBeTrue(name);
-        var nameParts = canonicalizedName.Split(' ');
-        if (nameParts.Length > prefixLength) nameParts = nameParts[..prefixLength];
+    [Theory]
+    [InlineData("C", "Bard")]
+    [InlineData("Bardette", "Bard")]
+    [InlineData("HobKeWi1", "Kobold Hedge Wizard")]
+    [InlineData("KWH1", "Kobold Hedge Wizard")]
+    [InlineData("KobHoWi1", "Kobold Hedge Wizard")]
+    [InlineData("KoboldHedgeWizards", "Kobold Hedge Wizard")]
+    public void CouldNotBeAliasFor(string alias, string name)
+    {
+        var couldBeAliasForName = NameAliasCollection.CouldBeAliasFor(alias, name);
+        couldBeAliasForName.ShouldBeFalse();
+    }
 
-        foreach (var namePart in nameParts)
-        {
-            patternBuilder.Append(namePart[0]);
-            patternBuilder.Append(@"\p{Ll}*"); // lowercase characters
-        }
+    private static void AssertIsValidAliasForName(string alias, string name, int prefixLength)
+    {
+        var message = $"'{alias}' alias of '{name}'";
 
-        patternBuilder.Append(@"[0-9]*$"); // number and end-of-line
-        var pattern = patternBuilder.ToString();
-        alias.ShouldMatch(pattern, $"First characters of: {string.Join(", ", nameParts)}");
+        var match = NameAliasCollection.AliasRegex().Match(alias);
+        match.Success.ShouldBeTrue(message);
+
+        var textPart = match.Groups[1].Value;
+        var totalPartsLength = name.Split(' ').Sum(namePart => namePart.Length);
+        textPart.Length.ShouldBe(Math.Min(prefixLength, totalPartsLength), message);
+
+        NameAliasCollection.CouldBeAliasFor(alias, name).ShouldBeTrue(message);
     }
 }
