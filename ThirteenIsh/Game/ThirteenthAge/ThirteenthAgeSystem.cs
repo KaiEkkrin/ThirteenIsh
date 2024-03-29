@@ -162,10 +162,10 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         }
     }
 
-    protected override void AddEncounterHeadingRow(List<string[]> data, Encounter encounter)
+    protected override void AddEncounterHeadingRow(List<TableRowBase> data, Encounter encounter)
     {
         base.AddEncounterHeadingRow(data, encounter);
-        data.Add(["Escalation Die", $"{encounter.Variables[EscalationDie]}"]);
+        data.Add(new TableRow(new TableCell("Escalation Die"), TableCell.Integer(encounter.Variables[EscalationDie])));
     }
 
     protected override void BuildEncounterInitiativeTableRows(Adventure adventure, CombatantBase combatant,
@@ -173,7 +173,9 @@ internal sealed class ThirteenthAgeSystem : GameSystem
     {
         var hitPointsCounter = GetCharacterSystem(combatant.CharacterType).GetProperty<GameCounter>(HitPoints);
         var hitPointsCell = BuildPointsEncounterTableCell(adventure, combatant, hitPointsCounter);
-        builder.AddRow(hitPointsCounter.Alias ?? hitPointsCounter.Name, hitPointsCell);
+        builder.AddRow(
+            new TableCell(hitPointsCounter.Alias ?? hitPointsCounter.Name),
+            new TableCell(hitPointsCell));
     }
 
     protected override bool EncounterNextRound(Encounter encounter, IRandomWrapper random)

@@ -207,11 +207,15 @@ internal sealed class DragonbaneSystem : GameSystem
 
         var hitPointsCounter = characterSystem.GetProperty<GameCounter>(HitPoints);
         var hitPointsCell = BuildPointsEncounterTableCell(adventure, combatant, hitPointsCounter);
-        builder.AddRow(hitPointsCounter.Alias ?? hitPointsCounter.Name, hitPointsCell);
+        builder.AddRow(
+            new TableCell(hitPointsCounter.Alias ?? hitPointsCounter.Name),
+            new TableCell(hitPointsCell));
 
         var willpowerPointsCounter = characterSystem.GetProperty<GameCounter>(WillpowerPoints);
         var willpowerPointsCell = BuildPointsEncounterTableCell(adventure, combatant, willpowerPointsCounter);
-        builder.AddRow(willpowerPointsCounter.Alias ?? willpowerPointsCounter.Name, willpowerPointsCell);
+        builder.AddRow(
+            new TableCell(willpowerPointsCounter.Alias ?? willpowerPointsCounter.Name),
+            new TableCell(willpowerPointsCell));
     }
 
     protected override bool EncounterNextRound(Encounter encounter, IRandomWrapper random)

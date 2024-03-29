@@ -115,16 +115,16 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
     /// </summary>
     public CharacterSystem GetCharacterSystem(CharacterType characterType) => _characterSystems[characterType];
 
-    protected virtual void AddEncounterHeadingRow(List<string[]> data, Encounter encounter)
+    protected virtual void AddEncounterHeadingRow(List<TableRowBase> data, Encounter encounter)
     {
-        data.Add(["Round", $"{encounter.Round}"]);
+        data.Add(new TableRow(new TableCell("Round"), TableCell.Integer(encounter.Round)));
     }
 
     private void BuildEncounterHeadingTable(StringBuilder builder, Encounter encounter)
     {
-        List<string[]> data = [];
+        List<TableRowBase> data = [];
         AddEncounterHeadingRow(data, encounter);
-        TableHelper.BuildTableEx(builder, 2, data, false, 1);
+        TableHelper.BuildTableEx(builder, 2, data, false);
     }
 
     public void BuildEncounterInitiativeTable(Adventure adventure, StringBuilder stringBuilder, Encounter encounter)
@@ -133,17 +133,20 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
         for (var i = 0; i < encounter.Combatants.Count; ++i)
         {
             // Leave a blank row between each combatant so that the table is readable
-            if (i > 0) tableBuilder.AddRow(string.Empty, string.Empty);
-
-            // TODO also add the combatant's full name as its own row (requires row spanning behaviour
-            // in the table builder...)
+            if (i > 0) tableBuilder.AddRow(TableCell.Empty, TableCell.Empty);
 
             var combatant = encounter.Combatants[i];
-            tableBuilder.AddRow($"{combatant.Initiative}", combatant.Alias, i == encounter.TurnIndex);
+            tableBuilder.AddRow(
+                TableCell.Integer(combatant.Initiative),
+                new TableCell(combatant.Alias),
+                i == encounter.TurnIndex);
+
+            tableBuilder.AddSpanningRow(combatant.Name, true);
+
             BuildEncounterInitiativeTableRows(adventure, combatant, tableBuilder);
         }
 
-        TableHelper.BuildTableEx(stringBuilder, 3, tableBuilder.Data, false, 1);
+        TableHelper.BuildTableEx(stringBuilder, 3, tableBuilder.Data, false);
     }
 
     protected abstract void BuildEncounterInitiativeTableRows(Adventure adventure, CombatantBase combatant,
@@ -175,13 +178,21 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
 
     protected sealed class EncounterInitiativeTableBuilder
     {
-        private readonly List<IReadOnlyList<string>> _data = [];
+        private readonly List<TableRowBase> _data = [];
 
-        public IReadOnlyCollection<IReadOnlyList<string>> Data => _data;
+        public IReadOnlyList<TableRowBase> Data => _data;
 
-        public void AddRow(string label, string value, bool withPointyBit = false)
+        public void AddRow(TableCell label, TableCell value, bool withPointyBit = false)
         {
-            _data.Add([withPointyBit ? "-->" : string.Empty, label, value]);
+            _data.Add(new TableRow(
+                new TableCell(withPointyBit ? "-->" : "   "),
+                label,
+                value));
+        }
+
+        public void AddSpanningRow(string text, bool rightJustify)
+        {
+            _data.Add(new SpanningTableRow(text, rightJustify, ' '));
         }
     }
 }

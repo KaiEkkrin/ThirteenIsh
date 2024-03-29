@@ -4,59 +4,44 @@ namespace ThirteenIsh.Game;
 
 internal static class TableHelper
 {
-    public static string BuildTable(
-        int columnCount, IReadOnlyCollection<IReadOnlyList<string>> data, params int[] rightJustifiedColumns)
+    public const string CellPadding = "..";
+    public const string TablePadding = "   ";
+
+    public static string BuildTable(int columnCount, IReadOnlyList<TableRowBase> data)
     {
         StringBuilder builder = new();
-        BuildTableEx(builder, columnCount, data, true, rightJustifiedColumns);
+        BuildTableEx(builder, columnCount, data, true);
         return builder.ToString();
     }
 
     public static void BuildTableEx(
-        StringBuilder builder, int columnCount, IReadOnlyCollection<IReadOnlyList<string>> data,
-        bool drawAsTwoColumnsIfPossible, params int[] rightJustifiedColumns)
+        StringBuilder builder, int columnCount, IReadOnlyList<TableRowBase> data,
+        bool drawAsTwoColumnsIfPossible = true)
     {
         if (data.Count == 0) return;
 
-        var rightJustify = new bool[columnCount];
-        foreach (var column in rightJustifiedColumns)
-        {
-            rightJustify[column] = true;
-        }
-
         // Work out how wide each cell will be, and thence the whole table
-        List<IReadOnlyList<string>> dataList = [];
         var maxCellSizes = new int[columnCount];
         foreach (var row in data)
         {
-            if (row.Count != columnCount)
-                throw new ArgumentException($"Found row with {row.Count} columns, expected {columnCount}", nameof(data));
-
-            for (var i = 0; i < columnCount; ++i)
-            {
-                maxCellSizes[i] = Math.Max(maxCellSizes[i], row[i].Length);
-            }
-
-            dataList.Add(row);
+            row.ContributeMaxCellSizes(maxCellSizes);
         }
 
         builder.AppendLine("```");
 
-        const string cellPadding = "..";
-        const string tablePadding = "   ";
-        var tableWidth = maxCellSizes.Sum() + (maxCellSizes.Length - 1) * cellPadding.Length;
-        if (drawAsTwoColumnsIfPossible && tableWidth < 30 - tablePadding.Length)
+        var tableWidth = maxCellSizes.Sum() + (maxCellSizes.Length - 1) * CellPadding.Length;
+        if (drawAsTwoColumnsIfPossible && tableWidth < 30 - TablePadding.Length)
         {
             // Draw the table with two logical rows on each drawn row.
-            var (halfRowsDiv, halfRowsRem) = Math.DivRem(dataList.Count, 2);
+            var (halfRowsDiv, halfRowsRem) = Math.DivRem(data.Count, 2);
             var height = halfRowsDiv + halfRowsRem;
             for (var j = 0; j < height; ++j)
             {
-                AppendDataRow(dataList[j]);
-                if (j + height < dataList.Count)
+                data[j].Append(builder, maxCellSizes);
+                if (j + height < data.Count)
                 {
-                    builder.Append(tablePadding);
-                    AppendDataRow(dataList[j + height]);
+                    builder.Append(TablePadding);
+                    data[j + height].Append(builder, maxCellSizes);
                 }
 
                 builder.AppendLine();
@@ -65,32 +50,13 @@ internal static class TableHelper
         else
         {
             // Draw the table without rearranging like that.
-            foreach (var row in dataList)
+            foreach (var row in data)
             {
-                AppendDataRow(row);
+                row.Append(builder, maxCellSizes);
                 builder.AppendLine();
             }
         }
 
         builder.AppendLine("```");
-
-        void AppendDataRow(IReadOnlyList<string> row)
-        {
-            for (var i = 0; i < columnCount; ++i)
-            {
-                // Between-cell padding
-                if (i > 0) builder.Append(cellPadding);
-
-                // Value if left justify
-                if (!rightJustify[i]) builder.Append(row[i]);
-
-                // Padding
-                var paddingLength = maxCellSizes[i] - row[i].Length;
-                for (var j = 0; j < paddingLength; ++j) builder.Append('.');
-
-                // Value if right justify
-                if (rightJustify[i]) builder.Append(row[i]);
-            }
-        }
     }
 }

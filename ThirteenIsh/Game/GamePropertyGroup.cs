@@ -19,11 +19,12 @@ internal class GamePropertyGroup<TProperty>(string groupName, ImmutableList<TPro
         var rows = properties
             .Where(property => !property.IsHidden &&
                     (onlyTheseProperties is not { Count: > 0 } || onlyTheseProperties.Contains(property.Name)))
-            .Select(property => new[] { property.Name, property.GetDisplayValue(character) })
+            .Select(property => new TableRow(
+                new TableCell(property.Name), new TableCell(property.GetDisplayValue(character), true)))
             .ToList();
 
         if (rows.Count == 0) return null;
-        var table = TableHelper.BuildTable(2, rows, 1);
+        var table = TableHelper.BuildTable(2, rows);
 
         return new EmbedFieldBuilder()
             .WithName(groupName)
@@ -36,11 +37,12 @@ internal class GamePropertyGroup<TProperty>(string groupName, ImmutableList<TPro
         var rows = properties
             .Where(property => !property.IsHidden &&
                     (onlyTheseProperties is not { Count: > 0 } || onlyTheseProperties.Contains(property.Name)))
-            .Select(property => new[] { property.Name, property.GetDisplayValue(sheet) })
+            .Select(property => new TableRow(
+                new TableCell(property.Name), new TableCell(property.GetDisplayValue(sheet), true)))
             .ToList();
 
         if (rows.Count == 0) return null;
-        var table = TableHelper.BuildTable(2, rows, 1);
+        var table = TableHelper.BuildTable(2, rows);
 
         return new EmbedFieldBuilder()
             .WithName(groupName)
