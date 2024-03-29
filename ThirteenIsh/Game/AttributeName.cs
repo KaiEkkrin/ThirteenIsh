@@ -58,13 +58,13 @@ internal static partial class AttributeName
     private static bool TryCanonicalizeInternal(string name, MatchEvaluator whiteSpaceEvaluator,
         [MaybeNullWhen(false)] out string canonicalizedName)
     {
-        name = WhiteSpaceRegex().Replace(name, whiteSpaceEvaluator);
         if (NotNameRegex().IsMatch(name))
         {
             canonicalizedName = null;
             return false;
         }
 
+        name = WhiteSpaceRegex().Replace(name, whiteSpaceEvaluator);
         canonicalizedName = NamePartRegex().Replace(name, match =>
             match.Groups[1].Value.ToUpper(CultureInfo.CurrentCulture) +
             match.Groups[2].Value.ToLower(CultureInfo.CurrentCulture));

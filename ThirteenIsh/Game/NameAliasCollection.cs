@@ -8,6 +8,8 @@ namespace ThirteenIsh.Game;
 /// </summary>
 internal sealed partial class NameAliasCollection
 {
+    private const int DefaultPrefixTryCount = 16;
+
     [GeneratedRegex(@"^(\p{L}+)([0-9]*)$", RegexOptions.Compiled)]
     internal static partial Regex AliasRegex();
 
@@ -16,30 +18,45 @@ internal sealed partial class NameAliasCollection
 
     // We split the existing aliases into a mapping of prefix => numbers in use.
     // I'll always prefer a lower number (if there needs to be one at all.)
-    private readonly Dictionary<string, NumbersInUse> _aliasDictionary = [];
+    private readonly Dictionary<string, NumbersInUse> _numbersInUseDictionary = [];
 
-    public NameAliasCollection(IEnumerable<string> aliases)
+    // We map each prefix to the original name(s) that it came from, so that
+    // we can re-use prefixes for identical names (which makes the aliasing much
+    // less ambiguous.)
+    private readonly Dictionary<string, HashSet<string>> _namesByPrefixDictionary = [];
+
+    // We also map each original name to the prefix we're using for it
+    private readonly Dictionary<string, string> _prefixesByNameDictionary = [];
+
+    private readonly int _prefixTryCount;
+
+    public NameAliasCollection(IEnumerable<(string Alias, string Name)> aliases, int prefixTryCount = DefaultPrefixTryCount)
     {
-        foreach (var alias in aliases)
+        foreach (var (alias, name) in aliases)
         {
+            if (!AttributeName.TryCanonicalizeMultiPart(name, out var canonicalizedName))
+                throw new ArgumentException($"Name '{name}' cannot be canonicalized", nameof(aliases));
+
             var match = AliasRegex().Match(alias);
-            if (!match.Success) throw new ArgumentException($"Invalid alias: {alias}", nameof(aliases));
+            if (!match.Success) throw new ArgumentException($"Invalid alias: '{alias}'", nameof(aliases));
 
             var number = match.Groups[2].Value is not { Length: > 0 } numberString
                 ? 0
                 : int.TryParse(numberString, out var numberValue)
                     ? numberValue
-                    : throw new ArgumentException($"Invalid alias number: {alias}", nameof(aliases));
+                    : throw new ArgumentException($"Invalid alias number: '{alias}'", nameof(aliases));
 
             var prefix = match.Groups[1].Value;
-            AddToDictionary(prefix, number);
+            AddToDictionaries(prefix, canonicalizedName, number);
         }
+
+        _prefixTryCount = prefixTryCount;
     }
 
     /// <summary>
     /// The aliases in order.
     /// </summary>
-    public IEnumerable<string> Aliases => _aliasDictionary
+    public IEnumerable<string> Aliases => _numbersInUseDictionary
         .SelectMany(pair => pair.Value.Numbers.Select(number => (Prefix: pair.Key, Number: number)))
         .OrderBy(x => x.Prefix)
         .ThenBy(x => x.Number)
@@ -56,23 +73,23 @@ internal sealed partial class NameAliasCollection
             ? canonicalizedName
             : throw new ArgumentException("Name cannot be canonicalized", nameof(name));
 
-        // There could be a very large number of possible prefixes. We'll only
-        // look at the top few. For each one, find the smallest number for this prefix.
-        // Use the smallest number, using the earliest in the enumeration order if there was a tie.
-        List<string> prefixes = [];
-        AddPossiblePrefixes(name, prefixLength, prefixes, 12);
-
-        // TODO avoid the Linq here for better performance?
-        var possibleResults = prefixes
-            .Select((prefix, index) =>
-                (Prefix: prefix, Number: FindSmallestNumberForPrefix(prefix, alwaysAddNumber), EnumerationOrder: index))
-            .OrderBy(x => x.Number)
-            .ThenBy(x => x.EnumerationOrder);
-
-        var (topPrefix, topNumber, _) = possibleResults.First();
-        var alias = topNumber == 0 ? topPrefix : $"{topPrefix}{topNumber}";
-        AddToDictionary(topPrefix, topNumber);
+        var prefix = GeneratePrefixAndNumber(name, prefixLength, alwaysAddNumber, out var number);
+        var alias = number == 0 ? prefix : $"{prefix}{number}";
+        AddToDictionaries(prefix, name, number);
         return alias;
+    }
+
+    /// <summary>
+    /// Checks how ambiguous this alias is, in terms of the current name alias collection.
+    /// </summary>
+    /// <param name="alias">The alias.</param>
+    /// <returns>The number of different tracked names it could map to, or 0 if this alias is
+    /// not tracked.</returns>
+    internal int CheckAmbiguity(string alias)
+    {
+        var match = AliasRegex().Match(alias);
+        if (!match.Success) throw new ArgumentException("Not a valid alias", nameof(alias));
+        return GetAmbiguity(match.Groups[1].Value);
     }
 
     internal static bool CouldBeAliasFor(string alias, string name)
@@ -106,7 +123,7 @@ internal sealed partial class NameAliasCollection
         return true;
     }
 
-    private static void AddPossiblePrefixes(string name, int prefixLength, List<string> list, int maxCount)
+    private void AddPossiblePrefixes(string name, int prefixLength, bool alwaysAddNumber, List<PossibleAlias> list)
     {
         // Only take into account as many name parts as there is a prefix length (the minimum
         // contribution from each is one character.) So long as `prefixLength` is reasonably
@@ -136,9 +153,11 @@ internal sealed partial class NameAliasCollection
         {
             if (index == nameParts.Length || prefixLength == 0)
             {
-                // This is a possible prefix
-                list.Add(acc);
-                return list.Count < maxCount;
+                // This is a possible prefix; generate the alias candidate
+                PossibleAlias possibleAlias = new(GetAmbiguity(acc), FindSmallestNumberForPrefix(acc, alwaysAddNumber),
+                    list.Count, acc);
+                list.Add(possibleAlias);
+                return list.Count < _prefixTryCount;
             }
 
             // Always leave room for the remaining name parts to contribute at least one character each
@@ -163,23 +182,43 @@ internal sealed partial class NameAliasCollection
         }
     }
 
-    private void AddToDictionary(string prefix, int number)
+    private void AddToDictionaries(string prefix, string name, int number)
     {
-        if (_aliasDictionary.TryGetValue(prefix, out var numbersInUse))
+        if (!_prefixesByNameDictionary.TryGetValue(name, out var currentPrefix))
+        {
+            _prefixesByNameDictionary.Add(name, prefix);
+        }
+        else if (currentPrefix != prefix)
+        {
+            throw new InvalidOperationException(
+                $"Saw '{name}' with an alias starting '{prefix}' but have already tracked it using the prefix '{currentPrefix}'");
+        }
+
+        if (_namesByPrefixDictionary.TryGetValue(prefix, out var nameSet))
+        {
+            nameSet.Add(name);
+        }
+        else
+        {
+            nameSet = [name];
+            _namesByPrefixDictionary.Add(prefix, nameSet);
+        }
+
+        if (_numbersInUseDictionary.TryGetValue(prefix, out var numbersInUse))
         {
             numbersInUse.AddNumber(number);
         }
         else
         {
             numbersInUse = new NumbersInUse(number);
-            _aliasDictionary.Add(prefix, numbersInUse);
+            _numbersInUseDictionary.Add(prefix, numbersInUse);
         }
     }
 
     private int FindSmallestNumberForPrefix(string prefix, bool alwaysAddNumber)
     {
         var lowestNumber = alwaysAddNumber ? 1 : 0;
-        if (!_aliasDictionary.TryGetValue(prefix, out var existingNumbers))
+        if (!_numbersInUseDictionary.TryGetValue(prefix, out var existingNumbers))
         {
             return lowestNumber;
         }
@@ -192,6 +231,38 @@ internal sealed partial class NameAliasCollection
         }
 
         return maxExistingNumber + 1;
+    }
+
+    private string GeneratePrefixAndNumber(string name, int prefixLength, bool alwaysAddNumber, out int number)
+    {
+        // If we're already tracking a prefix in association with this name, re-use it
+        if (_prefixesByNameDictionary.TryGetValue(name, out var currentPrefix))
+        {
+            number = FindSmallestNumberForPrefix(currentPrefix, alwaysAddNumber);
+            return currentPrefix;
+        }
+
+        // There could be a very large number of possible prefixes. We'll only
+        // look at the top few. For each one, find the smallest number for this prefix.
+        // Use the least ambiguous alias, with the smallest number, in a deterministic order.
+        List<PossibleAlias> list = [];
+        AddPossiblePrefixes(name, prefixLength, alwaysAddNumber, list);
+
+        // TODO reproduce in the test suite the case of no possible alias being available,
+        // and handle it. (I'm not really sure how to get to this.)
+        var topAlias = list.MinBy(x => x, PossibleAliasComparer.Instance);
+        if (topAlias is null) throw new InvalidOperationException(
+            $"No possible alias for '{name}' with prefix length {prefixLength}");
+
+        number = topAlias.Number;
+        return topAlias.Prefix;
+    }
+
+    private int GetAmbiguity(string prefix)
+    {
+        return _namesByPrefixDictionary.TryGetValue(prefix, out var names)
+            ? names.Count
+            : 0;
     }
 
     private sealed class NumbersInUse(int number)
@@ -209,5 +280,30 @@ internal sealed partial class NameAliasCollection
             _numbers.Add(number);
             MaxValue = Math.Max(number, MaxValue);
         }
+    }
+
+    private record PossibleAlias(int Ambiguity, int Number, int EnumerationOrder, string Prefix);
+
+    private sealed class PossibleAliasComparer : Comparer<PossibleAlias>
+    {
+        public static readonly PossibleAliasComparer Instance = new();
+
+        private PossibleAliasComparer()
+        {
+        }
+
+        public override int Compare(PossibleAlias? x, PossibleAlias? y) => (x, y) switch
+        {
+            (null, null) => 0,
+            (null, _) => -1,
+            (_, null) => 1,
+            _ => x.Ambiguity.CompareTo(y.Ambiguity) is not 0 and var ambiguityCmp
+                ? ambiguityCmp
+                : x.Number.CompareTo(y.Number) is not 0 and var numberCmp
+                    ? numberCmp
+                    : x.EnumerationOrder.CompareTo(y.EnumerationOrder) is not 0 and var enumerationOrderCmp
+                        ? enumerationOrderCmp
+                        : string.CompareOrdinal(x.Prefix, y.Prefix)
+        };
     }
 }

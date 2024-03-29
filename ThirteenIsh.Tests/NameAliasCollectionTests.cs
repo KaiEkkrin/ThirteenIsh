@@ -12,30 +12,39 @@ namespace ThirteenIsh.Tests;
 // as best I can on construction (using mappings with least ambiguity where no unambiguous mapping exists.)
 public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
 {
-    public static TheoryData<int, bool, string[]> NameAliasData
+    public static TheoryData<int, bool, int, string[]> NameAliasData
     {
         get
         {
-            TheoryData<int, bool, string[]> data = [];
+            TheoryData<int, bool, int, string[]> data = [];
 
-            AddData(7, false, "Bard", "Ba rd", "Cleric", "Warlock");
-            AddData(4, true, "Kobold Archer", "Kobold Warrior", "Kobold Hero");
-            AddData(4, true, "Kobold Archer", "Kobold Archer", "Kobold Warrior", "Kobold Archer", "Kobold Hero",
+            AddData(7, false, 1, "Bard", "Ba rd", "Cleric", "Warlock");
+            AddData(4, true, 1, "Kobold Archer", "Kobold Warrior", "Kobold Hero");
+            AddData(4, true, 1, "Kobold Archer", "Kobold Archer", "Kobold Warrior", "Kobold Archer", "Kobold Hero",
                 "Kobold Warrior");
 
-            AddData(4, true, "Kobold Archer", "Kobold Archer", "Kobold Warrior", "Kobold Archer", "Kobold Hero",
+            AddData(4, true, 1, "Kobold Archer", "Kobold Archer", "Kobold Warrior", "Kobold Archer", "Kobold Hero",
                 "Kobold War Hero", "Kobold Alchemist", "Kobold Archer");
 
-            AddDataRepeating(3, true, 10, "Aaaaaa", "Aaaaab", "Aaaaac", "Aaaaaa", "Aaaaab", "Aaaaad");
-            AddDataRepeating(3, true, 10, "A B C D E", "A B C D F", "A B C D G", "A B D E F", "A B D E G");
+            // This one necessarily has ambiguity because the identical name part prefixes
+            // are longer than the max prefix length for the aliases
+            AddData(4, true, 2, "Kobold Archer", "Kobold Archer", "Kobold Archmage", "Koboldkin Archer", "Komodo Archer",
+                "Komodo Arch Wizard", "Komodo Archmage", "Kobold Archmage", "Kobold Arch Wizard", "Koboldspawn Archer");
+
+            // TODO add more ambiguity test cases, and support min and max alias length to
+            // reduce ambiguity.
+
+            AddDataRepeating(3, true, 10, 1, "Aaaaaa", "Aaaaab", "Aaaaac", "Aaaaaa", "Aaaaab", "Aaaaad");
+            AddDataRepeating(3, true, 10, 1, "A B C D E", "A B C D F", "A B C D G", "A B D E F", "A B D E G");
 
             return data;
-            void AddData(int prefixLength, bool alwaysAddNumber, params string[] names)
+            void AddData(int prefixLength, bool alwaysAddNumber, int maxAmbiguity, params string[] names)
             {
-                data.Add(prefixLength, alwaysAddNumber, names);
+                data.Add(prefixLength, alwaysAddNumber, maxAmbiguity, names);
             }
 
-            void AddDataRepeating(int prefixLength, bool alwaysAddNumber, int repeatCount, params string[] names)
+            void AddDataRepeating(int prefixLength, bool alwaysAddNumber, int maxAmbiguity, int repeatCount,
+                params string[] names)
             {
                 var repeatingNames = new string[names.Length * repeatCount];
                 for (var i = 0; i < repeatCount; ++i)
@@ -43,7 +52,7 @@ public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
                     names.CopyTo(repeatingNames, i * names.Length);
                 }
 
-                data.Add(prefixLength, alwaysAddNumber, repeatingNames);
+                data.Add(prefixLength, alwaysAddNumber, maxAmbiguity, repeatingNames);
             }
         }
     }
@@ -51,21 +60,24 @@ public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
     [Theory]
     [MemberData(nameof(NameAliasData))]
     public void UniqueAliasesAreGeneratedBuildingCollectionEachTime(
-        int prefixLength, bool alwaysAddNumber, params string[] names)
+        int prefixLength, bool alwaysAddNumber, int maxAmbiguity, params string[] names)
     {
         SortedDictionary<string, string> namesByAlias = [];
+        NameAliasCollection? collection = null;
         foreach (var name in names)
         {
-            NameAliasCollection collection = new(namesByAlias.Keys);
+            collection = new(namesByAlias.Select(pair => (Alias: pair.Key, Name: pair.Value)));
             var alias = collection.Add(name, prefixLength, alwaysAddNumber);
             namesByAlias.ShouldNotContainKey(alias, name);
             namesByAlias.Add(alias, name);
         }
 
-        foreach (var alias in namesByAlias.Keys)
+        foreach (var (alias, name) in namesByAlias)
         {
-            testOutputHelper.WriteLine(alias);
+            testOutputHelper.WriteLine($"'{alias,20}' <- '{name}'");
         }
+
+        collection.ShouldNotBeNull(); // sanity check -- should have some input!
 
         // TODO check output looks sane
         // existingAliases.ShouldBeEmpty();
@@ -73,13 +85,14 @@ public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
         foreach (var (alias, name) in namesByAlias)
         {
             AssertIsValidAliasForName(alias, name, prefixLength);
+            AssertAmbiguity(alias, name, maxAmbiguity, collection);
         }
     }
 
     [Theory]
     [MemberData(nameof(NameAliasData))]
     public void UniqueAliasesAreGeneratedWithPersistentCollection(
-        int prefixLength, bool alwaysAddNumber, params string[] names)
+        int prefixLength, bool alwaysAddNumber, int maxAmbiguity, params string[] names)
     {
         NameAliasCollection collection = new([]);
         SortedDictionary<string, string> namesByAlias = [];
@@ -90,9 +103,9 @@ public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
             namesByAlias.Add(alias, name);
         }
 
-        foreach (var alias in namesByAlias.Keys)
+        foreach (var (alias, name) in namesByAlias)
         {
-            testOutputHelper.WriteLine(alias);
+            testOutputHelper.WriteLine($"'{alias,20}' <- '{name}'");
         }
 
         // TODO check output looks sane
@@ -102,6 +115,7 @@ public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
         foreach (var (alias, name) in namesByAlias)
         {
             AssertIsValidAliasForName(alias, name, prefixLength);
+            AssertAmbiguity(alias, name, maxAmbiguity, collection);
         }
     }
 
@@ -130,6 +144,16 @@ public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
     {
         var couldBeAliasForName = NameAliasCollection.CouldBeAliasFor(alias, name);
         couldBeAliasForName.ShouldBeFalse();
+    }
+
+    private static void AssertAmbiguity(string alias, string name, int maxAmbiguity, NameAliasCollection collection)
+    {
+        var message = $"'{alias}' alias of '{name}'";
+
+        var ambiguity = collection.CheckAmbiguity(alias);
+        ambiguity.ShouldSatisfyAllConditions(
+            () => ambiguity.ShouldBeGreaterThanOrEqualTo(1, message), // must be in the collection
+            () => ambiguity.ShouldBeLessThanOrEqualTo(maxAmbiguity, message));
     }
 
     private static void AssertIsValidAliasForName(string alias, string name, int prefixLength)
