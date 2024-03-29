@@ -99,8 +99,6 @@ public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
 
         collection.ShouldNotBeNull(); // sanity check -- should have some input!
 
-        // TODO check output looks sane
-        // existingAliases.ShouldBeEmpty();
         namesByAlias.Count.ShouldBe(names.Length);
         foreach (var (alias, name) in namesByAlias)
         {
@@ -124,8 +122,6 @@ public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
             testOutputHelper.WriteLine($"'{alias,10}' <- '{name}'");
         }
 
-        // TODO check output looks sane
-        // collection.Aliases.ShouldBeEmpty();
         namesByAlias.Count.ShouldBe(names.Length);
         collection.Aliases.Order().ShouldBe(namesByAlias.Keys);
         foreach (var (alias, name) in namesByAlias)

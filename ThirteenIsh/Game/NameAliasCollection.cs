@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Text;
+using System.Text.RegularExpressions;
 
 namespace ThirteenIsh.Game;
 
@@ -144,20 +145,22 @@ internal sealed partial class NameAliasCollection
 
         // Bound the prefix length to the total length of the name parts (otherwise we'll never
         // find a solution for too-short names)
-        var totalPartsLength = nameParts.Length == 1 ? nameParts[0].Length : nameParts[0].Length + cumulativeLengths[0];
+        var totalPartsLength = nameParts[0].Length + cumulativeLengths[0];
         prefixLength = Math.Min(prefixLength, totalPartsLength);
 
         // Start the recursive stage
-        AddPossiblePrefixParts(0, string.Empty);
+        StringBuilder aliasBuilder = new(prefixLength);
+        AddPossiblePrefixParts(0);
         return;
 
-        bool AddPossiblePrefixParts(int index, string acc)
+        bool AddPossiblePrefixParts(int index)
         {
             if (index == nameParts.Length || prefixLength == 0)
             {
                 // This is a possible prefix; generate the alias candidate
-                PossibleAlias possibleAlias = new(GetAmbiguity(acc), FindSmallestNumberForPrefix(acc, alwaysAddNumber),
-                    list.Count, acc);
+                var aliasString = aliasBuilder.ToString();
+                PossibleAlias possibleAlias = new(GetAmbiguity(aliasString),
+                    FindSmallestNumberForPrefix(aliasString, alwaysAddNumber), list.Count, aliasString);
                 list.Add(possibleAlias);
                 return list.Count < _prefixTryCount;
             }
@@ -165,7 +168,7 @@ internal sealed partial class NameAliasCollection
             // Always leave room for the remaining name parts to contribute at least one character each
             // to the alias:
             var remainingPartsCount = nameParts.Length - (index + 1);
-            var remainingPrefixLength = prefixLength - acc.Length;
+            var remainingPrefixLength = prefixLength - aliasBuilder.Length;
             if (remainingPartsCount > remainingPrefixLength) throw new InvalidOperationException(
                 $"At {index}: found {remainingPartsCount} remaining parts but only {remainingPrefixLength} prefix length remaining");
 
@@ -187,13 +190,19 @@ internal sealed partial class NameAliasCollection
                 if (i >= lengthMinBound)
                 {
                     var prefix = nameParts[index][..i];
-                    if (!AddPossiblePrefixParts(index + 1, acc + prefix)) return false;
+                    aliasBuilder.Append(prefix);
+                    var keepGoing = AddPossiblePrefixParts(index + 1);
+                    aliasBuilder.Remove(aliasBuilder.Length - prefix.Length, prefix.Length);
+                    if (!keepGoing) return false;
                 }
 
                 if (j <= lengthMaxBound)
                 {
                     var prefix = nameParts[index][..j];
-                    if (!AddPossiblePrefixParts(index + 1, acc + prefix)) return false;
+                    aliasBuilder.Append(prefix);
+                    var keepGoing = AddPossiblePrefixParts(index + 1);
+                    aliasBuilder.Remove(aliasBuilder.Length - prefix.Length, prefix.Length);
+                    if (!keepGoing) return false;
                 }
             }
 
