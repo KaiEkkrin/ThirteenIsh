@@ -46,12 +46,12 @@ internal sealed class PcCombatNextSubCommand() : SubCommandBase("next", "Moves o
 
         // Send an appropriate response
         StringBuilder titleBuilder = new();
-        if (!string.IsNullOrEmpty(output.PreviousCombatantName))
+        if (!string.IsNullOrEmpty(output.PreviousCombatantAlias))
         {
-            titleBuilder.Append(CultureInfo.CurrentCulture, $"{output.PreviousCombatantName} finished their turn. ");
+            titleBuilder.Append(CultureInfo.CurrentCulture, $"{output.PreviousCombatantAlias} finished their turn. ");
         }
 
-        titleBuilder.Append(CultureInfo.CurrentCulture, $"It is now {output.CurrentCombatantName}'s turn.");
+        titleBuilder.Append(CultureInfo.CurrentCulture, $"It is now {output.CurrentCombatantAlias}'s turn.");
 
         var embedBuilder = new EmbedBuilder()
             .WithAuthor(command.User)
@@ -72,8 +72,8 @@ internal sealed class PcCombatNextSubCommand() : SubCommandBase("next", "Moves o
                 return new MessageEditResult<EditOutput>(null, errorMessage);
             }
 
-            var previousCombatantName = encounter.TurnIndex.HasValue
-                ? encounter.Combatants[encounter.TurnIndex.Value].Name
+            var previousCombatantAlias = encounter.TurnIndex.HasValue
+                ? encounter.Combatants[encounter.TurnIndex.Value].Alias
                 : null;
 
             var gameSystem = GameSystem.Get(adventure.GameSystem);
@@ -81,10 +81,10 @@ internal sealed class PcCombatNextSubCommand() : SubCommandBase("next", "Moves o
                 return new MessageEditResult<EditOutput>(null, "This encounter cannot be progressed at this time.");
 
             return new MessageEditResult<EditOutput>(new EditOutput(
-                previousCombatantName, encounter.Combatants[turnIndex].Name, adventure, encounter, gameSystem));
+                previousCombatantAlias, encounter.Combatants[turnIndex].Alias, adventure, encounter, gameSystem));
         }
     }
 
-    private sealed record EditOutput(string? PreviousCombatantName, string CurrentCombatantName,
+    private sealed record EditOutput(string? PreviousCombatantAlias, string CurrentCombatantAlias,
         Adventure Adventure, Encounter Encounter, GameSystem GameSystem);
 }

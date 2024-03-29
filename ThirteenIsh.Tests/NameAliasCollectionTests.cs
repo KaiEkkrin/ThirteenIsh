@@ -15,6 +15,7 @@ public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
             TheoryData<int, bool, int, string[]> data = [];
 
             AddData(7, false, 1, "Bard", "Ba rd", "Cleric", "Warlock");
+            AddData(7, false, 1, "Bard", "Ba rd", "Cleric", "Warlock", "Cleric", "Warlock");
             AddData(4, true, 1, "Kobold Archer", "Kobold Warrior", "Kobold Hero");
             AddData(4, true, 1, "Kobold Archer", "Kobold Archer", "Kobold Warrior", "Kobold Archer", "Kobold Hero",
                 "Kobold Warrior");

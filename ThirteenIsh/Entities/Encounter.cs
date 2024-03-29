@@ -1,4 +1,5 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
+using ThirteenIsh.Game;
 
 namespace ThirteenIsh.Entities;
 
@@ -56,5 +57,14 @@ public class Encounter
         }
 
         Combatants.Add(combatant);
+    }
+
+    /// <summary>
+    /// Builds a name alias collection representing the current combatants in this encounter,
+    /// to enable us to generate unique aliases for new combatants.
+    /// </summary>
+    internal NameAliasCollection BuildNameAliasCollection()
+    {
+        return new NameAliasCollection(Combatants.Select(c => (c.Alias, c.Name)));
     }
 }

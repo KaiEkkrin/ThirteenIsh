@@ -67,7 +67,8 @@ internal sealed class PcCombatJoinSubCommand() : SubCommandBase("join", "Joins t
             }
 
             var gameSystem = GameSystem.Get(adventure.GameSystem);
-            var result = gameSystem.EncounterJoin(adventurer, encounter, random, rerolls, userId);
+            var nameAliasCollection = encounter.BuildNameAliasCollection();
+            var result = gameSystem.EncounterJoin(adventurer, encounter, nameAliasCollection, random, rerolls, userId);
             if (!result.HasValue) return new MessageEditResult<EditOutput>(
                 null, "You are not able to join this encounter at this time.");
 

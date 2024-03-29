@@ -162,29 +162,55 @@ internal static class CommandUtil
         return false;
     }
 
-    public static bool TryFindCombatantsByName(IEnumerable<string> nameParts, Encounter encounter,
+    public static bool TryFindCombatant(Encounter encounter,
+        Func<CombatantBase, bool> predicate, [MaybeNullWhen(false)] out CombatantBase combatant)
+    {
+        var matchingCombatants = encounter.Combatants.Where(predicate).ToList();
+        if (matchingCombatants.Count == 1)
+        {
+            // This is an unambiguous match.
+            combatant = matchingCombatants[0];
+            return true;
+        }
+
+        combatant = null;
+        return false;
+    }
+
+    public static bool TryFindCombatants(IEnumerable<string> nameParts, Encounter encounter,
         IList<CombatantBase> combatants, [MaybeNullWhen(true)] out string errorMessage)
     {
         foreach (var namePart in nameParts)
         {
-            var matchingCombatants = encounter.Combatants
-                .Where(c => c.Name.StartsWith(namePart, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-
-            switch (matchingCombatants.Count)
+            // Try matching on alias case sensitively first, then on alias case insensitively,
+            // and then finally on name prefix (case insensitively).
+            if (TryFindCombatant(encounter,
+                c => string.Equals(c.Alias, namePart, StringComparison.Ordinal),
+                out var combatant))
             {
-                case 0:
-                    errorMessage = $"'{namePart}' does not match any combatants in the current encounter.";
-                    return false;
-
-                case 1:
-                    if (!combatants.Contains(matchingCombatants[0])) combatants.Add(matchingCombatants[0]);
-                    break;
-
-                default:
-                    errorMessage = $"'{namePart}' does not uniquely match any combatants in the current encounter.";
-                    return false;
+                if (!combatants.Contains(combatant)) combatants.Add(combatant);
+                continue;
             }
+
+            if (TryFindCombatant(encounter,
+                c => string.Equals(c.Alias, namePart, StringComparison.OrdinalIgnoreCase),
+                out combatant))
+            {
+                if (!combatants.Contains(combatant)) combatants.Add(combatant);
+                continue;
+            }
+
+            if (TryFindCombatant(encounter,
+                c => c.Name.StartsWith(namePart, StringComparison.OrdinalIgnoreCase),
+                out combatant))
+            {
+                if (!combatants.Contains(combatant)) combatants.Add(combatant);
+                continue;
+            }
+
+            // If we got here we failed to match anything to this name part
+            errorMessage = $"'{namePart}' does not uniquely match any combatants in the current encounter.";
+            return false;
         }
 
         if (combatants.Count == 0)

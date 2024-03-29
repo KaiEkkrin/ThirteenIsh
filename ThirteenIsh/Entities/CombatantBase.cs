@@ -18,6 +18,12 @@ public abstract class CombatantBase
     public abstract CharacterType CharacterType { get; }
 
     /// <summary>
+    /// This combatant's alias, which identifies it uniquely amongst combatants,
+    /// even if it's got the same name as another one (e.g. for monsters.)
+    /// </summary>
+    public string Alias { get; set; } = string.Empty;
+
+    /// <summary>
     /// This combatant's place in the initiative order.
     /// </summary>
     public int Initiative { get; set; }
@@ -32,6 +38,7 @@ public abstract class CombatantBase
     /// TODO how to handle monsters correctly? Perhaps I should wrap this stuff in an interface.
     /// The goal here is to be able to return the storage of counters and variables.
     /// GameCounter should be the class that knows how to read the storage content.
+    /// - Make it return an ITrackedCharacter instead?
     /// </summary>
     public abstract bool TryGetAdventurer(Adventure adventure, [MaybeNullWhen(false)] out Adventurer adventurer);
 }

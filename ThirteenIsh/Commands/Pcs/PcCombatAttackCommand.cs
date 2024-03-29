@@ -86,7 +86,7 @@ internal sealed class PcCombatAttackCommand()
         }
 
         List<CombatantBase> targetCombatants = [];
-        if (!CommandUtil.TryFindCombatantsByName(targets, encounter, targetCombatants, out errorMessage))
+        if (!CommandUtil.TryFindCombatants(targets, encounter, targetCombatants, out errorMessage))
         {
             await command.RespondAsync(errorMessage);
             return;
@@ -117,7 +117,7 @@ internal sealed class PcCombatAttackCommand()
 
         void RollVs(CombatantBase target)
         {
-            stringBuilder.Append(CultureInfo.CurrentCulture, $"vs {target.Name}");
+            stringBuilder.Append(CultureInfo.CurrentCulture, $"vs {target.Alias}");
             // TODO should this switch turn into a virtual method on CombatantBase?
             switch (target)
             {

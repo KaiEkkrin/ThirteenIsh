@@ -63,6 +63,7 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
     public abstract GameCounterRollResult? EncounterJoin(
         Adventurer adventurer,
         Encounter encounter,
+        NameAliasCollection nameAliasCollection,
         IRandomWrapper random,
         int rerolls,
         ulong userId);
@@ -123,35 +124,30 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
     {
         List<string[]> data = [];
         AddEncounterHeadingRow(data, encounter);
-        DiscordUtil.BuildTable(builder, 2, data, 1);
+        DiscordUtil.BuildTableEx(builder, 2, data, false, 1);
     }
 
-    public void BuildEncounterInitiativeTable(Adventure adventure, StringBuilder builder, Encounter encounter)
+    public void BuildEncounterInitiativeTable(Adventure adventure, StringBuilder stringBuilder, Encounter encounter)
     {
-        // TODO Right now this is too wide to fit sensibly into a pin. I need to break this up into
-        // more rows. Use just 3 columns? Remember to truncate the names of combatants unambiguously
-        // (perhaps those truncated names should be written directly into the Combatant entities?)
-        List<IReadOnlyList<string>> data = new(encounter.Combatants.Count);
-        var columnCount = 4; // just a starting guess, rows are dynamically created (but must all match)
+        EncounterInitiativeTableBuilder tableBuilder = new();
         for (var i = 0; i < encounter.Combatants.Count; ++i)
         {
-            List<string> row = new(columnCount);
-            row.Add(i == encounter.TurnIndex ? "-->" : string.Empty);
-            BuildEncounterInitiativeTableRow(adventure, encounter.Combatants[i], row);
-            row.Add(i == encounter.TurnIndex ? "<--" : string.Empty);
-            data.Add(row);
+            // Leave a blank row between each combatant so that the table is readable
+            if (i > 0) tableBuilder.AddRow(string.Empty, string.Empty);
 
-            columnCount = row.Count;
+            // TODO also add the combatant's full name as its own row (requires row spanning behaviour
+            // in the table builder...)
+
+            var combatant = encounter.Combatants[i];
+            tableBuilder.AddRow($"{combatant.Initiative}", combatant.Alias, i == encounter.TurnIndex);
+            BuildEncounterInitiativeTableRows(adventure, combatant, tableBuilder);
         }
 
-        DiscordUtil.BuildTable(builder, columnCount, data, 1);
+        DiscordUtil.BuildTableEx(stringBuilder, 3, tableBuilder.Data, false, 1);
     }
 
-    protected virtual void BuildEncounterInitiativeTableRow(Adventure adventure, CombatantBase combatant, List<string> row)
-    {
-        row.Add($"{combatant.Initiative}");
-        row.Add(combatant.Name);
-    }
+    protected abstract void BuildEncounterInitiativeTableRows(Adventure adventure, CombatantBase combatant,
+        EncounterInitiativeTableBuilder builder);
 
     protected static string BuildPointsEncounterTableCell(Adventure adventure, CombatantBase combatant,
         GameCounter counter)
@@ -163,7 +159,7 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
 
         var currentPointsString = currentPoints.HasValue ? $"{currentPoints.Value}" : "???";
         var maxPointsString = maxPoints.HasValue ? $"{maxPoints.Value}" : "???";
-        return $"{counter.Alias} {currentPointsString}/{maxPointsString}";
+        return $"{currentPointsString}/{maxPointsString}";
     }
 
     protected virtual bool EncounterNextRound(Encounter encounter, IRandomWrapper random)
@@ -175,6 +171,18 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
     {
         public GameCounter Counter { get; init; }
         public int Multiplier { get; init; }
+    }
+
+    protected sealed class EncounterInitiativeTableBuilder
+    {
+        private readonly List<IReadOnlyList<string>> _data = [];
+
+        public IReadOnlyCollection<IReadOnlyList<string>> Data => _data;
+
+        public void AddRow(string label, string value, bool withPointyBit = false)
+        {
+            _data.Add([withPointyBit ? "-->" : string.Empty, label, value]);
+        }
     }
 }
 

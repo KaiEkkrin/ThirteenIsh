@@ -8,13 +8,13 @@ internal class DiscordUtil
         int columnCount, IReadOnlyCollection<IReadOnlyList<string>> data, params int[] rightJustifiedColumns)
     {
         StringBuilder builder = new();
-        BuildTable(builder, columnCount, data, rightJustifiedColumns);
+        BuildTableEx(builder, columnCount, data, true, rightJustifiedColumns);
         return builder.ToString();
     }
 
-    public static void BuildTable(
+    public static void BuildTableEx(
         StringBuilder builder, int columnCount, IReadOnlyCollection<IReadOnlyList<string>> data,
-        params int[] rightJustifiedColumns)
+        bool drawAsTwoColumnsIfPossible, params int[] rightJustifiedColumns)
     {
         if (data.Count == 0) return;
 
@@ -45,7 +45,7 @@ internal class DiscordUtil
         const string cellPadding = "..";
         const string tablePadding = "   ";
         var tableWidth = maxCellSizes.Sum() + (maxCellSizes.Length - 1) * cellPadding.Length;
-        if (tableWidth < 30 - tablePadding.Length)
+        if (drawAsTwoColumnsIfPossible && tableWidth < 30 - tablePadding.Length)
         {
             // Draw the table with two logical rows on each drawn row.
             var (halfRowsDiv, halfRowsRem) = Math.DivRem(dataList.Count, 2);

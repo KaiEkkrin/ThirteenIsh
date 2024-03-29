@@ -172,6 +172,7 @@ internal sealed class DragonbaneSystem : GameSystem
     public override GameCounterRollResult? EncounterJoin(
         Adventurer adventurer,
         Encounter encounter,
+        NameAliasCollection nameAliasCollection,
         IRandomWrapper random,
         int rerolls,
         ulong userId)
@@ -182,6 +183,7 @@ internal sealed class DragonbaneSystem : GameSystem
 
         encounter.AddCombatant(new AdventurerCombatant
         {
+            Alias = nameAliasCollection.Add(adventurer.Name, 10, false),
             Initiative = card.Value,
             Name = adventurer.Name,
             UserId = (long)userId
@@ -198,19 +200,18 @@ internal sealed class DragonbaneSystem : GameSystem
         return $"{kin} {profession}";
     }
 
-    protected override void BuildEncounterInitiativeTableRow(Adventure adventure, CombatantBase combatant, List<string> row)
+    protected override void BuildEncounterInitiativeTableRows(Adventure adventure, CombatantBase combatant,
+        EncounterInitiativeTableBuilder builder)
     {
-        base.BuildEncounterInitiativeTableRow(adventure, combatant, row);
-
         var characterSystem = GetCharacterSystem(combatant.CharacterType);
 
         var hitPointsCounter = characterSystem.GetProperty<GameCounter>(HitPoints);
         var hitPointsCell = BuildPointsEncounterTableCell(adventure, combatant, hitPointsCounter);
-        row.Add(hitPointsCell);
+        builder.AddRow(hitPointsCounter.Alias ?? hitPointsCounter.Name, hitPointsCell);
 
         var willpowerPointsCounter = characterSystem.GetProperty<GameCounter>(WillpowerPoints);
         var willpowerPointsCell = BuildPointsEncounterTableCell(adventure, combatant, willpowerPointsCounter);
-        row.Add(willpowerPointsCell);
+        builder.AddRow(willpowerPointsCounter.Alias ?? willpowerPointsCounter.Name, willpowerPointsCell);
     }
 
     protected override bool EncounterNextRound(Encounter encounter, IRandomWrapper random)

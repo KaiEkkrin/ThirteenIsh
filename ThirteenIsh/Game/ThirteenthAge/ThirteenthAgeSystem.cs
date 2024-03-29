@@ -122,17 +122,19 @@ internal sealed class ThirteenthAgeSystem : GameSystem
     public override GameCounterRollResult? EncounterJoin(
         Adventurer adventurer,
         Encounter encounter,
+        NameAliasCollection nameAliasCollection,
         IRandomWrapper random,
         int rerolls,
         ulong userId)
     {
         var dexterityBonusCounter = GetCharacterSystem(CharacterType.PlayerCharacter)
-            .GetProperty<GameCounter>(AbilityBonusCounter.GetBonusCounterName(ThirteenthAgeSystem.Dexterity));
+            .GetProperty<GameCounter>(AbilityBonusCounter.GetBonusCounterName(Dexterity));
 
         int? targetValue = null;
         var initiative = dexterityBonusCounter.Roll(adventurer, null, random, rerolls, ref targetValue);
         encounter.AddCombatant(new AdventurerCombatant
         {
+            Alias = nameAliasCollection.Add(adventurer.Name, 10, false),
             Initiative = initiative.Roll,
             Name = adventurer.Name,
             UserId = (long)userId
@@ -166,14 +168,12 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         data.Add(["Escalation Die", $"{encounter.Variables[EscalationDie]}"]);
     }
 
-    protected override void BuildEncounterInitiativeTableRow(Adventure adventure,
-        CombatantBase combatant, List<string> row)
+    protected override void BuildEncounterInitiativeTableRows(Adventure adventure, CombatantBase combatant,
+        EncounterInitiativeTableBuilder builder)
     {
-        base.BuildEncounterInitiativeTableRow(adventure, combatant, row);
-
         var hitPointsCounter = GetCharacterSystem(combatant.CharacterType).GetProperty<GameCounter>(HitPoints);
         var hitPointsCell = BuildPointsEncounterTableCell(adventure, combatant, hitPointsCounter);
-        row.Add(hitPointsCell);
+        builder.AddRow(hitPointsCounter.Alias ?? hitPointsCounter.Name, hitPointsCell);
     }
 
     protected override bool EncounterNextRound(Encounter encounter, IRandomWrapper random)

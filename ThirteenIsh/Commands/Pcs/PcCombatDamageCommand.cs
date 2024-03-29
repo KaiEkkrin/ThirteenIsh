@@ -102,7 +102,7 @@ internal sealed class PcCombatDamageCommand()
         if (!CommandUtil.TryGetOption<bool>(option, "roll-separately", out var rollSeparately)) rollSeparately = false;
 
         List<CombatantBase> targetCombatants = [];
-        if (!CommandUtil.TryFindCombatantsByName(targets, encounter, targetCombatants, out errorMessage))
+        if (!CommandUtil.TryFindCombatants(targets, encounter, targetCombatants, out errorMessage))
         {
             await command.RespondAsync(errorMessage);
             return;
@@ -158,7 +158,7 @@ internal sealed class PcCombatDamageCommand()
 
         async Task RollDamageVsAsync(CombatantBase target)
         {
-            stringBuilder.Append(CultureInfo.CurrentCulture, $"vs {target.Name}");
+            stringBuilder.Append(CultureInfo.CurrentCulture, $"vs {target.Alias}");
 
             // TODO should this switch turn into a virtual method on CombatantBase?
             switch (target)
