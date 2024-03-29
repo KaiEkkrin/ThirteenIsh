@@ -124,7 +124,7 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
     {
         List<string[]> data = [];
         AddEncounterHeadingRow(data, encounter);
-        DiscordUtil.BuildTableEx(builder, 2, data, false, 1);
+        TableHelper.BuildTableEx(builder, 2, data, false, 1);
     }
 
     public void BuildEncounterInitiativeTable(Adventure adventure, StringBuilder stringBuilder, Encounter encounter)
@@ -143,7 +143,7 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
             BuildEncounterInitiativeTableRows(adventure, combatant, tableBuilder);
         }
 
-        DiscordUtil.BuildTableEx(stringBuilder, 3, tableBuilder.Data, false, 1);
+        TableHelper.BuildTableEx(stringBuilder, 3, tableBuilder.Data, false, 1);
     }
 
     protected abstract void BuildEncounterInitiativeTableRows(Adventure adventure, CombatantBase combatant,

@@ -2,7 +2,7 @@
 
 namespace ThirteenIsh;
 
-internal class DiscordUtil
+internal class TableHelper
 {
     public static string BuildTable(
         int columnCount, IReadOnlyCollection<IReadOnlyList<string>> data, params int[] rightJustifiedColumns)

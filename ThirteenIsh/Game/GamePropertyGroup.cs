@@ -23,7 +23,7 @@ internal class GamePropertyGroup<TProperty>(string groupName, ImmutableList<TPro
             .ToList();
 
         if (rows.Count == 0) return null;
-        var table = DiscordUtil.BuildTable(2, rows, 1);
+        var table = TableHelper.BuildTable(2, rows, 1);
 
         return new EmbedFieldBuilder()
             .WithName(groupName)
@@ -40,7 +40,7 @@ internal class GamePropertyGroup<TProperty>(string groupName, ImmutableList<TPro
             .ToList();
 
         if (rows.Count == 0) return null;
-        var table = DiscordUtil.BuildTable(2, rows, 1);
+        var table = TableHelper.BuildTable(2, rows, 1);
 
         return new EmbedFieldBuilder()
             .WithName(groupName)
