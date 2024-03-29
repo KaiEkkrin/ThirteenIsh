@@ -150,6 +150,35 @@ public class NameAliasCollectionTests(ITestOutputHelper testOutputHelper)
     }
 
     [Theory]
+    [MemberData(nameof(NameAliasData))]
+    public void CollectionCanBeReCreatedWithoutChangeInBehaviour(
+        int prefixLength, bool alwaysAddNumber, int _, params string[] names)
+    {
+        // This test just checks that re-creating the collection between every generate results
+        // in the same aliases as retaining the existing collection. The Unique* tests check for
+        // correctness of the generated aliases.
+        NameAliasCollection? ephemeralCollection = null;
+        NameAliasCollection persistentCollection = new([]);
+        Dictionary<string, string> namesByAlias = [];
+        foreach (var name in names)
+        {
+            ephemeralCollection = new(namesByAlias.Select(pair => (Alias: pair.Key, Name: pair.Value)));
+            var ephemeralAlias = ephemeralCollection.Add(name, prefixLength, alwaysAddNumber);
+            var persistentAlias = persistentCollection.Add(name, prefixLength, alwaysAddNumber);
+
+            namesByAlias.ShouldNotContainKey(persistentAlias, name);
+            namesByAlias.Add(persistentAlias, name);
+
+            ephemeralAlias.ShouldBe(persistentAlias, name);
+        }
+
+        persistentCollection.Aliases.Order().ShouldBe(namesByAlias.Keys.Order());
+
+        ephemeralCollection.ShouldNotBeNull();
+        ephemeralCollection.Aliases.Order().ShouldBe(persistentCollection.Aliases.Order());
+    }
+
+    [Theory]
     [InlineData("Bard", "Bard")]
     [InlineData("B", "Bard")]
     [InlineData("Bar", "Bard")]

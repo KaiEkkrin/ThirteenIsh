@@ -23,6 +23,10 @@ internal sealed partial class NameAliasCollection
     // We also map each original name to the prefix we're using for it
     private readonly Dictionary<string, string> _prefixesByNameDictionary = [];
 
+    // Try not to repeatedly re-compute the split prefixes
+    // (remember to keep this in sync with `_prefixesByNameDictionary`)
+    private List<string[]>? _splitPrefixes;
+
     private readonly int _prefixTryCount;
 
     public NameAliasCollection(IEnumerable<(string Alias, string Name)> aliases, int prefixTryCount = DefaultPrefixTryCount)
@@ -87,6 +91,9 @@ internal sealed partial class NameAliasCollection
         return GetAmbiguity(match.Groups[1].Value);
     }
 
+    /// <summary>
+    /// For unit tests only.
+    /// </summary>
     internal static bool CouldBeAliasFor(string alias, string name)
     {
         name = AttributeName.TryCanonicalizeMultiPart(name, out var canonicalizedName)
@@ -182,6 +189,7 @@ internal sealed partial class NameAliasCollection
         if (!_prefixesByNameDictionary.TryGetValue(name, out var currentPrefix))
         {
             _prefixesByNameDictionary.Add(name, prefix);
+            _splitPrefixes?.Add(name.Split(' '));
         }
         else if (currentPrefix != prefix)
         {
@@ -246,9 +254,10 @@ internal sealed partial class NameAliasCollection
     private int GetAmbiguity(string prefix)
     {
         var ambiguity = 0;
-        foreach (var name in _prefixesByNameDictionary.Keys)
+        _splitPrefixes ??= _prefixesByNameDictionary.Keys.Select(name => name.Split(' ')).ToList();
+        foreach (var nameParts in _splitPrefixes)
         {
-            if (CouldBeAliasFor(prefix, name.Split(' '))) ++ambiguity;
+            if (CouldBeAliasFor(prefix, nameParts)) ++ambiguity;
         }
 
         return ambiguity;
