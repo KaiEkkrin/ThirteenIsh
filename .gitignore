@@ -363,4 +363,4 @@ MigrationBackup/
 FodyWeavers.xsd
 
 # Local docker configuration
-my.docker.env
+*.docker.env

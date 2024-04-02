@@ -1,6 +1,6 @@
 # ThirteenIsh
 
-An experimental Discord bot
+An experimental Discord bot for dice rolling and TTRPG tracking
 
 ## Setup
 
