@@ -32,9 +32,10 @@ internal static class TableHelper
             row.ContributeMaxCellSizes(maxCellSizes);
         }
 
-        builder.AppendLine("```diff");
+        builder.Append("```");
 
         var tableWidth = maxCellSizes.Sum() + (maxCellSizes.Length - 1) * CellPaddingLength;
+        var charactersInLine = 0;
         if (drawAsTwoColumnsIfPossible && tableWidth < maxTableWidth / 2 - TablePaddingLength)
         {
             // Draw the table with two logical rows on each drawn row.
@@ -42,14 +43,14 @@ internal static class TableHelper
             var height = halfRowsDiv + halfRowsRem;
             for (var j = 0; j < height; ++j)
             {
-                data[j].Append(builder, maxCellSizes, cellPaddingCharacter);
+                builder.AppendLine();
+                charactersInLine = data[j].Append(builder, maxCellSizes, cellPaddingCharacter);
                 if (j + height < data.Count)
                 {
                     for (var k = 0; k < TablePaddingLength; ++k) builder.Append(tablePaddingCharacter);
-                    data[j + height].Append(builder, maxCellSizes, cellPaddingCharacter);
+                    charactersInLine += TablePaddingLength +
+                        data[j + height].Append(builder, maxCellSizes, cellPaddingCharacter);
                 }
-
-                builder.AppendLine();
             }
         }
         else
@@ -57,14 +58,15 @@ internal static class TableHelper
             // Draw the table without rearranging like that.
             foreach (var row in data)
             {
-                row.Append(builder, maxCellSizes, cellPaddingCharacter);
                 builder.AppendLine();
+                charactersInLine = row.Append(builder, maxCellSizes, cellPaddingCharacter);
             }
         }
 
-        // A long row of nbsp at the end will pad the table but seems to be the only way to
-        // discourage Discord from randomly line breaking my tables at ridiculous intervals
-        // for (var i = 0; i < maxTableWidth; ++i) builder.Append('\u00a0');
+        // HACK : To discourage Discord from randomly line breaking my tables in ridiculous
+        // places, pad the last line with a whole lot of nbsp. This will wrap, but only once.
+        // (Discord's ability to format text into tables seems completely knackered.)
+        for (var i = charactersInLine; i < maxTableWidth; ++i) builder.Append('\u00a0');
 
         builder.AppendLine("```");
     }
