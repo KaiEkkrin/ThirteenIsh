@@ -14,11 +14,11 @@ internal readonly record struct TableCell(string Text, bool RightJustify = false
 /// </summary>
 internal abstract class TableRowBase
 {
-    public abstract void Append(StringBuilder builder, int[] maxCellSizes, char paddingCharacter);
+    public abstract int Append(StringBuilder builder, int[] maxCellSizes, char paddingCharacter);
 
     public abstract void ContributeMaxCellSizes(int[] maxCellSizes);
 
-    protected static void AppendJustified(StringBuilder builder, int maxCellWidth, string text, bool rightJustify,
+    protected static int AppendJustified(StringBuilder builder, int maxCellWidth, string text, bool rightJustify,
         char paddingCharacter)
     {
         // Ensure text fits within cell and replace spaces with non-breaking space to stop
@@ -35,6 +35,9 @@ internal abstract class TableRowBase
 
         // Value if right justify
         if (rightJustify) builder.Append(text);
+
+        // Return the number of characters we wrote
+        return text.Length + paddingLength;
     }
 }
 
@@ -43,8 +46,9 @@ internal abstract class TableRowBase
 /// </summary>
 internal sealed class TableRow(params TableCell[] cells) : TableRowBase
 {
-    public override void Append(StringBuilder builder, int[] maxCellSizes, char paddingCharacter)
+    public override int Append(StringBuilder builder, int[] maxCellSizes, char paddingCharacter)
     {
+        var charactersWritten = 0;
         for (var i = 0; i < cells.Length; ++i)
         {
             var cell = cells[i];
@@ -53,11 +57,15 @@ internal sealed class TableRow(params TableCell[] cells) : TableRowBase
             if (i > 0)
             {
                 for (var j = 0; j < TableHelper.CellPaddingLength; ++j) builder.Append(paddingCharacter);
+                charactersWritten += TableHelper.CellPaddingLength;
             }
 
             // Cell text
-            AppendJustified(builder, maxCellSizes[i], cell.Text, cell.RightJustify, paddingCharacter);
+            charactersWritten += AppendJustified(
+                builder, maxCellSizes[i], cell.Text, cell.RightJustify, paddingCharacter);
         }
+
+        return charactersWritten;
     }
 
     public override void ContributeMaxCellSizes(int[] maxCellSizes)
@@ -80,18 +88,18 @@ internal sealed class TableRow(params TableCell[] cells) : TableRowBase
 /// </summary>
 internal sealed class SpanningTableRow(string text, bool rightJustify = false) : TableRowBase
 {
-    public override void Append(StringBuilder builder, int[] maxCellSizes, char paddingCharacter)
+    public override int Append(StringBuilder builder, int[] maxCellSizes, char paddingCharacter)
     {
         var maxWidth = maxCellSizes.Sum() + TableHelper.CellPaddingLength * (maxCellSizes.Length - 1);
         if (text.Length >= maxWidth)
         {
             // Fill the whole row with truncated text
             builder.Append(text[..maxWidth]);
-            return;
+            return maxWidth;
         }
 
         // Otherwise, justify the text within the row
-        AppendJustified(builder, maxWidth, text, rightJustify, paddingCharacter);
+        return AppendJustified(builder, maxWidth, text, rightJustify, paddingCharacter);
     }
 
     public override void ContributeMaxCellSizes(int[] maxCellSizes)

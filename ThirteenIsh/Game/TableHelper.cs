@@ -21,7 +21,7 @@ internal static class TableHelper
         bool drawAsTwoColumnsIfPossible = true,
         char cellPaddingCharacter = '\u00b7', // middle dot
         char tablePaddingCharacter = '\u00a0', // non-breaking space
-        int maxTableWidth = 60)
+        int maxTableWidth = 40)
     {
         if (data.Count == 0) return;
 
@@ -32,7 +32,7 @@ internal static class TableHelper
             row.ContributeMaxCellSizes(maxCellSizes);
         }
 
-        builder.AppendLine("```");
+        builder.AppendLine("```diff");
 
         var tableWidth = maxCellSizes.Sum() + (maxCellSizes.Length - 1) * CellPaddingLength;
         if (drawAsTwoColumnsIfPossible && tableWidth < maxTableWidth / 2 - TablePaddingLength)
@@ -64,7 +64,7 @@ internal static class TableHelper
 
         // A long row of nbsp at the end will pad the table but seems to be the only way to
         // discourage Discord from randomly line breaking my tables at ridiculous intervals
-        for (var i = 0; i < maxTableWidth; ++i) builder.Append('\u00a0');
+        // for (var i = 0; i < maxTableWidth; ++i) builder.Append('\u00a0');
 
         builder.AppendLine("```");
     }
