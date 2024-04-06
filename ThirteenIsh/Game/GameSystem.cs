@@ -146,22 +146,22 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
         EncounterInitiativeTableBuilder tableBuilder = new();
         for (var i = 0; i < encounter.Combatants.Count; ++i)
         {
-            // Leave a blank row between each combatant so that the table is readable
+            // Leave a blank row between each combatant so that the table is readable?
             if (i > 0) tableBuilder.AddRow(TableCell.Empty, TableCell.Empty);
 
             var combatant = encounter.Combatants[i];
+            tableBuilder.AddingActiveRows = i == encounter.TurnIndex;
             tableBuilder.AddRow(
                 TableCell.Integer(combatant.Initiative),
-                new TableCell(combatant.Alias),
-                i == encounter.TurnIndex);
+                new TableCell(combatant.Alias));
 
-            tableBuilder.AddSpanningRow(combatant.Name, true);
+            tableBuilder.AddSpanningRow(combatant.Name);
 
             BuildEncounterInitiativeTableRows(adventure, combatant, tableBuilder);
         }
 
-        TableHelper.BuildTableEx(stringBuilder, 3, tableBuilder.Data, false, '\u00a0',
-            maxTableWidth: TableHelper.MaxPinnedTableWidth);
+        TableHelper.BuildTableEx(stringBuilder, 2, tableBuilder.Data, false, '\u00a0',
+            maxTableWidth: TableHelper.MaxPinnedTableWidth, language: "diff");
     }
 
     protected abstract void BuildEncounterInitiativeTableRows(Adventure adventure, CombatantBase combatant,
@@ -195,19 +195,22 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
     {
         private readonly List<TableRowBase> _data = [];
 
+        public bool AddingActiveRows { get; set; }
+
+        private char ActiveCharacter => AddingActiveRows ? '+' : ' ';
+
         public IReadOnlyList<TableRowBase> Data => _data;
 
-        public void AddRow(TableCell label, TableCell value, bool withPointyBit = false)
+        public void AddRow(TableCell label, TableCell value)
         {
             _data.Add(new TableRow(
-                new TableCell(withPointyBit ? "-->" : string.Empty),
-                label,
+                label with { Text = $"{ActiveCharacter}{label.Text}" },
                 value));
         }
 
-        public void AddSpanningRow(string text, bool rightJustify)
+        public void AddSpanningRow(string text)
         {
-            _data.Add(new SpanningTableRow(text, rightJustify));
+            _data.Add(new SpanningTableRow($"{ActiveCharacter}{text}"));
         }
     }
 }

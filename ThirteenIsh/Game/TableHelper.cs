@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Globalization;
+using System.Text;
 
 namespace ThirteenIsh.Game;
 
@@ -21,7 +22,8 @@ internal static class TableHelper
         bool drawAsTwoColumnsIfPossible = true,
         char cellPaddingCharacter = '\u00b7', // middle dot
         char tablePaddingCharacter = '\u00a0', // non-breaking space
-        int maxTableWidth = 40)
+        int maxTableWidth = 40,
+        string language = "")
     {
         if (data.Count == 0) return;
 
@@ -32,7 +34,7 @@ internal static class TableHelper
             row.ContributeMaxCellSizes(maxCellSizes);
         }
 
-        builder.Append("```");
+        builder.Append(CultureInfo.CurrentCulture, $"```{language}");
 
         var tableWidth = maxCellSizes.Sum() + (maxCellSizes.Length - 1) * CellPaddingLength;
         var charactersInLine = 0;
