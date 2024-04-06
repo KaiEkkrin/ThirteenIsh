@@ -21,6 +21,11 @@ internal abstract class TableRowBase
     protected static void AppendJustified(StringBuilder builder, int maxCellWidth, string text, bool rightJustify,
         char paddingCharacter)
     {
+        // Ensure text fits within cell and replace spaces with non-breaking space to stop
+        // Discord shenanigans
+        if (text.Length > maxCellWidth) text = text[..maxCellWidth];
+        text = text.Replace(' ', '\u00a0');
+
         // Value if left justify
         if (!rightJustify) builder.Append(text);
 
