@@ -1,19 +1,43 @@
-using ThirteenIsh;
+using Microsoft.EntityFrameworkCore;
+using ThirteenIsh.Database;
 using ThirteenIsh.Services;
 
-var builder = Host.CreateApplicationBuilder(args);
+namespace ThirteenIsh;
 
-builder.Configuration.AddCommandLine(args)
-    .AddEnvironmentVariables()
-    .AddUserSecrets<Worker>();
+// Our Program.cs must be this shape in order to be usable to EF Core design-time tools:
+// https://learn.microsoft.com/en-us/ef/core/cli/dbcontext-creation?tabs=dotnet-core-cli
+public class Program
+{
+    public static IHostBuilder CreateHostBuilder(string[] args)
+    {
+        var builder = Host.CreateDefaultBuilder(args)
+            .ConfigureAppConfiguration(configurationBuilder =>
+            {
+                configurationBuilder.AddCommandLine(args)
+                    .AddEnvironmentVariables()
+                    .AddUserSecrets<Worker>();
+            })
+            .ConfigureServices(context =>
+            {
+                CommandRegistration.RegisterCommands(context);
 
-CommandRegistration.RegisterCommands(builder.Services);
-builder.Services
-    .AddSingleton<DataService>()
-    .AddSingleton<DiscordService>()
-    .AddSingleton<PinnedMessageService>()
-    .AddSingleton<IRandomWrapper, RandomWrapper>()
-    .AddHostedService<Worker>();
+                context.AddDbContextPool<DataContext>((services, options) =>
+                {
+                    var configuration = services.GetRequiredService<IConfiguration>();
+                    options.UseNpgsql(configuration[ConfigKeys.DbConnectionString]);
+                });
 
-var host = builder.Build();
-host.Run();
+                context
+                    .AddSingleton<DataService>()
+                    .AddSingleton<DiscordService>()
+                    .AddSingleton<PinnedMessageService>()
+                    .AddSingleton<IRandomWrapper, RandomWrapper>()
+                    .AddHostedService<DbMigrationService>()
+                    .AddHostedService<Worker>();
+            });
+
+        return builder;
+    }
+
+    public static void Main(string[] args) => CreateHostBuilder(args).Build().Run();
+}

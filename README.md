@@ -15,25 +15,46 @@ And, it will need these bot permissions:
 
 ## Database
 
-ThirteenIsh uses MongoDB. You can run up a basic Docker container:
+ThirteenIsh uses Postgres. You can run up a basic Docker container:
 
 ```powershell
-docker run --memory=4g --name thirteenish-mongo --restart unless-stopped -d -p 27017:27017 -v thirteenish-mongo-data:/data/db mongo:5
+docker run --name thirteenish-postgres --restart unless-stopped -d -e POSTGRES_USER=thirteenish -e POSTGRES_PASSWORD=<...password...> -p 5432:5432 postgres:16
 ```
-
-If you're using that, you can use the connection string `mongodb://localhost:27017`
 
 ## Configuration settings
 
 Configure these via command line, environment variables or user secrets.
 
 * "BotToken": the Discord bot token.
-* "MongoConnectionString": the MongoDB connection string.
+* "DbConnectionString": the Postgres connection string, e.g. TODO "Host=localhost;Database=thirteenish;Username=thirteenish;Password=<...password...>"
 
 ## Docker-compose based deployment
 
 * Create a file "my.docker.env" in the project root and add to it `BotToken="...my bot token..."`.
 * Run e.g. `docker-compose up -d --build`
+
+## If you make a change to the data model (ThirteenIsh.Database)
+
+You'll need the `dotnet ef` tool installed:
+
+```powershell
+dotnet tool install --global dotnet-ef
+```
+
+Add a new migration:
+
+```powershell
+cd ThirteenIsh.Database
+dotnet ef migrations add <...migration name...> --startup-project ..\ThirteenIsh\ThirteenIsh.csproj
+```
+
+This will scaffold the migration in code but won't change the database. ThirteenIsh updates the database itself when it starts up, you don't need to call `dotnet ef database update`.
+
+There are other useful commands, e.g. you can list the existing migrations with
+
+```powershell
+dotnet ef migrations list --startup-project ..\ThirteenIsh\ThirteenIsh.csproj
+```
 
 ## General TO DO
 
