@@ -1,28 +1,11 @@
-﻿using System.ComponentModel.DataAnnotations;
-using ThirteenIsh.Entities;
+﻿using Microsoft.EntityFrameworkCore;
 
 namespace ThirteenIsh.Database.Entities;
 
-public class Character : IHasLastEdited
+[Index(nameof(UserId), nameof(Name), IsUnique = true)]
+[Index(nameof(UserId), nameof(NameUpper), IsUnique = true)]
+public class Character : SearchableNamedEntityBase, IHasLastEdited
 {
-    public required long Id { get; set; }
-
-    /// <summary>
-    /// The concurrency token -- see https://www.npgsql.org/efcore/modeling/concurrency.html?tabs=data-annotations
-    /// </summary>
-    [Timestamp]
-    public uint Version { get; set; }
-
-    /// <summary>
-    /// The character name.
-    /// </summary>
-    public required string Name { get; set; }
-
-    /// <summary>
-    /// The character name in upper case, for searching.
-    /// </summary>
-    public string NameUpper => Name.ToUpperInvariant();
-
     /// <summary>
     /// The owning user ID.
     /// </summary>
@@ -31,7 +14,7 @@ public class Character : IHasLastEdited
     /// <summary>
     /// The character sheet.
     /// </summary>
-    public CharacterSheet Sheet { get; set; } = new();
+    public required CharacterSheet Sheet { get; set; }
 
     /// <summary>
     /// The character type.
@@ -44,7 +27,7 @@ public class Character : IHasLastEdited
     public required string GameSystem { get; set; }
 
     /// <summary>
-    /// The datetime last edited.
+    /// The datetime last updated.
     /// </summary>
     public DateTimeOffset LastEdited { get; set; }
 }

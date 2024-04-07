@@ -3,6 +3,7 @@ using Discord.WebSocket;
 using ThirteenIsh.Entities;
 using ThirteenIsh.Entities.Messages;
 using ThirteenIsh.Services;
+using CharacterType = ThirteenIsh.Database.Entities.CharacterType;
 
 namespace ThirteenIsh.Commands.Character;
 

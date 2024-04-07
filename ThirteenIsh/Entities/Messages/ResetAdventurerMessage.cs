@@ -3,6 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 using ThirteenIsh.Commands;
 using ThirteenIsh.Game;
 using ThirteenIsh.Services;
+using CharacterType = ThirteenIsh.Database.Entities.CharacterType;
 
 namespace ThirteenIsh.Entities.Messages;
 

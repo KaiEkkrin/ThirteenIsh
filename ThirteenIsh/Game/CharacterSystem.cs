@@ -1,7 +1,9 @@
 ﻿using Discord;
 using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
+using ThirteenIsh;
 using ThirteenIsh.Entities;
+using CharacterType = ThirteenIsh.Database.Entities.CharacterType;
 
 namespace ThirteenIsh.Game;
 

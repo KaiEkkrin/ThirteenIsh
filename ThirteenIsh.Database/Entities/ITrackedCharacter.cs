@@ -1,6 +1,4 @@
-﻿using CharacterType = ThirteenIsh.Database.Entities.CharacterType;
-
-namespace ThirteenIsh.Entities;
+﻿namespace ThirteenIsh.Database.Entities;
 
 /// <summary>
 /// Encompasses any tracked character with variables, which can either be a player's adventurer
@@ -16,5 +14,5 @@ public interface ITrackedCharacter
 
     public CharacterType Type { get; }
 
-    public Dictionary<string, int> Variables { get; }
+    public IList<CharacterCounter> Variables { get; }
 }

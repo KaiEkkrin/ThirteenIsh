@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using ThirteenIsh.Entities;
 using ThirteenIsh.Entities.Messages;
+using CharacterType = ThirteenIsh.Database.Entities.CharacterType;
 
 namespace ThirteenIsh.Services;
 

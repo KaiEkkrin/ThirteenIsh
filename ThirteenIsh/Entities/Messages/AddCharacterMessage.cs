@@ -3,6 +3,7 @@ using ThirteenIsh.Commands;
 using ThirteenIsh.EditOperations;
 using ThirteenIsh.Game;
 using ThirteenIsh.Services;
+using CharacterType = ThirteenIsh.Database.Entities.CharacterType;
 
 namespace ThirteenIsh.Entities.Messages;
 

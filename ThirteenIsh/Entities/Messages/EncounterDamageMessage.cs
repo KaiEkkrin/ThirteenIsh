@@ -6,6 +6,7 @@ using ThirteenIsh.EditOperations;
 using ThirteenIsh.Game;
 using ThirteenIsh.Parsing;
 using ThirteenIsh.Services;
+using CharacterType = ThirteenIsh.Database.Entities.CharacterType;
 
 namespace ThirteenIsh.Entities.Messages;
 

@@ -2,6 +2,7 @@
 using ThirteenIsh.Entities;
 using ThirteenIsh.Game;
 using ThirteenIsh.Services;
+using CharacterType = ThirteenIsh.Database.Entities.CharacterType;
 
 namespace ThirteenIsh.Commands.Pcs;
 

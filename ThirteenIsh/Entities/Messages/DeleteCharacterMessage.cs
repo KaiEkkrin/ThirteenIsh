@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using ThirteenIsh.Services;
+using CharacterType = ThirteenIsh.Database.Entities.CharacterType;
 
 namespace ThirteenIsh.Entities.Messages;
 
