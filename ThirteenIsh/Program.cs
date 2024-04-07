@@ -32,7 +32,6 @@ public class Program
                     .AddSingleton<DiscordService>()
                     .AddSingleton<PinnedMessageService>()
                     .AddSingleton<IRandomWrapper, RandomWrapper>()
-                    .AddHostedService<DbMigrationService>()
                     .AddHostedService<Worker>();
             });
 

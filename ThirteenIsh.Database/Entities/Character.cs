@@ -2,8 +2,8 @@
 
 namespace ThirteenIsh.Database.Entities;
 
-[Index(nameof(UserId), nameof(Name), IsUnique = true)]
-[Index(nameof(UserId), nameof(NameUpper), IsUnique = true)]
+[Index(nameof(UserId), nameof(CharacterType), nameof(Name), IsUnique = true)]
+[Index(nameof(UserId), nameof(CharacterType), nameof(NameUpper), IsUnique = true)]
 public class Character : SearchableNamedEntityBase, IHasLastEdited
 {
     /// <summary>
@@ -14,7 +14,7 @@ public class Character : SearchableNamedEntityBase, IHasLastEdited
     /// <summary>
     /// The character sheet.
     /// </summary>
-    public required CharacterSheet Sheet { get; set; }
+    public CharacterSheet Sheet { get; set; } = new();
 
     /// <summary>
     /// The character type.

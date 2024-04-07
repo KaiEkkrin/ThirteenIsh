@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using ThirteenIsh.Database;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh;
@@ -5,7 +7,8 @@ namespace ThirteenIsh;
 internal sealed class Worker(
     DataService dataService,
     DiscordService discordService,
-    ILogger<Worker> logger)
+    ILogger<Worker> logger,
+    IServiceProvider serviceProvider)
     : BackgroundService
 {
     private static readonly TimeSpan TimerInterval = TimeSpan.FromMinutes(5);
@@ -34,10 +37,21 @@ internal sealed class Worker(
             new EventId(4, nameof(Worker)),
             "Stopping worker");
 
+    private static readonly Action<ILogger, Exception?> MigratingDatabase = LoggerMessage.Define(
+        LogLevel.Information,
+        new EventId(5, nameof(Worker)),
+        "Migrating database...");
+
+    private static readonly Action<ILogger, Exception?> MigrateDatabaseSucceeded = LoggerMessage.Define(
+        LogLevel.Information,
+        new EventId(6, nameof(Worker)),
+        "Migrating database succeeded");
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         try
         {
+            await MigrateDatabaseAsync(stoppingToken);
             await discordService.StartAsync();
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -67,5 +81,16 @@ internal sealed class Worker(
                 ErrorStoppingWorkerMessage(logger, ex2.Message, ex2);
             }
         }
+    }
+
+    private async Task MigrateDatabaseAsync(CancellationToken cancellationToken = default)
+    {
+        MigratingDatabase(logger, null);
+
+        await using var scope = serviceProvider.CreateAsyncScope();
+        var dataContext = scope.ServiceProvider.GetRequiredService<DataContext>();
+
+        await dataContext.Database.MigrateAsync(cancellationToken);
+        MigrateDatabaseSucceeded(logger, null);
     }
 }
