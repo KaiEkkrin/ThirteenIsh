@@ -28,10 +28,11 @@ public class Program
                 });
 
                 context
-                    .AddSingleton<DataService>()
+                    .AddSingleton<DataService>() // TODO remove this one after converting everything over
                     .AddSingleton<DiscordService>()
                     .AddSingleton<PinnedMessageService>()
                     .AddSingleton<IRandomWrapper, RandomWrapper>()
+                    .AddScoped<SqlDataService>()
                     .AddHostedService<Worker>();
             });
 

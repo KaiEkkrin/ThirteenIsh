@@ -11,7 +11,7 @@ public class Guild : EntityBase
     /// <summary>
     /// The version of commands most recently registered to this guild.
     /// </summary>
-    public required int CommandVersion { get; set; }
+    public int CommandVersion { get; set; }
 
     /// <summary>
     /// The guild's Discord ID.

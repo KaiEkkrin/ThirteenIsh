@@ -1,6 +1,5 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ThirteenIsh;
 using ThirteenIsh.Entities.Messages;
 using ThirteenIsh.Game;
 using ThirteenIsh.Services;
