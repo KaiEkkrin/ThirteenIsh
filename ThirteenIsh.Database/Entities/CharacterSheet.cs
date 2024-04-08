@@ -1,16 +1,59 @@
 ﻿namespace ThirteenIsh.Database.Entities;
 
 /// <summary>
-/// Defines a character sheet.
+/// Defines an object containing counters, e.g. the sheet or variables.
 /// </summary>
-public class CharacterSheet
+public class CounterValueSet
 {
-    public List<CharacterCounter> Counters { get; set; } = [];
+    public List<CounterValue> Counters { get; set; } = [];
 
-    public List<CharacterProperty> Properties { get; set; } = [];
+    public int? GetCounter(string name)
+    {
+        return Counters.FirstOrDefault(c => c.Name == name)?.Value;
+    }
+
+    public void SetCounter(string name, int value)
+    {
+        var index = Counters.FindIndex(c => c.Name == name);
+        if (index >= 0)
+        {
+            Counters[index] = Counters[index] with { Value = value };
+        }
+        else
+        {
+            Counters.Add(new CounterValue(name, value));
+        }
+    }
 }
 
-public record CharacterProperty(string Name, string Value);
+/// <summary>
+/// Defines a character sheet.
+/// 
+/// </summary>
+public class CharacterSheet : CounterValueSet
+{
+    public List<PropertyValue> Properties { get; set; } = [];
 
-public record CharacterCounter(string Name, int Value);
+    public string? GetProperty(string name)
+    {
+        return Properties.FirstOrDefault(c => c.Name == name)?.Value;
+    }
+
+    public void SetProperty(string name, string value)
+    {
+        var index = Properties.FindIndex(c => c.Name == name);
+        if (index >= 0)
+        {
+            Properties[index] = Properties[index] with { Value = value };
+        }
+        else
+        {
+            Properties.Add(new PropertyValue(name, value));
+        }
+    }
+}
+
+public record PropertyValue(string Name, string Value);
+
+public record CounterValue(string Name, int Value);
 

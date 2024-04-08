@@ -41,5 +41,5 @@ public class Encounter : EntityBase
     /// <summary>
     /// This encounter's variables (game system dependent.)
     /// </summary>
-    public Variables Variables { get; set; } = new();
+    public CounterValueSet Variables { get; set; } = new();
 }

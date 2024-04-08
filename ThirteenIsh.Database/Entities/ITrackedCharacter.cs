@@ -14,5 +14,5 @@ public interface ITrackedCharacter
 
     public CharacterType Type { get; }
 
-    public IList<CharacterCounter> Variables { get; }
+    public CounterValueSet Variables { get; }
 }
