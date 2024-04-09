@@ -1,7 +1,9 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ThirteenIsh.Entities;
+using ThirteenIsh.Database.Entities;
+using ThirteenIsh.Database.Entities.Combatants;
 using ThirteenIsh.Game;
+using ThirteenIsh.Results;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Pcs;
@@ -21,10 +23,10 @@ internal sealed class PcCombatJoinSubCommand() : SubCommandBase("join", "Joins t
 
         if (!CommandUtil.TryGetOption<int>(option, "rerolls", out var rerolls)) rerolls = 0;
 
-        var dataService = serviceProvider.GetRequiredService<DataService>();
+        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var random = serviceProvider.GetRequiredService<IRandomWrapper>();
-        var (output, message) = await dataService.EditGuildAsync(
-            new EditOperation(channelId, command.User.Id, random, rerolls), guildId, cancellationToken);
+        var (output, message) = await dataService.EditEncounterAsync(guildId, channelId,
+            new EditOperation(dataService, command.User.Id, random, rerolls), cancellationToken);
 
         if (!string.IsNullOrEmpty(message))
         {
@@ -35,7 +37,9 @@ internal sealed class PcCombatJoinSubCommand() : SubCommandBase("join", "Joins t
         if (output is null) throw new InvalidOperationException(nameof(output));
 
         // Update the encounter table
-        var encounterTable = output.GameSystem.EncounterTable(output.Adventure, output.Encounter);
+        var encounterTable = await output.GameSystem.BuildEncounterTableAsync(dataService, output.Adventure,
+            output.Encounter, cancellationToken);
+
         var pinnedMessageService = serviceProvider.GetRequiredService<PinnedMessageService>();
         await pinnedMessageService.SetEncounterMessageAsync(command.Channel, output.Encounter.AdventureName, guildId,
             encounterTable, cancellationToken);
@@ -49,25 +53,26 @@ internal sealed class PcCombatJoinSubCommand() : SubCommandBase("join", "Joins t
         await command.RespondAsync(embed: embedBuilder.Build());
     }
 
-    private sealed class EditOperation(ulong channelId, ulong userId, IRandomWrapper random, int rerolls)
-        : SyncEditOperation<ResultOrMessage<EditOutput>, Guild, MessageEditResult<EditOutput>>
+    private sealed class EditOperation(SqlDataService dataService, ulong userId, IRandomWrapper random, int rerolls)
+        : EditOperation<ResultOrMessage<EditOutput>, EncounterResult, MessageEditResult<EditOutput>>
     {
-        public override MessageEditResult<EditOutput> DoEdit(Guild guild)
+        public override async Task<MessageEditResult<EditOutput>> DoEditAsync(EncounterResult encounterResult,
+            CancellationToken cancellationToken = default)
         {
-            if (!CommandUtil.TryGetCurrentCombatant(guild, channelId, userId, out var adventure, out var adventurer,
-                out var encounter, out var errorMessage))
-            {
-                return new MessageEditResult<EditOutput>(null, errorMessage);
-            }
-
-            if (encounter.Combatants.OfType<AdventurerCombatant>().Any(o => o.NativeUserId == userId))
+            var (adventure, encounter) = encounterResult;
+            if (encounter.Combatants.OfType<AdventurerCombatant>().Any(o => o.UserId == userId))
             {
                 return new MessageEditResult<EditOutput>(
                     null, "You have already joined this encounter.");
             }
 
+            var adventurer = await dataService.GetAdventurerAsync(adventure, userId, cancellationToken);
+            if (adventurer is null) return new MessageEditResult<EditOutput>(
+                null, "You have not joined this adventure.");
+
             var gameSystem = GameSystem.Get(adventure.GameSystem);
-            var nameAliasCollection = encounter.BuildNameAliasCollection();
+            NameAliasCollection nameAliasCollection = new(encounter);
+
             var result = gameSystem.EncounterJoin(adventurer, encounter, nameAliasCollection, random, rerolls, userId);
             if (!result.HasValue) return new MessageEditResult<EditOutput>(
                 null, "You are not able to join this encounter at this time.");

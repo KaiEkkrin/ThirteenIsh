@@ -20,6 +20,7 @@ public class Program
             .ConfigureServices(context =>
             {
                 CommandRegistration.RegisterCommands(context);
+                MessageHandlerRegistration.RegisterMessageHandlers(context);
 
                 context.AddDbContextPool<DataContext>((services, options) =>
                 {
@@ -28,9 +29,8 @@ public class Program
                 });
 
                 context
-                    .AddSingleton<DataService>() // TODO remove this one after converting everything over
                     .AddSingleton<DiscordService>()
-                    .AddSingleton<PinnedMessageService>()
+                    .AddScoped<PinnedMessageService>()
                     .AddSingleton<IRandomWrapper, RandomWrapper>()
                     .AddScoped<SqlDataService>()
                     .AddHostedService<Worker>();

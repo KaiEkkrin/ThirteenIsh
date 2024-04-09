@@ -3,12 +3,12 @@ using Discord.WebSocket;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
-using ThirteenIsh.Entities;
-using ThirteenIsh.Entities.Messages;
+using ThirteenIsh.Database.Entities;
+using ThirteenIsh.Database.Entities.Combatants;
+using ThirteenIsh.Database.Entities.Messages;
 using ThirteenIsh.Game;
 using ThirteenIsh.Parsing;
 using ThirteenIsh.Services;
-using CharacterType = ThirteenIsh.Database.Entities.CharacterType;
 
 namespace ThirteenIsh.Commands.Pcs;
 
@@ -76,20 +76,35 @@ internal sealed class PcCombatDamageCommand()
             return;
         }
 
-        var dataService = serviceProvider.GetRequiredService<DataService>();
+        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var guild = await dataService.EnsureGuildAsync(guildId, cancellationToken);
 
-        // TODO TryGetCurrentCombatant should be able to change to handle the current monster, too (?)
-        if (!CommandUtil.TryGetCurrentCombatant(guild, channelId, command.User.Id, out var adventure,
-            out var adventurer, out var encounter, out var errorMessage))
+        // TODO This code should be able to change to handle the current monster, too (?)
+        // Should I be able to share this with PcCombatAttackCommand (generalise to making attacks with
+        // monsters, too)?
+        // For now, this only deals damage as the current player's character
+        var encounterResult = await dataService.GetEncounterResultAsync(guild, channelId, cancellationToken);
+        if (!string.IsNullOrEmpty(encounterResult.Value.ErrorMessage))
         {
-            await command.RespondAsync(errorMessage);
+            await command.RespondAsync(encounterResult.Value.ErrorMessage, ephemeral: true);
+            return;
+        }
+
+        var (adventure, encounter) = encounterResult.Value.Value ?? throw new InvalidOperationException(
+            "GetEncounterResultAsync did not return a value");
+
+        var combatant = encounter.Combatants.FirstOrDefault(c => c.CharacterType == CharacterType.PlayerCharacter &&
+                                                                 c.UserId == command.User.Id);
+        if (combatant == null ||
+            await dataService.GetCharacterAsync(combatant, cancellationToken) is not { } character)
+        {
+            await command.RespondAsync("You have not joined this encounter.", ephemeral: true);
             return;
         }
 
         var gameSystem = GameSystem.Get(adventure.GameSystem);
         var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
-        if (!TryGetCounter(characterSystem, option, out var counter, out errorMessage))
+        if (!TryGetCounter(characterSystem, option, out var counter, out var errorMessage))
         {
             await command.RespondAsync(errorMessage);
             return;
@@ -98,7 +113,7 @@ internal sealed class PcCombatDamageCommand()
         // If there is a counter it must have a value
         int? counterValue = counter is null
             ? null
-            : counter.GetValue(adventurer.Sheet) is { } realCounterValue
+            : counter.GetValue(character.Sheet) is { } realCounterValue
                 ? realCounterValue
                 : throw new GamePropertyException(counter.Name);
 
@@ -149,7 +164,9 @@ internal sealed class PcCombatDamageCommand()
         for (var i = 0; i < targetCombatants.Count; ++i)
         {
             if (i > 0) stringBuilder.AppendLine(); // space things out
-            await RollDamageVsAsync(targetCombatants[i]);
+            var targetCharacter = await dataService.GetCharacterAsync(targetCombatants[i], cancellationToken);
+            if (targetCharacter is null) continue;
+            await RollDamageVsAsync(targetCombatants[i], targetCharacter);
         }
 
         var embedBuilder = new EmbedBuilder()
@@ -160,51 +177,37 @@ internal sealed class PcCombatDamageCommand()
         await command.ModifyOriginalResponseAsync(properties => properties.Embed = embedBuilder.Build());
         return;
 
-        async Task RollDamageVsAsync(CombatantBase target)
+        async Task RollDamageVsAsync(CombatantBase target, ITrackedCharacter targetCharacter)
         {
             stringBuilder.Append(CultureInfo.CurrentCulture, $"vs {target.Alias}");
 
-            // TODO should this switch turn into a virtual method on CombatantBase?
-            switch (target)
+            var result = damageRoller.Roll();
+            stringBuilder.AppendLine(CultureInfo.CurrentCulture, $" : {result.Roll}");
+            stringBuilder.AppendLine(result.Working);
+
+            var vsCounter = vsCounterByType[target.CharacterType];
+            EncounterDamageMessage message = new()
             {
-                case AdventurerCombatant adventurerCombatant when adventure.Adventurers.TryGetValue(
-                    adventurerCombatant.NativeUserId, out var targetAdventurer):
-                    {
-                        var result = damageRoller.Roll();
-                        stringBuilder.AppendLine(CultureInfo.CurrentCulture, $" : {result.Roll}");
-                        stringBuilder.AppendLine(result.Working);
+                Alias = target.Alias,
+                ChannelId = channelId,
+                CharacterType = targetCharacter.Type,
+                Damage = -result.Roll,
+                GuildId = guildId,
+                Name = adventure.Name,
+                UserId = targetCharacter.UserId,
+                VariableName = vsCounter.Name
+            };
+            await dataService.AddMessageAsync(message, cancellationToken);
 
-                        // TODO Append the message to go to the target's player to acknowledge the damage
-                        var targetUser = await discordService.GetGuildUserAsync(guildId, adventurerCombatant.NativeUserId);
-                        var vsCounter = vsCounterByType[CharacterType.PlayerCharacter];
-                        EncounterDamageMessage message = new()
-                        {
-                            Damage = -result.Roll,
-                            ChannelId = (long)channelId,
-                            GuildId = (long)guildId,
-                            UserId = adventurerCombatant.UserId,
-                            VariableName = vsCounter.Name
-                        };
-                        await dataService.AddMessageAsync(message, cancellationToken);
+            var component = new ComponentBuilder()
+                .WithButton("Take full", message.GetMessageId(EncounterDamageMessage.TakeFullControlId))
+                .WithButton("Take half", message.GetMessageId(EncounterDamageMessage.TakeHalfControlId))
+                .WithButton("Take none", message.GetMessageId(EncounterDamageMessage.TakeNoneControlId));
 
-                        var component = new ComponentBuilder()
-                            .WithButton("Take full", message.GetMessageId(EncounterDamageMessage.TakeFullControlId))
-                            .WithButton("Take half", message.GetMessageId(EncounterDamageMessage.TakeHalfControlId))
-                            .WithButton("Take none", message.GetMessageId(EncounterDamageMessage.TakeNoneControlId));
-
-                        await targetUser.SendMessageAsync(
-                            $"{adventurer.Name} dealt you {result.Roll} damage to {vsCounter.Name}",
-                            components: component.Build());
-
-                        break;
-                    }
-
-                // TODO add code for rolling vs monsters here
-
-                default:
-                    stringBuilder.AppendLine(" : Target unresolved");
-                    break;
-            }
+            var targetUser = await discordService.GetGuildUserAsync(guildId, targetCharacter.UserId);
+            await targetUser.SendMessageAsync(
+                $"{character.Name} dealt {result.Roll} damage to {target.Alias}'s {vsCounter.Name}",
+                components: component.Build());
         }
     }
 

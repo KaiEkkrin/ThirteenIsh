@@ -1,10 +1,9 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ThirteenIsh;
+using ThirteenIsh.Database.Entities;
 using ThirteenIsh.EditOperations;
 using ThirteenIsh.Game;
 using ThirteenIsh.Services;
-using CharacterType = ThirteenIsh.Database.Entities.CharacterType;
 
 namespace ThirteenIsh.Commands.Character;
 
@@ -44,7 +43,7 @@ internal sealed class CharacterSetSubCommand(CharacterType characterType)
             return;
         }
 
-        var dataService = serviceProvider.GetRequiredService<DataService>();
+        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var character = await dataService.GetCharacterAsync(name, command.User.Id, characterType, cancellationToken);
         if (character is null)
         {

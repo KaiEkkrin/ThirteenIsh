@@ -1,9 +1,9 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ThirteenIsh.Entities;
+using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Game;
+using ThirteenIsh.Results;
 using ThirteenIsh.Services;
-using CharacterType = ThirteenIsh.Database.Entities.CharacterType;
 
 namespace ThirteenIsh.Commands.Combat;
 
@@ -32,7 +32,7 @@ internal sealed class CombatAddCommand() : SubCommandBase("add", "Adds a monster
 
         if (!CommandUtil.TryGetOption<int>(option, "rerolls", out var rerolls)) rerolls = 0;
 
-        var dataService = serviceProvider.GetRequiredService<DataService>();
+        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var character = await dataService.GetCharacterAsync(name, command.User.Id, CharacterType.Monster, cancellationToken);
         if (character is null)
         {
@@ -43,8 +43,8 @@ internal sealed class CombatAddCommand() : SubCommandBase("add", "Adds a monster
         }
 
         var random = serviceProvider.GetRequiredService<IRandomWrapper>();
-        var (output, message) = await dataService.EditGuildAsync(
-            new EditOperation(channelId, character, random, rerolls, command.User.Id), guildId, cancellationToken);
+        var (output, message) = await dataService.EditEncounterAsync(guildId, channelId,
+            new EditOperation(character, random, rerolls, command.User.Id), cancellationToken);
 
         if (!string.IsNullOrEmpty(message))
         {
@@ -55,7 +55,9 @@ internal sealed class CombatAddCommand() : SubCommandBase("add", "Adds a monster
         if (output is null) throw new InvalidOperationException(nameof(output));
 
         // Update the encounter table
-        var encounterTable = output.GameSystem.EncounterTable(output.Adventure, output.Encounter);
+        var encounterTable = await output.GameSystem.BuildEncounterTableAsync(dataService, output.Adventure,
+            output.Encounter, cancellationToken);
+
         var pinnedMessageService = serviceProvider.GetRequiredService<PinnedMessageService>();
         await pinnedMessageService.SetEncounterMessageAsync(command.Channel, output.Encounter.AdventureName, guildId,
             encounterTable, cancellationToken);
@@ -69,24 +71,19 @@ internal sealed class CombatAddCommand() : SubCommandBase("add", "Adds a monster
         await command.RespondAsync(embed: embedBuilder.Build());
     }
 
-    private sealed class EditOperation(ulong channelId, Entities.Character character, IRandomWrapper random, int rerolls,
-            ulong userId)
-        : SyncEditOperation<ResultOrMessage<EditOutput>, Guild, MessageEditResult<EditOutput>>
+    private sealed class EditOperation(Database.Entities.Character character, IRandomWrapper random, int rerolls,
+        ulong userId)
+        : SyncEditOperation<ResultOrMessage<EditOutput>, EncounterResult, MessageEditResult<EditOutput>>
     {
-        public override MessageEditResult<EditOutput> DoEdit(Guild guild)
+        public override MessageEditResult<EditOutput> DoEdit(EncounterResult encounterResult)
         {
-            if (!CommandUtil.TryGetCurrentEncounter(guild, channelId, userId, out var adventure,
-                out var encounter, out var errorMessage))
-            {
-                return new MessageEditResult<EditOutput>(null, errorMessage);
-            }
-
+            var (adventure, encounter) = encounterResult;
             if (adventure.GameSystem != character.GameSystem)
                 return new MessageEditResult<EditOutput>(null,
                     "This monster was not created in the same game system as the adventure.");
 
             var gameSystem = GameSystem.Get(adventure.GameSystem);
-            var nameAliasCollection = encounter.BuildNameAliasCollection();
+            NameAliasCollection nameAliasCollection = new(encounter);
             var result = gameSystem.EncounterAdd(character, encounter, nameAliasCollection, random, rerolls, userId,
                 out var alias);
 

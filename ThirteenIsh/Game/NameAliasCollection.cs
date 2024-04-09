@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
+using ThirteenIsh.Database.Entities;
 
 namespace ThirteenIsh.Game;
 
@@ -51,6 +52,10 @@ internal sealed partial class NameAliasCollection
         }
 
         _prefixTryCount = prefixTryCount;
+    }
+
+    public NameAliasCollection(Encounter encounter) : this(encounter.Combatants.Select(c => (c.Alias, c.Name)))
+    {
     }
 
     /// <summary>

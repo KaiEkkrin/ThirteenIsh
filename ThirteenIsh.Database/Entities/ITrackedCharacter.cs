@@ -8,11 +8,13 @@ public interface ITrackedCharacter
 {
     public string Name { get; }
 
-    public DateTimeOffset LastUpdated { get; }
+    public DateTimeOffset LastUpdated { get; set; }
 
     public CharacterSheet Sheet { get; }
 
     public CharacterType Type { get; }
 
-    public CounterValueSet Variables { get; }
+    public ulong UserId { get; }
+
+    public CounterSheet Variables { get; }
 }

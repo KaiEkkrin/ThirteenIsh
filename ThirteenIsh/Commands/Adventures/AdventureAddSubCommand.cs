@@ -1,6 +1,5 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ThirteenIsh.Entities;
 using ThirteenIsh.Game;
 using ThirteenIsh.Services;
 
@@ -39,33 +38,19 @@ internal sealed class AdventureAddSubCommand() : SubCommandBase("add", "Adds a n
         }
 
         // This will also make it the current adventure
-        var dataService = serviceProvider.GetRequiredService<DataService>();
-        var updatedGuild = await dataService.EditGuildAsync(
-            new EditOperation(name, description, gameSystem.Name), guildId, cancellationToken);
-
-        if (updatedGuild?.CurrentAdventure is null)
+        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
+        var (result, message) = await dataService.AddAdventureAsync(guildId, name, description, gameSystem.Name,
+            cancellationToken);
+        if (!string.IsNullOrEmpty(message))
         {
-            await command.RespondAsync($"Cannot create an adventure named '{name}'. Perhaps it was already created?",
-                ephemeral: true);
+            await command.RespondAsync(message, ephemeral: true);
             return;
         }
 
+        if (result is null) throw new InvalidOperationException("AddAdventureAsync returned null result");
+
         var discordService = serviceProvider.GetRequiredService<DiscordService>();
-        await discordService.RespondWithAdventureSummaryAsync(command, updatedGuild, updatedGuild.CurrentAdventure,
+        await discordService.RespondWithAdventureSummaryAsync(dataService, command, result.Guild, result.Adventure,
             $"Created adventure: {name}");
-    }
-
-    private sealed class EditOperation(string name, string description, string gameSystem)
-        : SyncEditOperation<Guild, Guild, EditResult<Guild>>
-    {
-        public override EditResult<Guild> DoEdit(Guild guild)
-        {
-            if (guild.Adventures.Any(o => o.Name == name)) return new EditResult<Guild>(null); // adventure already exists
-
-            guild.Adventures.Add(new Adventure { Name = name, Description = description, GameSystem = gameSystem });
-            guild.CurrentAdventureName = name;
-
-            return new EditResult<Guild>(guild);
-        }
     }
 }

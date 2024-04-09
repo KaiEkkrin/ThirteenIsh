@@ -5,7 +5,7 @@ using ThirteenIsh.Services;
 namespace ThirteenIsh;
 
 internal sealed class Worker(
-    DataService dataService,
+    SqlDataService dataService,
     DiscordService discordService,
     ILogger<Worker> logger,
     IServiceProvider serviceProvider)

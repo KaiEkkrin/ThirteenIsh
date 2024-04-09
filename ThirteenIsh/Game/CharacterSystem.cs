@@ -1,9 +1,7 @@
 ﻿using Discord;
 using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
-using ThirteenIsh;
-using ThirteenIsh.Entities;
-using CharacterType = ThirteenIsh.Database.Entities.CharacterType;
+using ThirteenIsh.Database.Entities;
 
 namespace ThirteenIsh.Game;
 
@@ -230,9 +228,11 @@ internal class CharacterSystem
             foreach (var counter in group.Properties)
             {
                 if (counter.GetValue(character.Sheet) is { } counterValue)
-                    character.Variables[counter.Name] = counterValue;
+                    character.Variables.SetCounter(counter.Name, counterValue);
             }
         }
+
+        character.LastUpdated = DateTimeOffset.Now;
     }
 
     public bool TryBuildPropertyValueChoiceComponent(string messageId, string propertyName, CharacterSheet sheet,

@@ -2,10 +2,10 @@
 using Discord.WebSocket;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using ThirteenIsh.Entities;
+using ThirteenIsh.Database.Entities;
+using ThirteenIsh.Database.Entities.Combatants;
 using ThirteenIsh.Game;
 using ThirteenIsh.Services;
-using CharacterType = ThirteenIsh.Database.Entities.CharacterType;
 
 namespace ThirteenIsh.Commands;
 
@@ -28,6 +28,7 @@ internal static class CommandUtil
 
     public static async Task<Embed> BuildAdventureSummaryEmbedAsync(
         this DiscordService discordService,
+        SqlDataService dataService,
         IDiscordInteraction command,
         Guild guild,
         Adventure adventure,
@@ -40,9 +41,9 @@ internal static class CommandUtil
         embedBuilder.AddField("Game System", adventure.GameSystem);
 
         var gameSystem = GameSystem.Get(adventure.GameSystem);
-        foreach (var (userId, adventurer) in adventure.Adventurers.OrderBy(pair => pair.Value.Name))
+        await foreach (var adventurer in dataService.GetAdventurersAsync(adventure).OrderBy(a => a.Name))
         {
-            var guildUser = await discordService.GetGuildUserAsync(guild.NativeGuildId, userId);
+            var guildUser = await discordService.GetGuildUserAsync(guild.GuildId, adventurer.UserId);
             embedBuilder.AddField(new EmbedFieldBuilder()
                 .WithIsInline(true)
                 .WithName($"{adventurer.Name} [{guildUser.DisplayName}]")
@@ -54,7 +55,7 @@ internal static class CommandUtil
 
     public static Embed BuildCharacterSheetEmbed(
         IDiscordInteraction command,
-        Entities.Character character,
+        Database.Entities.Character character,
         string title,
         params string[] onlyTheseProperties)
     {
@@ -100,12 +101,13 @@ internal static class CommandUtil
 
     public static async Task RespondWithAdventureSummaryAsync(
         this DiscordService discordService,
+        SqlDataService dataService,
         IDiscordInteraction command,
         Guild guild,
         Adventure adventure,
         string title)
     {
-        var embed = await discordService.BuildAdventureSummaryEmbedAsync(command, guild, adventure, title);
+        var embed = await discordService.BuildAdventureSummaryEmbedAsync(dataService, command, guild, adventure, title);
         await command.RespondAsync(embed: embed);
     }
 
@@ -121,7 +123,7 @@ internal static class CommandUtil
 
     public static Task RespondWithCharacterSheetAsync(
         IDiscordInteraction command,
-        Entities.Character character,
+        Database.Entities.Character character,
         string title,
         params string[] onlyTheseProperties)
     {
@@ -302,80 +304,6 @@ internal static class CommandUtil
         }
 
         return TryConvertTo(value, out typedValue);
-    }
-
-    public static bool TryGetSelectedAdventure(Guild guild, SocketSlashCommandDataOption option,
-        string name, [MaybeNullWhen(false)] out Adventure adventure)
-    {
-        var adventureName = TryGetCanonicalizedMultiPartOption(option, name, out var optionName)
-            ? optionName
-            : guild.CurrentAdventureName;
-
-        if (string.IsNullOrWhiteSpace(adventureName))
-        {
-            adventure = null;
-            return false;
-        }
-        else if (guild.Adventures.FirstOrDefault(o => o.Name == adventureName) is { } selectedAdventure)
-        {
-            adventure = selectedAdventure;
-            return true;
-        }
-
-        adventure = null;
-        return false;
-    }
-
-    public static bool TryGetCurrentCombatant(Guild guild, ulong channelId, ulong userId,
-        [MaybeNullWhen(false)] out Adventure adventure,
-        [MaybeNullWhen(false)] out Adventurer adventurer,
-        [MaybeNullWhen(false)] out Encounter encounter,
-        [MaybeNullWhen(true)] out string errorMessage)
-    {
-        if (!TryGetCurrentEncounter(guild, channelId, userId, out adventure, out encounter, out errorMessage))
-        {
-            adventurer = null;
-            return false;
-        }
-
-        if (!adventure.Adventurers.TryGetValue(userId, out adventurer))
-        {
-            encounter = null;
-            errorMessage = "You have not joined the current adventure.";
-            return false;
-        }
-
-        errorMessage = null;
-        return true;
-    }
-
-    public static bool TryGetCurrentEncounter(Guild guild, ulong channelId, ulong userId,
-        [MaybeNullWhen(false)] out Adventure adventure,
-        [MaybeNullWhen(false)] out Encounter encounter,
-        [MaybeNullWhen(true)] out string errorMessage)
-    {
-        adventure = guild.CurrentAdventure;
-        if (adventure is null)
-        {
-            encounter = null;
-            errorMessage = "There is no current adventure.";
-            return false;
-        }
-
-        if (!guild.Encounters.TryGetValue(channelId, out encounter))
-        {
-            errorMessage = "No encounter is currently in progress in this channel.";
-            return false;
-        }
-
-        if (encounter.AdventureName != adventure.Name)
-        {
-            errorMessage = "The current adventure does not match the encounter in progress.";
-            return false;
-        }
-
-        errorMessage = null;
-        return true;
     }
 
     public readonly struct AdventurerSummaryOptions

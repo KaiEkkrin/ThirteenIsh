@@ -1,11 +1,8 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using ThirteenIsh.EditOperations;
-using ThirteenIsh.Entities;
-using ThirteenIsh.Game;
 using ThirteenIsh.Parsing;
 using ThirteenIsh.Services;
-using CharacterType = ThirteenIsh.Database.Entities.CharacterType;
 
 namespace ThirteenIsh.Commands.Pcs;
 
@@ -48,31 +45,15 @@ internal abstract class PcVSubCommandBase(string name, string description,
             return;
         }
 
-        var dataService = serviceProvider.GetRequiredService<DataService>();
-        var guild = await dataService.EnsureGuildAsync(guildId, cancellationToken);
-        if (guild.CurrentAdventure is null ||
-            guild.CurrentAdventure.Adventurers.TryGetValue(command.User.Id, out var adventurer) != true ||
-            adventurer is null)
-        {
-            await command.RespondAsync("Either there is no current adventure or you have not joined it.",
-                ephemeral: true);
-            return;
-        }
-
-        var gameSystem = GameSystem.Get(guild.CurrentAdventure.GameSystem);
-        var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
-        var counter = characterSystem.FindCounter(namePart, c => c.Options.HasFlag(GameCounterOptions.HasVariable));
-        if (counter is null)
-        {
-            await command.RespondAsync($"'{namePart}' does not uniquely match a variable name.",
-                ephemeral: true);
-            return;
-        }
-
+        // TODO move all these database gets into the edit operation?
+        // (I should check for well-accepted patterns of using EF Core with retry on conflict, though. But
+        // I suspect that as a rule, anything I'm going to read that contributes to what I would write, should
+        // be read within the edit operation so it gets retried on conflict?)
+        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var random = serviceProvider.GetRequiredService<IRandomWrapper>();
-        var editOperation = CreateEditOperation(command, counter, parseTree, random);
-        var (result, errorMessage) = await dataService.EditGuildAsync(
-            editOperation, guildId, cancellationToken);
+        var editOperation = CreateEditOperation(dataService, command, namePart, parseTree, random);
+        var (result, errorMessage) = await dataService.EditAdventureAsync(
+            guildId, editOperation, null, cancellationToken);
 
         if (errorMessage is not null)
         {
@@ -91,17 +72,16 @@ internal abstract class PcVSubCommandBase(string name, string description,
                 .WithValue(result.Working));
         }
 
-        var updatedAdventurer = result.Adventure.Adventurers[command.User.Id];
-        await CommandUtil.RespondWithAdventurerSummaryAsync(command, updatedAdventurer, gameSystem,
+        await CommandUtil.RespondWithAdventurerSummaryAsync(command, result.Adventurer, result.GameSystem,
             new CommandUtil.AdventurerSummaryOptions
             {
                 ExtraFields = extraFields,
-                OnlyTheseProperties = [counter.Name],
+                OnlyTheseProperties = [result.GameCounter.Name],
                 OnlyVariables = true,
-                Title = $"Set {counter.Name} on {updatedAdventurer.Name}"
+                Title = $"Set {result.GameCounter.Name} on {result.Adventurer.Name}"
             });
     }
 
-    protected abstract EditVariableOperationBase CreateEditOperation(SocketSlashCommand command,
-        GameCounter counter, ParseTreeBase parseTree, IRandomWrapper random);
+    protected abstract EditVariableOperationBase CreateEditOperation(SqlDataService dataService, SocketSlashCommand command,
+        string counterNamePart, ParseTreeBase parseTree, IRandomWrapper random);
 }

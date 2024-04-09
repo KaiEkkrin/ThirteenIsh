@@ -1,5 +1,8 @@
-﻿namespace ThirteenIsh.Database.Entities.Combatants;
+﻿using Microsoft.EntityFrameworkCore;
 
+namespace ThirteenIsh.Database.Entities.Combatants;
+
+[Index(nameof(EncounterId), nameof(Alias), IsUnique = true)]
 public abstract class CombatantBase : EntityBase
 {
     public long EncounterId { get; set; }
@@ -19,12 +22,12 @@ public abstract class CombatantBase : EntityBase
     /// <summary>
     /// This combatant's initiative roll result.
     /// </summary>
-    public required int Initiative { get; set; }
+    public int Initiative { get; set; }
 
     /// <summary>
     /// The initiative roll working, in case we want to display it again.
     /// </summary>
-    public required string InitiativeRollWorking { get; set; }
+    public string InitiativeRollWorking { get; set; } = string.Empty;
 
     /// <summary>
     /// This combatant's name.
@@ -32,13 +35,11 @@ public abstract class CombatantBase : EntityBase
     public required string Name { get; set; }
 
     /// <summary>
-    /// This property, derived from the initiative, determines the actual order
-    /// in which the combatants act. It must be unique per encounter.
-    /// </summary>
-    public required int Order { get; set; }
-
-    /// <summary>
     /// The owning user ID.
     /// </summary>
     public required ulong UserId { get; set; }
+
+    public abstract Task<ITrackedCharacter?> GetCharacterAsync(
+        DataContext dataContext,
+        CancellationToken cancellationToken = default);
 }

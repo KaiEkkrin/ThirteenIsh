@@ -1,8 +1,7 @@
 ﻿using Discord.WebSocket;
-using ThirteenIsh.Entities;
+using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Game;
 using ThirteenIsh.Services;
-using CharacterType = ThirteenIsh.Database.Entities.CharacterType;
 
 namespace ThirteenIsh.Commands.Pcs;
 
@@ -13,9 +12,9 @@ internal sealed class PcUpdateSubCommand() : SubCommandBase("update", "Syncs the
     {
         if (command.GuildId is not { } guildId) return;
 
-        var dataService = serviceProvider.GetRequiredService<DataService>();
-        var (updatedAdventure, errorMessage) = await dataService.EditGuildAsync(
-            new EditOperation(command, dataService), guildId, cancellationToken);
+        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
+        var (result, errorMessage) = await dataService.EditAdventureAsync(
+            guildId, new EditOperation(dataService, command), null, cancellationToken);
 
         if (errorMessage is not null)
         {
@@ -23,39 +22,38 @@ internal sealed class PcUpdateSubCommand() : SubCommandBase("update", "Syncs the
             return;
         }
 
-        if (updatedAdventure is null) throw new InvalidOperationException("updatedAdventure was null after update");
+        if (result is null) throw new InvalidOperationException("result was null after update");
 
-        var gameSystem = GameSystem.Get(updatedAdventure.GameSystem);
-        var adventurer = updatedAdventure.Adventurers[command.User.Id];
-
-        await CommandUtil.RespondWithAdventurerSummaryAsync(command, adventurer, gameSystem,
+        var gameSystem = GameSystem.Get(result.Adventure.GameSystem);
+        await CommandUtil.RespondWithAdventurerSummaryAsync(command, result.Adventurer, gameSystem,
             new CommandUtil.AdventurerSummaryOptions
             {
                 OnlyVariables = false,
-                Title = $"Updated {adventurer.Name}"
+                Title = $"Updated {result.Adventurer.Name}"
             });
     }
 
-    private sealed class EditOperation(SocketSlashCommand command, DataService dataService)
-        : EditOperation<ResultOrMessage<Adventure>, Guild, MessageEditResult<Adventure>>
+    private sealed class EditOperation(SqlDataService dataService, SocketSlashCommand command)
+        : EditOperation<ResultOrMessage<EditResult>, Adventure, MessageEditResult<EditResult>>
     {
-        public override async Task<MessageEditResult<Adventure>> DoEditAsync(Guild guild, CancellationToken cancellationToken)
+        public override async Task<MessageEditResult<EditResult>> DoEditAsync(Adventure adventure,
+            CancellationToken cancellationToken)
         {
-            if (guild.CurrentAdventure is not { } currentAdventure)
-                return new MessageEditResult<Adventure>(null, "There is no current adventure in this guild.");
-
-            if (!currentAdventure.Adventurers.TryGetValue(command.User.Id, out var adventurer))
-                return new MessageEditResult<Adventure>(null, "You have not joined the current adventure.");
+            var adventurer = await dataService.GetAdventurerAsync(adventure, command.User.Id, cancellationToken);
+            if (adventurer == null)
+                return new MessageEditResult<EditResult>(null, "You have not joined the current adventure.");
 
             var character = await dataService.GetCharacterAsync(adventurer.Name, command.User.Id, CharacterType.PlayerCharacter,
                 cancellationToken);
 
             if (character is null)
-                return new MessageEditResult<Adventure>(null, $"Character {adventurer.Name} not found.");
+                return new MessageEditResult<EditResult>(null, $"Character {adventurer.Name} not found.");
 
             adventurer.LastUpdated = DateTimeOffset.Now;
             adventurer.Sheet = character.Sheet;
-            return new MessageEditResult<Adventure>(currentAdventure);
+            return new MessageEditResult<EditResult>(new EditResult(adventure, adventurer));
         }
     }
+
+    private record EditResult(Adventure Adventure, Adventurer Adventurer);
 }

@@ -22,5 +22,12 @@ public class MonsterCombatant : CombatantBase, ITrackedCharacter
     /// This monster's variables. These are the current values of counters that
     /// can have them.
     /// </summary>
-    public CounterValueSet Variables { get; set; } = new();
+    public CounterSheet Variables { get; set; } = new();
+
+    public override Task<ITrackedCharacter?> GetCharacterAsync(
+        DataContext dataContext,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult((ITrackedCharacter?)this);
+    }
 }

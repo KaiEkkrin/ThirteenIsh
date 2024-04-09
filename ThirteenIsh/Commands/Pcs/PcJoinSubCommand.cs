@@ -1,9 +1,8 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ThirteenIsh.Entities;
+using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Game;
 using ThirteenIsh.Services;
-using CharacterType = ThirteenIsh.Database.Entities.CharacterType;
 
 namespace ThirteenIsh.Commands.Pcs;
 
@@ -25,7 +24,7 @@ internal sealed class PcJoinSubCommand() : SubCommandBase("join", "Joins the cur
             return;
         }
 
-        var dataService = serviceProvider.GetRequiredService<DataService>();
+        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var character = await dataService.GetCharacterAsync(characterName, command.User.Id, CharacterType.PlayerCharacter,
             cancellationToken);
 
@@ -35,8 +34,8 @@ internal sealed class PcJoinSubCommand() : SubCommandBase("join", "Joins the cur
             return;
         }
 
-        var (updatedAdventure, errorMessage) = await dataService.EditGuildAsync(
-            new EditOperation(command, character), guildId, cancellationToken);
+        var (updatedAdventure, errorMessage) = await dataService.EditAdventureAsync(
+            guildId, new EditOperation(dataService, character), cancellationToken: cancellationToken);
 
         if (errorMessage is not null)
         {
@@ -53,35 +52,35 @@ internal sealed class PcJoinSubCommand() : SubCommandBase("join", "Joins the cur
         await command.RespondAsync(embed: embedBuilder.Build());
     }
 
-    private sealed class EditOperation(SocketSlashCommand command, Entities.Character character)
-        : SyncEditOperation<ResultOrMessage<Adventure>, Guild, MessageEditResult<Adventure>>
+    private sealed class EditOperation(SqlDataService dataService, Database.Entities.Character character)
+        : EditOperation<ResultOrMessage<Adventure>, Adventure, MessageEditResult<Adventure>>
     {
-        public override MessageEditResult<Adventure> DoEdit(Guild guild)
+        public override async Task<MessageEditResult<Adventure>> DoEditAsync(Adventure adventure,
+            CancellationToken cancellationToken = default)
         {
-            if (guild.CurrentAdventure is not { } currentAdventure)
-                return new MessageEditResult<Adventure>(null, "There is no current adventure in this guild.");
-
-            if (guild.CurrentAdventure.GameSystem != character.GameSystem)
+            if (adventure.GameSystem != character.GameSystem)
                 return new MessageEditResult<Adventure>(null,
                     "This character was not created in the same game system as the adventure.");
 
-            if (!currentAdventure.Adventurers.TryGetValue(command.User.Id, out var adventurer))
+            var currentAdventurer = await dataService.GetAdventurerAsync(adventure, character.UserId,
+                cancellationToken);
+            if (currentAdventurer == null)
             {
-                adventurer = new Adventurer()
+                Adventurer adventurer = new()
                 {
                     Name = character.Name,
                     LastUpdated = DateTimeOffset.Now,
-                    Sheet = character.Sheet
+                    Sheet = character.Sheet,
+                    UserId = character.UserId
                 };
 
                 var gameSystem = GameSystem.Get(character.GameSystem);
                 var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
                 characterSystem.ResetVariables(adventurer);
-                currentAdventure.Adventurers.Add(command.User.Id, adventurer);
-
-                return new MessageEditResult<Adventure>(currentAdventure);
+                adventure.Adventurers.Add(adventurer); // TODO will this cause the entity to be added?
+                return new MessageEditResult<Adventure>(adventure);
             }
-            else if (adventurer.Name == character.Name)
+            else if (currentAdventurer.Name == character.Name)
             {
                 return new MessageEditResult<Adventure>(null, "This character is already joined to the current adventure.");
             }

@@ -1,24 +1,29 @@
 ﻿using Discord.WebSocket;
-using ThirteenIsh.Entities;
+using ThirteenIsh.Database.Entities;
+using ThirteenIsh.Game;
+using ThirteenIsh.Services;
 
 namespace ThirteenIsh.EditOperations;
 
-internal abstract class EditVariableOperationBase(SocketInteraction interaction)
-    : SyncEditOperation<ResultOrMessage<EditVariableResult>, Guild, MessageEditResult<EditVariableResult>>
+internal abstract class EditVariableOperationBase(SqlDataService dataService, SocketInteraction interaction)
+    : EditOperation<ResultOrMessage<EditVariableResult>, Adventure, MessageEditResult<EditVariableResult>>
 {
-    public sealed override MessageEditResult<EditVariableResult> DoEdit(Guild guild)
+    public sealed override async Task<MessageEditResult<EditVariableResult>> DoEditAsync(Adventure adventure,
+        CancellationToken cancellationToken = default)
     {
-        if (guild.CurrentAdventure is not { } currentAdventure)
-            return new MessageEditResult<EditVariableResult>(null, "There is no current adventure in this guild.");
-
-        if (!currentAdventure.Adventurers.TryGetValue(interaction.User.Id, out var adventurer))
+        var adventurer = await dataService.GetAdventurerAsync(adventure, interaction.User.Id, cancellationToken);
+        if (adventurer is null)
             return new MessageEditResult<EditVariableResult>(null, "You have not joined the current adventure.");
 
-        return DoEditInternal(currentAdventure, adventurer);
+        var gameSystem = GameSystem.Get(adventure.GameSystem);
+        var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
+        return DoEditInternal(adventure, adventurer, characterSystem, gameSystem);
     }
 
-    protected abstract MessageEditResult<EditVariableResult> DoEditInternal(Adventure adventure, Adventurer adventurer);
+    protected abstract MessageEditResult<EditVariableResult> DoEditInternal(Adventure adventure, Adventurer adventurer,
+        CharacterSystem characterSystem, GameSystem gameSystem);
 }
 
-internal record EditVariableResult(Adventure Adventure, string Working);
+internal record EditVariableResult(Adventure Adventure, Adventurer Adventurer, GameCounter GameCounter,
+    GameSystem GameSystem, string Working);
 

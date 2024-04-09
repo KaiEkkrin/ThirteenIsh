@@ -6,9 +6,11 @@ namespace ThirteenIsh.Database.Entities;
 /// An Adventurer is a Character within an adventure and combines their sheet
 /// (basic stats) with their state (what resources they've expended, etc).
 /// The name is the name of the matching character.
+/// For now, each user can join each adventure only once.
 /// </summary>
 [Index(nameof(AdventureId), nameof(Name), IsUnique = true)]
 [Index(nameof(AdventureId), nameof(NameUpper), IsUnique = true)]
+[Index(nameof(AdventureId), nameof(UserId), IsUnique = true)]
 public class Adventurer : SearchableNamedEntityBase, ITrackedCharacter
 {
     public long AdventureId { get; set; }
@@ -35,5 +37,5 @@ public class Adventurer : SearchableNamedEntityBase, ITrackedCharacter
     /// This adventurer's variables. These are the current values of counters that
     /// can have them.
     /// </summary>
-    public CounterValueSet Variables { get; set; } = new();
+    public CounterSheet Variables { get; set; } = new();
 }

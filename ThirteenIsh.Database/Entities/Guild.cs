@@ -23,7 +23,7 @@ public class Guild : EntityBase
     /// </summary>
     public string CurrentAdventureName { get; set; } = string.Empty;
 
-    public ICollection<Adventure> Adventures { get; set; } = [];
+    public virtual ICollection<Adventure> Adventures { get; set; } = [];
 
-    public ICollection<Encounter> Encounters { get; set; } = [];
+    public virtual ICollection<Encounter> Encounters { get; set; } = [];
 }

@@ -1,4 +1,4 @@
-﻿using CharacterType = ThirteenIsh.Database.Entities.CharacterType;
+﻿using ThirteenIsh.Database.Entities;
 
 namespace ThirteenIsh.Game;
 

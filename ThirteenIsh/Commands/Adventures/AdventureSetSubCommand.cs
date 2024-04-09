@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ThirteenIsh.Entities;
+using ThirteenIsh.Database.Entities;
+using ThirteenIsh.Results;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Adventures;
@@ -28,30 +29,34 @@ internal sealed class AdventureSetSubCommand() : SubCommandBase("set", "Sets an 
 
         if (!CommandUtil.TryGetOption<string>(option, "description", out var description)) description = string.Empty;
 
-        var dataService = serviceProvider.GetRequiredService<DataService>();
-        var updatedGuild = await dataService.EditGuildAsync(
-            new EditOperation(name, description), guildId, cancellationToken);
+        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
+        var (result, message) = await dataService.EditGuildAsync(
+            new EditOperation(dataService, name, description), guildId, cancellationToken);
 
-        if (updatedGuild?.Adventures.FirstOrDefault(o => o.Name == name) is not { } adventure)
+        if (!string.IsNullOrEmpty(message))
         {
-            await command.RespondAsync($"Cannot edit an adventure named '{name}'. Perhaps it does not exist?",
-                ephemeral: true);
+            await command.RespondAsync(message, ephemeral: true);
             return;
         }
 
+        if (result is null) throw new InvalidOperationException(nameof(result));
+
         var discordService = serviceProvider.GetRequiredService<DiscordService>();
-        await discordService.RespondWithAdventureSummaryAsync(command, updatedGuild, adventure, adventure.Name);
+        await discordService.RespondWithAdventureSummaryAsync(dataService, command, result.Guild, result.Adventure, name);
     }
 
-    private sealed class EditOperation(string name, string description) : SyncEditOperation<Guild, Guild, EditResult<Guild>>
+    private sealed class EditOperation(SqlDataService dataService, string name, string description)
+        : EditOperation<ResultOrMessage<AdventureResult>, Guild, MessageEditResult<AdventureResult>>
     {
-        public override EditResult<Guild> DoEdit(Guild guild)
+        public override async Task<MessageEditResult<AdventureResult>> DoEditAsync(Guild guild,
+            CancellationToken cancellationToken = default)
         {
-            var index = guild.Adventures.FindIndex(o => o.Name == name);
-            if (index < 0) return new EditResult<Guild>(null);
+            var adventure = await dataService.GetAdventureAsync(guild, name, cancellationToken);
+            if (adventure == null) return new MessageEditResult<AdventureResult>(
+                null, $"No adventure found matching name '{name}'.");
 
-            guild.Adventures[index].Description = description;
-            return new EditResult<Guild>(guild);
+            adventure.Description = description;
+            return new MessageEditResult<AdventureResult>(new AdventureResult(guild, adventure));
         }
     }
 }

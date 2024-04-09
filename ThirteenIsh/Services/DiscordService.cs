@@ -3,8 +3,7 @@ using Discord.WebSocket;
 using System.Collections.Concurrent;
 using System.Reflection;
 using ThirteenIsh.Commands;
-using ThirteenIsh.Entities;
-using ThirteenIsh.Entities.Messages;
+using ThirteenIsh.Database.Entities.Messages;
 
 namespace ThirteenIsh.Services;
 
@@ -64,7 +63,6 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
     private readonly ConcurrentDictionary<string, CommandBase> _commandsMap = new();
 
     private readonly IConfiguration _configuration;
-    private readonly DataService _dataService;
     private readonly ILogger<DiscordService> _logger;
     private readonly IServiceProvider _serviceProvider;
 
@@ -72,12 +70,10 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
 
     public DiscordService(
         IConfiguration configuration,
-        DataService dataService,
         ILogger<DiscordService> logger,
         IServiceProvider serviceProvider)
     {
         _configuration = configuration;
-        _dataService = dataService;
         _logger = logger;
         _serviceProvider = serviceProvider;
 
@@ -171,16 +167,16 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
     {
         await using var scope = _serviceProvider.CreateAsyncScope();
         using CancellationTokenSource cancellationSource = new(SlashCommandTimeout);
-
         try
         {
             if (!MessageBase.TryParseMessageId(arg.Data.CustomId, out var entityId, out var controlId)) return;
 
-            var dataService = scope.ServiceProvider.GetRequiredService<DataService>();
+            var dataService = scope.ServiceProvider.GetRequiredService<SqlDataService>();
             var message = await dataService.GetMessageAsync(entityId, cancellationSource.Token);
-            if (message is null || message.NativeUserId != arg.User.Id) return;
+            if (message is null || message.UserId != arg.User.Id) return;
 
-            var completed = await message.HandleAsync(arg, controlId, scope.ServiceProvider, cancellationSource.Token);
+            var handler = scope.ServiceProvider.ResolveMessageHandler(message);
+            var completed = await handler.HandleAsync(arg, controlId, message, cancellationSource.Token);
             if (completed) await dataService.DeleteMessageAsync(entityId, cancellationSource.Token);
         }
         catch (OperationCanceledException ex)
@@ -255,9 +251,11 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
 
     private async Task RegisterGuildCommandsAsync(SocketGuild guild)
     {
+        await using var scope = _serviceProvider.CreateAsyncScope();
         try
         {
-            var guildEntity = await _dataService.EnsureGuildAsync(guild.Id);
+            var dataService = scope.ServiceProvider.GetRequiredService<SqlDataService>();
+            var guildEntity = await dataService.EnsureGuildAsync(guild.Id);
             if (guildEntity.CommandVersion >= CommandBase.Version)
             {
                 // Up-to-date commands are already registered
@@ -274,7 +272,7 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
                 RegisteredCommandMessage(_logger, guild.Name, build.Name.Value, build.Description.Value, command.GetType(), null);
             }
 
-            await _dataService.UpdateGuildCommandVersionAsync(guild.Id, CommandBase.Version);
+            await dataService.UpdateGuildCommandVersionAsync(guildEntity, CommandBase.Version);
         }
         catch (Exception ex)
         {

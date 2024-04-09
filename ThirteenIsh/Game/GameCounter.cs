@@ -1,6 +1,6 @@
 ﻿using Discord;
 using System.Diagnostics.CodeAnalysis;
-using ThirteenIsh.Entities;
+using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Game;
@@ -47,10 +47,10 @@ internal class GameCounter(string name, string? alias = null,
     /// Adds a component that would edit this counter's value to the component builder.
     /// </summary>
     public ComponentBuilder AddCharacterEditorComponent(ComponentBuilder componentBuilder,
-        string customId, CharacterSheet? sheet)
+        string customId, CounterSheet? sheet)
     {
         if (!CanStore) return componentBuilder; // no editing for this one
-        var currentValue = sheet != null ? (int?)GetValue(sheet) : null;
+        var currentValue = sheet != null ? GetValue(sheet) : null;
         if (maxValue.HasValue && (maxValue - minValue) <= 25)
         {
             // Represent this as a menu. It helps, since Discord doesn't have number
@@ -108,26 +108,26 @@ internal class GameCounter(string name, string? alias = null,
     /// Gets the maximum value of this counter's variable
     /// (only relevant if it has an associated variable.)
     /// </summary>
-    public virtual int? GetMaxVariableValue(CharacterSheet characterSheet)
+    public virtual int? GetMaxVariableValue(CounterSheet sheet)
     {
-        return GetValue(characterSheet);
+        return GetValue(sheet);
     }
 
     /// <summary>
     /// Gets the starting value of this counter's variable from the character sheet
     /// (only relevant if it has an associated variable.)
     /// </summary>
-    public virtual int? GetStartingValue(CharacterSheet characterSheet)
+    public virtual int? GetStartingValue(CounterSheet sheet)
     {
-        return GetValue(characterSheet);
+        return GetValue(sheet);
     }
 
     /// <summary>
-    /// Gets this counter's value from the character sheet.
+    /// Gets this counter's value from the sheet.
     /// </summary>
-    public virtual int? GetValue(CharacterSheet characterSheet)
+    public virtual int? GetValue(CounterSheet sheet)
     {
-        return characterSheet.Counters.TryGetValue(Name, out var value) ? value : defaultValue;
+        return sheet.GetCounter(Name);
     }
 
     /// <summary>
@@ -135,7 +135,7 @@ internal class GameCounter(string name, string? alias = null,
     /// </summary>
     public virtual int? GetVariableValue(ITrackedCharacter character)
     {
-        return character.Variables.TryGetValue(Name, out var value) ? value : null;
+        return GetValue(character.Variables);
     }
 
     /// <summary>
@@ -172,7 +172,7 @@ internal class GameCounter(string name, string? alias = null,
             newValue = Math.Max(minValue, newValue);
         }
 
-        adventurer.Variables[Name] = newValue;
+        adventurer.Variables.SetCounter(Name, newValue);
     }
 
     public override bool TryEditCharacterProperty(string newValue, CharacterSheet sheet,
@@ -201,7 +201,7 @@ internal class GameCounter(string name, string? alias = null,
             }
         }
 
-        sheet.Counters[Name] = newValueInt;
+        sheet.SetCounter(Name, newValueInt);
         errorMessage = null;
         return true;
     }
@@ -215,7 +215,7 @@ internal class GameCounter(string name, string? alias = null,
             return false;
         }
 
-        adventurer.Variables[Name] = newValue;
+        adventurer.Variables.SetCounter(Name, newValue);
         errorMessage = null;
         return true;
     }

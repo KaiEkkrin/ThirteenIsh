@@ -1,8 +1,11 @@
 ﻿using Discord;
+using MongoDB.Driver;
 using System.Collections.Frozen;
 using System.Text;
-using ThirteenIsh.Entities;
-using CharacterType = ThirteenIsh.Database.Entities.CharacterType;
+using ThirteenIsh.Database;
+using ThirteenIsh.Database.Entities;
+using ThirteenIsh.Database.Entities.Combatants;
+using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Game;
 
@@ -34,6 +37,18 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
     /// This game system's name.
     /// </summary>
     public string Name { get; } = name;
+
+    /// <summary>
+    /// Writes an encounter summary table suitable for being part of a pinned message.
+    /// </summary>
+    public async Task<string> BuildEncounterTableAsync(SqlDataService dataService, Adventure adventure,
+        Encounter encounter, CancellationToken cancellationToken = default)
+    {
+        StringBuilder builder = new();
+        BuildEncounterHeadingTable(builder, encounter);
+        await BuildEncounterInitiativeTableAsync(dataService, adventure, builder, encounter, cancellationToken);
+        return builder.ToString();
+    }
 
     public static SlashCommandOptionBuilder BuildGameSystemChoiceOption(string name)
     {
@@ -84,35 +99,15 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
         ulong userId);
 
     /// <summary>
-    /// Moves to the next combatant in the encounter. Returns the new turn index or null if
+    /// Moves to the next combatant in the encounter. Returns the next combatant, or null if
     /// the encounter could not be progressed.
     /// </summary>
-    public int? EncounterNext(Encounter encounter, IRandomWrapper random)
+    public CombatantBase? EncounterNext(Encounter encounter, IRandomWrapper random)
     {
         if (encounter.Combatants.Count == 0) return null;
 
-        if (encounter.TurnIndex.HasValue) encounter.TurnIndex += 1;
-        else encounter.TurnIndex = 0;
-
-        if (encounter.TurnIndex >= encounter.Combatants.Count)
-        {
-            encounter.TurnIndex = 0;
-            ++encounter.Round;
-            return EncounterNextRound(encounter, random) ? encounter.TurnIndex : null;
-        }
-
-        return encounter.TurnIndex;
-    }
-
-    /// <summary>
-    /// Writes an encounter summary table suitable for being part of a pinned message.
-    /// </summary>
-    public string EncounterTable(Adventure adventure, Encounter encounter)
-    {
-        StringBuilder builder = new();
-        BuildEncounterHeadingTable(builder, encounter);
-        BuildEncounterInitiativeTable(adventure, builder, encounter);
-        return builder.ToString();
+        var nextCombatant = encounter.NextTurn(out var newRound);
+        return newRound ? EncounterNextRound(encounter, random) : nextCombatant;
     }
 
     /// <summary>
@@ -142,36 +137,54 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
         TableHelper.BuildTableEx(builder, 2, data, false, maxTableWidth: TableHelper.MaxPinnedTableWidth);
     }
 
-    public void BuildEncounterInitiativeTable(Adventure adventure, StringBuilder stringBuilder, Encounter encounter)
+    public async Task BuildEncounterInitiativeTableAsync(
+        SqlDataService dataService,
+        Adventure adventure,
+        StringBuilder stringBuilder,
+        Encounter encounter,
+        CancellationToken cancellationToken = default)
     {
         EncounterInitiativeTableBuilder tableBuilder = new();
-        for (var i = 0; i < encounter.Combatants.Count; ++i)
+
+        // trust the encounter to have the up-to-date combatants list
+        var leaveBlankRow = false;
+        foreach (var combatant in encounter.CombatantsInTurnOrder)
         {
             // Leave a blank row between each combatant so that the table is readable?
-            if (i > 0) tableBuilder.AddRow(TableCell.Empty, TableCell.Empty);
+            if (leaveBlankRow) tableBuilder.AddRow(TableCell.Empty, TableCell.Empty);
 
-            var combatant = encounter.Combatants[i];
-            tableBuilder.AddingActiveRows = i == encounter.TurnIndex;
+            tableBuilder.AddingActiveRows = combatant.Alias == encounter.TurnAlias;
             tableBuilder.AddRow(
                 TableCell.Integer(combatant.Initiative),
                 new TableCell(combatant.Alias));
 
             tableBuilder.AddSpanningRow(combatant.Name);
 
-            BuildEncounterInitiativeTableRows(adventure, combatant, tableBuilder);
+            await BuildEncounterInitiativeTableRowsAsync(dataService, adventure, combatant, tableBuilder,
+                cancellationToken);
+
+            leaveBlankRow = true;
         }
 
         TableHelper.BuildTableEx(stringBuilder, 2, tableBuilder.Data, false, '\u00a0',
             maxTableWidth: TableHelper.MaxPinnedTableWidth, language: "diff");
     }
 
-    protected abstract void BuildEncounterInitiativeTableRows(Adventure adventure, CombatantBase combatant,
-        EncounterInitiativeTableBuilder builder);
+    protected abstract Task BuildEncounterInitiativeTableRowsAsync(
+        SqlDataService dataService,
+        Adventure adventure,
+        CombatantBase combatant,
+        EncounterInitiativeTableBuilder builder,
+        CancellationToken cancellationToken = default);
 
-    protected static string BuildPointsEncounterTableCell(Adventure adventure, CombatantBase combatant,
-        GameCounter counter)
+    protected static async Task<string> BuildPointsEncounterTableCellAsync(
+        SqlDataService dataService,
+        CombatantBase combatant,
+        GameCounter counter,
+        CancellationToken cancellationToken = default)
     {
-        if (!combatant.TryGetCharacter(adventure, out var character)) return "???";
+        var character = await dataService.GetCharacterAsync(combatant, cancellationToken);
+        if (character is null) return "???";
 
         var currentPoints = counter.GetVariableValue(character);
         var maxPoints = counter.GetValue(character.Sheet);
@@ -181,10 +194,7 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
         return $"{currentPointsString}/{maxPointsString}";
     }
 
-    protected virtual bool EncounterNextRound(Encounter encounter, IRandomWrapper random)
-    {
-        return true;
-    }
+    protected abstract CombatantBase? EncounterNextRound(Encounter encounter, IRandomWrapper random);
 
     public readonly struct DamageCounter
     {

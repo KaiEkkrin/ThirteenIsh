@@ -1,5 +1,6 @@
-﻿using ThirteenIsh.Entities;
-using CharacterType = ThirteenIsh.Database.Entities.CharacterType;
+﻿using ThirteenIsh.Database.Entities;
+using ThirteenIsh.Database.Entities.Combatants;
+using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Game.ThirteenthAge;
 
@@ -134,8 +135,10 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         MonsterCombatant combatant = new()
         {
             Alias = nameAliasCollection.Add(character.Name, 5, true),
+            LastUpdated = DateTimeOffset.Now,
             Name = character.Name,
-            Sheet = character.Sheet
+            Sheet = character.Sheet,
+            UserId = userId
         };
 
         var characterSystem = GetCharacterSystem(CharacterType.Monster);
@@ -147,15 +150,15 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         // Add it to the encounter
         combatant.Initiative = initiative.Roll;
         combatant.InitiativeRollWorking = initiative.Working;
-        encounter.AddCombatant(combatant);
 
+        encounter.InsertCombatantIntoTurnOrder(combatant);
         alias = combatant.Alias;
         return initiative;
     }
 
     public override void EncounterBegin(Encounter encounter)
     {
-        encounter.Variables[EscalationDie] = 0;
+        encounter.Variables.SetCounter(EscalationDie, 0);
     }
 
     public override GameCounterRollResult? EncounterJoin(
@@ -171,15 +174,17 @@ internal sealed class ThirteenthAgeSystem : GameSystem
 
         int? targetValue = null;
         var initiative = dexterityBonusCounter.Roll(adventurer, null, random, rerolls, ref targetValue);
-        encounter.AddCombatant(new AdventurerCombatant
+
+        AdventurerCombatant combatant = new()
         {
             Alias = nameAliasCollection.Add(adventurer.Name, 10, false),
             Initiative = initiative.Roll,
             InitiativeRollWorking = initiative.Working,
             Name = adventurer.Name,
-            UserId = (long)userId
-        });
+            UserId = userId
+        };
 
+        encounter.InsertCombatantIntoTurnOrder(combatant);
         return initiative;
     }
 
@@ -205,32 +210,42 @@ internal sealed class ThirteenthAgeSystem : GameSystem
     protected override void AddEncounterHeadingRow(List<TableRowBase> data, Encounter encounter)
     {
         base.AddEncounterHeadingRow(data, encounter);
-        data.Add(new TableRow(new TableCell("Escalation Die"), TableCell.Integer(encounter.Variables[EscalationDie])));
+        data.Add(new TableRow(new TableCell("Escalation Die"), TableCell.Integer(
+            encounter.Variables.GetCounter(EscalationDie) ?? 0)));
     }
 
-    protected override void BuildEncounterInitiativeTableRows(Adventure adventure, CombatantBase combatant,
-        EncounterInitiativeTableBuilder builder)
+    protected override async Task BuildEncounterInitiativeTableRowsAsync(
+        SqlDataService dataService,
+        Adventure adventure,
+        CombatantBase combatant,
+        EncounterInitiativeTableBuilder builder,
+        CancellationToken cancellationToken = default)
     {
         var hitPointsCounter = GetCharacterSystem(combatant.CharacterType).GetProperty<GameCounter>(HitPoints);
-        var hitPointsCell = BuildPointsEncounterTableCell(adventure, combatant, hitPointsCounter);
+        var hitPointsCell = await BuildPointsEncounterTableCellAsync(dataService, combatant, hitPointsCounter,
+            cancellationToken);
+
         builder.AddRow(
             new TableCell(hitPointsCounter.Alias ?? hitPointsCounter.Name),
             new TableCell(hitPointsCell));
     }
 
-    protected override bool EncounterNextRound(Encounter encounter, IRandomWrapper random)
+    protected override CombatantBase? EncounterNextRound(Encounter encounter, IRandomWrapper random)
     {
         // When we roll over to the next round, increase the escalation die, to a maximum of 6.
         // TODO Add commands to explicitly set and modify an encounter variable?
-        encounter.Variables[EscalationDie] = Math.Min(6, encounter.Variables[EscalationDie] + 1);
-        return true;
+        encounter.Variables.SetCounter(EscalationDie,
+            Math.Min(6, (encounter.Variables.GetCounter(EscalationDie) ?? 0) + 1));
+
+        return encounter.GetCurrentCombatant();
     }
 
     private static GameCounterRollResult RollMonsterInitiative(CharacterSystem characterSystem, MonsterCombatant combatant,
         Encounter encounter, IRandomWrapper random, int rerolls, ulong userId)
     {
         var matchingMonster = encounter.Combatants.OfType<MonsterCombatant>()
-            .FirstOrDefault(c => c.Name == combatant.Name && c.NativeUserId == userId);
+            .FirstOrDefault(c => c.Name == combatant.Name && c.UserId == userId);
+
         if (matchingMonster is { Initiative: { } roll, InitiativeRollWorking: { } working })
         {
             // We have already rolled for this monster type -- re-use the same one.

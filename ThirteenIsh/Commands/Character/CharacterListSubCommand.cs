@@ -1,9 +1,8 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ThirteenIsh;
+using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Game;
 using ThirteenIsh.Services;
-using CharacterType = ThirteenIsh.Database.Entities.CharacterType;
 
 namespace ThirteenIsh.Commands.Character;
 
@@ -13,12 +12,13 @@ internal sealed class CharacterListSubCommand(CharacterType characterType)
     public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
         IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
-        var dataService = serviceProvider.GetRequiredService<DataService>();
+        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
 
         var embedBuilder = new EmbedBuilder()
             .WithTitle(characterType.FriendlyName(FriendlyNameOptions.CapitalizeFirstCharacter | FriendlyNameOptions.Plural));
 
-        await foreach (var character in dataService.ListCharactersAsync(null, command.User.Id, characterType, cancellationToken))
+        await foreach (var character in dataService.ListCharactersAsync(command.User.Id, characterType)
+                                                   .WithCancellation(cancellationToken))
         {
             var gameSystem = GameSystem.Get(character.GameSystem);
             var summary = gameSystem.GetCharacterSummary(character.Sheet, characterType);

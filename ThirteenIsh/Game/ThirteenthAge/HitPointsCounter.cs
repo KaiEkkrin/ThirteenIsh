@@ -1,4 +1,4 @@
-﻿using ThirteenIsh.Entities;
+﻿using ThirteenIsh.Database.Entities;
 
 namespace ThirteenIsh.Game.ThirteenthAge;
 
@@ -11,8 +11,10 @@ internal class HitPointsCounter(
 {
     public override bool CanStore => false;
 
-    public override int? GetValue(CharacterSheet characterSheet)
+    public override int? GetValue(CounterSheet sheet)
     {
+        if (sheet is not CharacterSheet characterSheet) return null;
+
         // See page 31, 76 and onwards. Why is this so baroque?!
         var conBonus = constitutionBonusCounter.GetValue(characterSheet);
         var classValue = classProperty.GetValue(characterSheet);

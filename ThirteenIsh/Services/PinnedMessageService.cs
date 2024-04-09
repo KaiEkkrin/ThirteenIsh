@@ -1,12 +1,15 @@
 ﻿using Discord.WebSocket;
-using ThirteenIsh.Entities;
+using ThirteenIsh.Database.Entities;
+using ThirteenIsh.Results;
 
 namespace ThirteenIsh.Services;
 
 /// <summary>
 /// Helps handle pinned messages.
 /// </summary>
-internal sealed class PinnedMessageService
+internal sealed class PinnedMessageService(
+    SqlDataService dataService,
+    ILogger<PinnedMessageService> logger)
 {
     private static readonly Action<ILogger, string, string, Exception> ErrorWritingMessage =
         LoggerMessage.Define<string, string>(
@@ -14,23 +17,12 @@ internal sealed class PinnedMessageService
             new EventId(1, nameof(PinnedMessageService)),
             "Pinned message {Action} : {Message}");
 
-    private readonly DataService _dataService;
-    private readonly ILogger<PinnedMessageService> _logger;
-
-    public PinnedMessageService(
-        DataService dataService,
-        ILogger<PinnedMessageService> logger)
-    {
-        _dataService = dataService;
-        _logger = logger;
-    }
-
     public async Task SetEncounterMessageAsync(ISocketMessageChannel channel, string adventureName, ulong guildId, string text,
         CancellationToken cancellationToken = default)
     {
-        await _dataService.EditGuildAsync(
+        await dataService.EditEncounterAsync(
+            guildId, channel.Id,
             new SetEncounterMessageOperation(this, channel, adventureName, text),
-            guildId,
             cancellationToken);
     }
 
@@ -55,7 +47,7 @@ internal sealed class PinnedMessageService
         catch (Exception ex)
         {
             // I'm not quite sure what this would throw, so I'll just catch anything for now
-            ErrorWritingMessage(_logger, nameof(UpdateAsync), ex.Message, ex);
+            ErrorWritingMessage(logger, nameof(UpdateAsync), ex.Message, ex);
             return false;
         }
     }
@@ -65,27 +57,28 @@ internal sealed class PinnedMessageService
         ISocketMessageChannel channel,
         string adventureName,
         string encounterMessage)
-        : EditOperation<Guild, Guild, EditResult<Guild>>()
+        : EditOperation<Encounter, EncounterResult, EditResult<Encounter>>()
     {
-        public override async Task<EditResult<Guild>> DoEditAsync(Guild guild, CancellationToken cancellationToken)
+        public override async Task<EditResult<Encounter>> DoEditAsync(EncounterResult encounterResult,
+            CancellationToken cancellationToken)
         {
-            if (!guild.Encounters.TryGetValue(channel.Id, out var encounter) ||
-                encounter.AdventureName != adventureName)
+            var (adventure, encounter) = encounterResult;
+            if (adventure.Name != adventureName)
             {
                 // The current encounter or adventure has changed and this message is no longer valid.
-                return new EditResult<Guild>(null);
+                return new EditResult<Encounter>(null);
             }
 
-            if (encounter.NativePinnedMessageId is { } pinnedMessageId &&
+            if (encounter.PinnedMessageId is { } pinnedMessageId &&
                 await pinnedMessageService.UpdateAsync(channel, pinnedMessageId, encounterMessage))
             {
                 // No edit to the guild is needed.
-                return new EditResult<Guild>(null);
+                return new EditResult<Encounter>(null);
             }
 
             pinnedMessageId = await CreateAsync(channel, encounterMessage);
-            encounter.PinnedMessageId = (long)pinnedMessageId;
-            return new EditResult<Guild>(guild);
+            encounter.PinnedMessageId = pinnedMessageId;
+            return new EditResult<Encounter>(encounter);
         }
     }
 }

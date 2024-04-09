@@ -1,4 +1,4 @@
-﻿using ThirteenIsh.Entities;
+﻿using ThirteenIsh.Database.Entities;
 
 namespace ThirteenIsh.Game.ThirteenthAge;
 
@@ -12,8 +12,9 @@ internal class ArmorClassCounter(
 {
     public override bool CanStore => false;
 
-    public override int? GetValue(CharacterSheet characterSheet)
+    public override int? GetValue(CounterSheet sheet)
     {
+        if (sheet is not CharacterSheet characterSheet) return null;
         int? baseAC = classProperty.GetValue(characterSheet) switch
         {
             ThirteenthAgeSystem.Barbarian => 12,
@@ -31,12 +32,12 @@ internal class ArmorClassCounter(
         if (!baseAC.HasValue) return null;
         var bonuses = new List<int?>
         {
-            constitutionBonusCounter.GetValue(characterSheet),
-            dexterityBonusCounter.GetValue(characterSheet),
-            wisdomBonusCounter.GetValue(characterSheet)
+            constitutionBonusCounter.GetValue(sheet),
+            dexterityBonusCounter.GetValue(sheet),
+            wisdomBonusCounter.GetValue(sheet)
         };
 
         bonuses.Sort();
-        return baseAC + bonuses[1] + levelCounter.GetValue(characterSheet);
+        return baseAC + bonuses[1] + levelCounter.GetValue(sheet);
     }
 }

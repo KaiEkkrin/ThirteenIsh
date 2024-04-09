@@ -16,17 +16,22 @@ internal sealed class AdventureGetSubCommand() : SubCommandBase("get", "Gets the
         IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
         if (command.GuildId is not { } guildId) return;
+        if (!CommandUtil.TryGetCanonicalizedMultiPartOption(option, "name", out var adventureName))
+        {
+            await command.RespondAsync("Adventure names must contain only letters and spaces.", ephemeral: true);
+            return;
+        }
 
-        var dataService = serviceProvider.GetRequiredService<DataService>();
+        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var guild = await dataService.EnsureGuildAsync(guildId, cancellationToken);
-
-        if (!CommandUtil.TryGetSelectedAdventure(guild, option, "name", out var adventure))
+        var adventure = await dataService.GetAdventureAsync(guild, adventureName, cancellationToken);
+        if (adventure == null)
         {
             await command.RespondAsync("No such adventure was found in this guild.");
             return;
         }
 
         var discordService = serviceProvider.GetRequiredService<DiscordService>();
-        await discordService.RespondWithAdventureSummaryAsync(command, guild, adventure, adventure.Name);
+        await discordService.RespondWithAdventureSummaryAsync(dataService, command, guild, adventure, adventure.Name);
     }
 }

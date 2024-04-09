@@ -1,11 +1,18 @@
-﻿namespace ThirteenIsh.Database.Entities;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace ThirteenIsh.Database.Entities;
 
 /// <summary>
 /// Defines an object containing counters, e.g. the sheet or variables.
 /// </summary>
-public class CounterValueSet
+public class CounterSheet
 {
-    public List<CounterValue> Counters { get; set; } = [];
+    public virtual IList<CounterValue> Counters { get; set; } = [];
+
+    public void Clear()
+    {
+        Counters.Clear();
+    }
 
     public int? GetCounter(string name)
     {
@@ -14,15 +21,15 @@ public class CounterValueSet
 
     public void SetCounter(string name, int value)
     {
-        var index = Counters.FindIndex(c => c.Name == name);
-        if (index >= 0)
+        for (var i = 0; i < Counters.Count; ++i)
         {
-            Counters[index] = Counters[index] with { Value = value };
+            if (Counters[i].Name != name) continue;
+
+            Counters[i] = Counters[i] with { Value = value };
+            return;
         }
-        else
-        {
-            Counters.Add(new CounterValue(name, value));
-        }
+
+        Counters.Add(new CounterValue(name, value));
     }
 }
 
@@ -30,9 +37,9 @@ public class CounterValueSet
 /// Defines a character sheet.
 /// 
 /// </summary>
-public class CharacterSheet : CounterValueSet
+public class CharacterSheet : CounterSheet
 {
-    public List<PropertyValue> Properties { get; set; } = [];
+    public virtual IList<PropertyValue> Properties { get; set; } = [];
 
     public string? GetProperty(string name)
     {
@@ -41,15 +48,15 @@ public class CharacterSheet : CounterValueSet
 
     public void SetProperty(string name, string value)
     {
-        var index = Properties.FindIndex(c => c.Name == name);
-        if (index >= 0)
+        for (var i = 0; i < Properties.Count; ++i)
         {
-            Properties[index] = Properties[index] with { Value = value };
+            if (Properties[i].Name != name) continue;
+
+            Properties[i] = Properties[i] with { Value = value };
+            return;
         }
-        else
-        {
-            Properties.Add(new PropertyValue(name, value));
-        }
+
+        Properties.Add(new PropertyValue(name, value));
     }
 }
 

@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 
 namespace ThirteenIsh.Database.Entities.Messages;
 
@@ -38,5 +39,26 @@ public class MessageBase
     public string GetMessageId(string? controlId = null)
     {
         return string.IsNullOrEmpty(controlId) ? $"{Id}" : $"{Id}:{controlId}";
+    }
+
+    /// <summary>
+    /// Splits a combined Discord message ID into entity and control ID parts.
+    /// </summary>
+    public static bool TryParseMessageId(string messageId, [MaybeNullWhen(false)] out long entityId,
+        [MaybeNullWhen(false)] out string controlId)
+    {
+        var indexOfSeparator = messageId.IndexOf(':');
+        var (entityIdString, controlIdString) = indexOfSeparator >= 0
+            ? (messageId[..indexOfSeparator], messageId[(indexOfSeparator + 1)..])
+            : (messageId, string.Empty);
+
+        if (!long.TryParse(entityIdString, out entityId))
+        {
+            controlId = null;
+            return false;
+        }
+
+        controlId = controlIdString;
+        return true;
     }
 }

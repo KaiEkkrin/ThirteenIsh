@@ -1,5 +1,6 @@
-﻿using ThirteenIsh.Entities;
-using CharacterType = ThirteenIsh.Database.Entities.CharacterType;
+﻿using ThirteenIsh.Database.Entities;
+using ThirteenIsh.Database.Entities.Combatants;
+using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Game.Dragonbane;
 
@@ -195,14 +196,16 @@ internal sealed class DragonbaneSystem : GameSystem
         var card = DrawInitiativeDeck(encounter, random, out var working);
         if (!card.HasValue) return null;
 
-        encounter.AddCombatant(new AdventurerCombatant
+        AdventurerCombatant newCombatant = new()
         {
             Alias = nameAliasCollection.Add(adventurer.Name, 10, false),
             Initiative = card.Value,
+            InitiativeRollWorking = working,
             Name = adventurer.Name,
-            UserId = (long)userId
-        });
+            UserId = userId
+        };
 
+        encounter.InsertCombatantIntoTurnOrder(newCombatant);
         return new GameCounterRollResult { Roll = card.Value, Working = working };
     }
 
@@ -214,47 +217,52 @@ internal sealed class DragonbaneSystem : GameSystem
         return $"{kin} {profession}";
     }
 
-    protected override void BuildEncounterInitiativeTableRows(Adventure adventure, CombatantBase combatant,
-        EncounterInitiativeTableBuilder builder)
+    protected override async Task BuildEncounterInitiativeTableRowsAsync(
+        SqlDataService dataService,
+        Adventure adventure,
+        CombatantBase combatant,
+        EncounterInitiativeTableBuilder builder,
+        CancellationToken cancellationToken = default)
     {
         var characterSystem = GetCharacterSystem(combatant.CharacterType);
 
         var hitPointsCounter = characterSystem.GetProperty<GameCounter>(HitPoints);
-        var hitPointsCell = BuildPointsEncounterTableCell(adventure, combatant, hitPointsCounter);
+        var hitPointsCell = await BuildPointsEncounterTableCellAsync(dataService, combatant, hitPointsCounter,
+            cancellationToken);
+
         builder.AddRow(
             new TableCell(hitPointsCounter.Alias ?? hitPointsCounter.Name),
             new TableCell(hitPointsCell));
 
         var willpowerPointsCounter = characterSystem.GetProperty<GameCounter>(WillpowerPoints);
-        var willpowerPointsCell = BuildPointsEncounterTableCell(adventure, combatant, willpowerPointsCounter);
+        var willpowerPointsCell = await BuildPointsEncounterTableCellAsync(dataService, combatant, willpowerPointsCounter,
+            cancellationToken);
+
         builder.AddRow(
             new TableCell(willpowerPointsCounter.Alias ?? willpowerPointsCounter.Name),
             new TableCell(willpowerPointsCell));
     }
 
-    protected override bool EncounterNextRound(Encounter encounter, IRandomWrapper random)
+    protected override CombatantBase? EncounterNextRound(Encounter encounter, IRandomWrapper random)
     {
         // When we roll over to the next round, re-draw the initiative.
-        var oldCombatants = new CombatantBase[encounter.Combatants.Count];
-        encounter.Combatants.CopyTo(oldCombatants);
-        encounter.Combatants.Clear();
-
         ResetInitiativeDeck(encounter);
-        foreach (var combatant in oldCombatants)
+        foreach (var combatant in encounter.Combatants)
         {
             var card = DrawInitiativeDeck(encounter, random, out _);
-            if (!card.HasValue) return false;
+            if (!card.HasValue) break; // TODO ???
 
             combatant.Initiative = card.Value;
-            encounter.AddCombatant(combatant);
         }
 
-        return true;
+        encounter.RebuildTurnOrder();
+        encounter.TurnAlias = encounter.Variables.TurnOrder.FirstOrDefault();
+        return encounter.GetCurrentCombatant();
     }
 
     private static int? DrawInitiativeDeck(Encounter encounter, IRandomWrapper random, out string working)
     {
-        var deck = encounter.Variables[InitiativeDeck];
+        var deck = encounter.Variables.GetCounter(InitiativeDeck) ?? 0;
         List<int> cards = [];
         for (var i = 0; i < 10; ++i)
         {
@@ -271,12 +279,12 @@ internal sealed class DragonbaneSystem : GameSystem
         var card = cards[cardIndex];
         working = "🎲 " + string.Join(", ", cards.Select((c, i) => i == cardIndex ? $"{c}" : $"~~{c}~~"));
 
-        encounter.Variables[InitiativeDeck] = deck & ~(1 << cardIndex);
+        encounter.Variables.SetCounter(InitiativeDeck, deck & ~(1 << cardIndex));
         return card;
     }
 
     private static void ResetInitiativeDeck(Encounter encounter)
     {
-        encounter.Variables[InitiativeDeck] = (1 << 10) - 1;
+        encounter.Variables.SetCounter(InitiativeDeck, (1 << 10) - 1);
     }
 }

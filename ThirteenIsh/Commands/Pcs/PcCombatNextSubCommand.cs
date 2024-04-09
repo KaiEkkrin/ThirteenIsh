@@ -2,8 +2,9 @@
 using Discord.WebSocket;
 using System.Globalization;
 using System.Text;
-using ThirteenIsh.Entities;
+using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Game;
+using ThirteenIsh.Results;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Pcs;
@@ -25,10 +26,10 @@ internal sealed class PcCombatNextSubCommand() : SubCommandBase("next", "Moves o
     {
         if (command is not { ChannelId: { } channelId, GuildId: { } guildId }) return;
 
-        var dataService = serviceProvider.GetRequiredService<DataService>();
+        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var random = serviceProvider.GetRequiredService<IRandomWrapper>();
-        var (output, message) = await dataService.EditGuildAsync(
-            new EditOperation(channelId, command.User.Id, random), guildId, cancellationToken);
+        var (output, message) = await dataService.EditEncounterAsync(
+            guildId, channelId, new EditOperation(random), cancellationToken);
 
         if (!string.IsNullOrEmpty(message))
         {
@@ -39,7 +40,9 @@ internal sealed class PcCombatNextSubCommand() : SubCommandBase("next", "Moves o
         if (output is null) throw new InvalidOperationException(nameof(output));
 
         // Update the encounter table
-        var encounterTable = output.GameSystem.EncounterTable(output.Adventure, output.Encounter);
+        var encounterTable = await output.GameSystem.BuildEncounterTableAsync(dataService, output.Adventure,
+            output.Encounter, cancellationToken);
+
         var pinnedMessageService = serviceProvider.GetRequiredService<PinnedMessageService>();
         await pinnedMessageService.SetEncounterMessageAsync(command.Channel, output.Encounter.AdventureName, guildId,
             encounterTable, cancellationToken);
@@ -61,27 +64,20 @@ internal sealed class PcCombatNextSubCommand() : SubCommandBase("next", "Moves o
         await command.RespondAsync(embed: embedBuilder.Build());
     }
 
-    private sealed class EditOperation(ulong channelId, ulong userId, IRandomWrapper random)
-        : SyncEditOperation<ResultOrMessage<EditOutput>, Guild, MessageEditResult<EditOutput>>
+    private sealed class EditOperation(IRandomWrapper random)
+        : SyncEditOperation<ResultOrMessage<EditOutput>, EncounterResult, MessageEditResult<EditOutput>>
     {
-        public override MessageEditResult<EditOutput> DoEdit(Guild guild)
+        public override MessageEditResult<EditOutput> DoEdit(EncounterResult result)
         {
-            if (!CommandUtil.TryGetCurrentCombatant(guild, channelId, userId, out var adventure, out _, out var encounter,
-                out var errorMessage))
-            {
-                return new MessageEditResult<EditOutput>(null, errorMessage);
-            }
-
-            var previousCombatantAlias = encounter.TurnIndex.HasValue
-                ? encounter.Combatants[encounter.TurnIndex.Value].Alias
-                : null;
+            var (adventure, encounter) = result;
+            var previousCombatantAlias = encounter.TurnAlias;
 
             var gameSystem = GameSystem.Get(adventure.GameSystem);
-            if (gameSystem.EncounterNext(encounter, random) is not { } turnIndex)
+            if (gameSystem.EncounterNext(encounter, random) is not { } nextCombatant)
                 return new MessageEditResult<EditOutput>(null, "This encounter cannot be progressed at this time.");
 
             return new MessageEditResult<EditOutput>(new EditOutput(
-                previousCombatantAlias, encounter.Combatants[turnIndex].Alias, adventure, encounter, gameSystem));
+                previousCombatantAlias, nextCombatant.Alias, adventure, encounter, gameSystem));
         }
     }
 

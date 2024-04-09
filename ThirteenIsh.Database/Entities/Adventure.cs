@@ -23,5 +23,5 @@ public class Adventure : SearchableNamedEntityBase
     /// </summary>
     public required string GameSystem { get; set; }
 
-    public ICollection<Adventurer> Adventurers { get; set; } = [];
+    public virtual ICollection<Adventurer> Adventurers { get; set; } = [];
 }

@@ -2,11 +2,11 @@
 using Discord.WebSocket;
 using System.Globalization;
 using System.Text;
-using ThirteenIsh.Entities;
+using ThirteenIsh.Database.Entities;
+using ThirteenIsh.Database.Entities.Combatants;
 using ThirteenIsh.Game;
 using ThirteenIsh.Parsing;
 using ThirteenIsh.Services;
-using CharacterType = ThirteenIsh.Database.Entities.CharacterType;
 
 namespace ThirteenIsh.Commands.Pcs;
 
@@ -70,12 +70,24 @@ internal sealed class PcCombatAttackCommand()
             return;
         }
 
-        var dataService = serviceProvider.GetRequiredService<DataService>();
+        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var guild = await dataService.EnsureGuildAsync(guildId, cancellationToken);
-        if (!CommandUtil.TryGetCurrentCombatant(guild, channelId, command.User.Id, out var adventure,
-            out var adventurer, out var encounter, out var errorMessage))
+        var encounterResult = await dataService.GetEncounterResultAsync(guild, channelId, cancellationToken);
+        if (!string.IsNullOrEmpty(encounterResult.Value.ErrorMessage))
         {
-            await command.RespondAsync(errorMessage);
+            await command.RespondAsync(encounterResult.Value.ErrorMessage, ephemeral: true);
+            return;
+        }
+
+        var (adventure, encounter) = encounterResult.Value.Value ?? throw new InvalidOperationException(
+            "GetEncounterResultAsync did not return a value");
+
+        var combatant = encounter.Combatants.FirstOrDefault(c => c.CharacterType == CharacterType.PlayerCharacter &&
+                                                                 c.UserId == command.User.Id);
+        if (combatant == null ||
+            await dataService.GetCharacterAsync(combatant, cancellationToken) is not { } character)
+        {
+            await command.RespondAsync("You have not joined this encounter.", ephemeral: true);
             return;
         }
 
@@ -90,7 +102,7 @@ internal sealed class PcCombatAttackCommand()
         }
 
         List<CombatantBase> targetCombatants = [];
-        if (!CommandUtil.TryFindCombatants(targets, encounter, targetCombatants, out errorMessage))
+        if (!CommandUtil.TryFindCombatants(targets, encounter, targetCombatants, out var errorMessage))
         {
             await command.RespondAsync(errorMessage);
             return;
@@ -108,53 +120,42 @@ internal sealed class PcCombatAttackCommand()
         for (var i = 0; i < targetCombatants.Count; ++i)
         {
             if (i > 0) stringBuilder.AppendLine(); // space things out
-            RollVs(targetCombatants[i]);
+
+            var target = targetCombatants[i];
+            stringBuilder.Append(CultureInfo.CurrentCulture, $"vs {target.Alias}");
+            var targetCharacter = await dataService.GetCharacterAsync(target, cancellationToken);
+            if (targetCharacter is null)
+            {
+                stringBuilder.AppendLine(CultureInfo.CurrentCulture, $" : Target unresolved");
+                continue;
+            }
+
+            var vsCounter = vsCounterByType[CharacterType.PlayerCharacter];
+            var dc = vsCounter.GetValue(targetCharacter.Sheet);
+            if (!dc.HasValue)
+            {
+                stringBuilder.AppendLine(CultureInfo.CurrentCulture, $" : Target has no {vsCounter.Name}");
+                continue;
+            }
+
+            var result = counter.Roll(character, bonus, random, rerolls, ref dc);
+            stringBuilder.Append(CultureInfo.CurrentCulture, $" ({dc}) : {result.Roll}");
+            if (result.Success.HasValue)
+            {
+                var successString = result.Success.Value ? "Success!" : "Failure!";
+                stringBuilder.Append(" -- ").Append(successString);
+            }
+            stringBuilder.AppendLine();
+            stringBuilder.AppendLine(result.Working);
         }
 
         var embedBuilder = new EmbedBuilder()
             .WithAuthor(command.User)
-            .WithTitle($"{adventurer.Name} : Rolled {counter.Name} vs {vsCounterByType.Values.First().Name}")
+            .WithTitle($"{character.Name} : Rolled {counter.Name} vs {vsCounterByType.Values.First().Name}")
             .WithDescription(stringBuilder.ToString());
 
         await command.RespondAsync(embed: embedBuilder.Build());
         return;
-
-        void RollVs(CombatantBase target)
-        {
-            stringBuilder.Append(CultureInfo.CurrentCulture, $"vs {target.Alias}");
-            // TODO should this switch turn into a virtual method on CombatantBase?
-            switch (target)
-            {
-                case AdventurerCombatant adventurerCombatant when adventure.Adventurers.TryGetValue(
-                    adventurerCombatant.NativeUserId, out var targetAdventurer):
-                    {
-                        var vsCounter = vsCounterByType[CharacterType.PlayerCharacter];
-                        var dc = vsCounter.GetValue(targetAdventurer.Sheet);
-                        if (!dc.HasValue)
-                        {
-                            stringBuilder.AppendLine(CultureInfo.CurrentCulture, $" : Target has no {vsCounter.Name}");
-                            break;
-                        }
-
-                        var result = counter.Roll(adventurer, bonus, random, rerolls, ref dc);
-                        stringBuilder.Append(CultureInfo.CurrentCulture, $" ({dc}) : {result.Roll}");
-                        if (result.Success.HasValue)
-                        {
-                            var successString = result.Success.Value ? "Success!" : "Failure!";
-                            stringBuilder.Append(" -- ").Append(successString);
-                        }
-                        stringBuilder.AppendLine();
-                        stringBuilder.AppendLine(result.Working);
-                        break;
-                    }
-
-                // TODO add code for rolling vs monsters here
-
-                default:
-                    stringBuilder.AppendLine(" : Target unresolved");
-                    break;
-            }
-        }
     }
 
     private static ParseTreeBase? GetBonus(SocketSlashCommandDataOption option)

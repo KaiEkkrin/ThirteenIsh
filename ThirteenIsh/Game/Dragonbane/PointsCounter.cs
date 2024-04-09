@@ -1,4 +1,4 @@
-﻿using ThirteenIsh.Entities;
+﻿using ThirteenIsh.Database.Entities;
 
 namespace ThirteenIsh.Game.Dragonbane;
 
@@ -10,8 +10,8 @@ internal class PointsCounter(string name, string alias, GameAbilityCounter abili
 {
     public override bool CanStore => false;
 
-    public override int? GetValue(CharacterSheet characterSheet)
+    public override int? GetValue(CounterSheet sheet)
     {
-        return abilityCounter.GetValue(characterSheet);
+        return abilityCounter.GetValue(sheet);
     }
 }

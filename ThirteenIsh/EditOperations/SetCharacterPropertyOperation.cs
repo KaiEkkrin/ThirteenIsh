@@ -1,22 +1,23 @@
-﻿using ThirteenIsh.Game;
+﻿using ThirteenIsh.Database.Entities;
+using ThirteenIsh.Game;
 
 namespace ThirteenIsh.EditOperations;
 
 internal sealed class SetCharacterPropertyOperation(GamePropertyBase property, string newValue)
-    : SyncEditOperation<ResultOrMessage<Entities.Character>, Entities.Character, MessageEditResult<Entities.Character>>
+    : SyncEditOperation<ResultOrMessage<Character>, Character, MessageEditResult<Character>>
 {
-    public override EditResult<ResultOrMessage<Entities.Character>> CreateError(string message)
+    public override EditResult<ResultOrMessage<Character>> CreateError(string message)
     {
-        return new MessageEditResult<Entities.Character>(null, message);
+        return new MessageEditResult<Character>(null, message);
     }
 
-    public override MessageEditResult<Entities.Character> DoEdit(Entities.Character character)
+    public override MessageEditResult<Character> DoEdit(Character character)
     {
         if (!property.TryEditCharacterProperty(newValue, character.Sheet, out var errorMessage))
         {
-            return new MessageEditResult<Entities.Character>(null, errorMessage);
+            return new MessageEditResult<Character>(null, errorMessage);
         }
 
-        return new MessageEditResult<Entities.Character>(character);
+        return new MessageEditResult<Character>(character);
     }
 }

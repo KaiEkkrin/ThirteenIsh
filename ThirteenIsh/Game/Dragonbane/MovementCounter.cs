@@ -1,4 +1,4 @@
-﻿using ThirteenIsh.Entities;
+﻿using ThirteenIsh.Database.Entities;
 
 namespace ThirteenIsh.Game.Dragonbane;
 
@@ -7,8 +7,9 @@ internal class MovementCounter(GameProperty kinProperty, GameAbilityCounter agil
 {
     public override bool CanStore => false;
 
-    public override int? GetValue(CharacterSheet characterSheet)
+    public override int? GetValue(CounterSheet sheet)
     {
+        if (sheet is not CharacterSheet characterSheet) return null;
         int? baseMovement = kinProperty.GetValue(characterSheet) switch
         {
             DragonbaneSystem.Human => 10,

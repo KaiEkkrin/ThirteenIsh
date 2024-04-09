@@ -1,4 +1,5 @@
-﻿using ThirteenIsh.Database.Entities.Combatants;
+﻿using Microsoft.EntityFrameworkCore;
+using ThirteenIsh.Database.Entities.Combatants;
 
 namespace ThirteenIsh.Database.Entities;
 
@@ -6,6 +7,7 @@ namespace ThirteenIsh.Database.Entities;
 /// This entity describes an encounter, which happens within a channel in a guild,
 /// and is associated with an adventure.
 /// </summary>
+[Index(nameof(GuildId), nameof(ChannelId), IsUnique = true)]
 public class Encounter : EntityBase
 {
     public long GuildId { get; set; }
@@ -21,7 +23,7 @@ public class Encounter : EntityBase
     /// </summary>
     public required ulong ChannelId { get; set; }
 
-    public ICollection<CombatantBase> Combatants { get; set; } = [];
+    public virtual IList<CombatantBase> Combatants { get; set; } = [];
 
     /// <summary>
     /// The Discord ID of the pinned message relating to this encounter, if any.
@@ -34,12 +36,94 @@ public class Encounter : EntityBase
     public required int Round { get; set; }
 
     /// <summary>
-    /// Whose turn it is currently; null if the encounter has not yet been begun.
+    /// The alias of the combatant whose turn it is currently;
+    /// null if the encounter has not yet been begun.
     /// </summary>
-    public int? TurnIndex { get; set; }
+    public string? TurnAlias { get; set; }
 
     /// <summary>
     /// This encounter's variables (game system dependent.)
     /// </summary>
-    public CounterValueSet Variables { get; set; } = new();
+    public EncounterVariables Variables { get; set; } = new();
+
+    /// <summary>
+    /// The combatants, in the current initiative order.
+    /// </summary>
+    public IEnumerable<CombatantBase> CombatantsInTurnOrder => Variables.TurnOrder
+        .Join(Combatants, o => o, c => c.Alias, (_, c) => c);
+
+    /// <summary>
+    /// Gets the current combatant, if any.
+    /// </summary>
+    public CombatantBase? GetCurrentCombatant()
+    {
+        return Combatants.FirstOrDefault(c => c.Alias == TurnAlias);
+    }
+
+    /// <summary>
+    /// Inserts a combatant into the right place in the turn order.
+    /// </summary>
+    public void InsertCombatantIntoTurnOrder(CombatantBase combatant)
+    {
+        if (Variables.TurnOrder.Contains(combatant.Alias)) return;
+
+        var insertBefore = Combatants.FirstOrDefault(c => c.Initiative < combatant.Initiative);
+        if (insertBefore != null &&
+            Variables.TurnOrder.IndexOf(insertBefore.Alias) is >= 0 and var insertIndex)
+        {
+            Variables.TurnOrder.Insert(insertIndex, combatant.Alias);
+        }
+        else
+        {
+            Variables.TurnOrder.Add(combatant.Alias);
+        }
+
+        // TODO will this suffice to get the combatant written into the database?
+        Combatants.Add(combatant);
+    }
+
+    /// <summary>
+    /// Moves to the next turn in the initiative, returning the next combatant.
+    /// </summary>
+    public CombatantBase? NextTurn(out bool newRound)
+    {
+        var currentIndex = !string.IsNullOrEmpty(TurnAlias)
+            ? Variables.TurnOrder.IndexOf(TurnAlias)
+            : -1;
+
+        var nextIndex = currentIndex + 1;
+        if (nextIndex >= Variables.TurnOrder.Count)
+        {
+            nextIndex = 0;
+            ++Round;
+            newRound = true;
+        }
+        else
+        {
+            newRound = false;
+        }
+
+        TurnAlias = Variables.TurnOrder.ElementAtOrDefault(nextIndex);
+        return GetCurrentCombatant();
+    }
+
+    /// <summary>
+    /// Rebuilds the turn order from the combatants.
+    /// </summary>
+    public void RebuildTurnOrder()
+    {
+        Variables.TurnOrder.Clear();
+        foreach (var combatant in Combatants.OrderByDescending(c => c.Initiative).ThenBy(c => c.Alias))
+        {
+            Variables.TurnOrder.Add(combatant.Alias);
+        }
+    }
+}
+
+public class EncounterVariables : CounterSheet
+{
+    /// <summary>
+    /// The aliases in the initiative in the order in which turns are taken.
+    /// </summary>
+    public IList<string> TurnOrder { get; set; } = [];
 }

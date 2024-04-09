@@ -18,17 +18,17 @@ internal sealed class PcGetSubCommand() : SubCommandBase("get", "Shows your play
     {
         if (command.GuildId is not { } guildId) return;
 
-        var dataService = serviceProvider.GetRequiredService<DataService>();
+        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var guild = await dataService.EnsureGuildAsync(guildId, cancellationToken);
-        if (guild.CurrentAdventure?.Adventurers.TryGetValue(command.User.Id, out var adventurer) != true ||
-            adventurer is null)
+        if (await dataService.GetAdventureAsync(guild, null, cancellationToken) is not { } adventure ||
+            await dataService.GetAdventurerAsync(adventure, command.User.Id, cancellationToken) is not { } adventurer)
         {
             await command.RespondAsync("Either there is no current adventure or you have not joined it.",
                 ephemeral: true);
             return;
         }
 
-        var gameSystem = GameSystem.Get(guild.CurrentAdventure.GameSystem);
+        var gameSystem = GameSystem.Get(adventure.GameSystem);
         var onlyVariables = !CommandUtil.TryGetOption<bool>(option, "full", out var full) || !full;
         await CommandUtil.RespondWithAdventurerSummaryAsync(command, adventurer, gameSystem,
             new CommandUtil.AdventurerSummaryOptions

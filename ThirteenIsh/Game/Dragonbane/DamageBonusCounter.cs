@@ -1,4 +1,4 @@
-﻿using ThirteenIsh.Entities;
+﻿using ThirteenIsh.Database.Entities;
 
 namespace ThirteenIsh.Game.Dragonbane;
 
@@ -11,9 +11,9 @@ internal class DamageBonusCounter(string name, GameAbilityCounter abilityCounter
 {
     public override bool CanStore => false;
 
-    public override int? GetValue(CharacterSheet characterSheet)
+    public override int? GetValue(CounterSheet sheet)
     {
-        return abilityCounter.GetValue(characterSheet) switch
+        return abilityCounter.GetValue(sheet) switch
         {
             <= 12 => 0,
             >= 13 and <= 16 => 4,

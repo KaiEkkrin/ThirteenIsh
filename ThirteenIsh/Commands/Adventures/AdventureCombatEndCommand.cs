@@ -1,6 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ThirteenIsh.Entities.Messages;
+using ThirteenIsh.Database.Entities.Messages;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Adventures;
@@ -12,7 +12,7 @@ internal sealed class AdventureCombatEndCommand() : SubCommandBase("end", "Ends 
     {
         if (command is not { ChannelId: { } channelId, GuildId: { } guildId }) return;
 
-        var dataService = serviceProvider.GetRequiredService<DataService>();
+        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var guild = await dataService.EnsureGuildAsync(guildId, cancellationToken);
         if (!guild.Encounters.ContainsKey(channelId))
         {

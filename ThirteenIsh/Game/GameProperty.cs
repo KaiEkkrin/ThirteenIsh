@@ -1,6 +1,6 @@
 ﻿using Discord;
 using System.Diagnostics.CodeAnalysis;
-using ThirteenIsh.Entities;
+using ThirteenIsh.Database.Entities;
 
 namespace ThirteenIsh.Game;
 
@@ -61,7 +61,7 @@ internal class GameProperty(string name, string[] possibleValues, bool showOnAdd
     /// </summary>
     public string GetValue(CharacterSheet characterSheet)
     {
-        return characterSheet.Properties.TryGetValue(Name, out var value) ? value : string.Empty;
+        return characterSheet.GetProperty(Name) ?? string.Empty;
     }
 
     public override bool TryEditCharacterProperty(string newValue, CharacterSheet sheet,
@@ -73,7 +73,7 @@ internal class GameProperty(string name, string[] possibleValues, bool showOnAdd
             return false;
         }
 
-        sheet.Properties[Name] = newValue;
+        sheet.SetProperty(Name, newValue);
         errorMessage = null;
         return true;
     }

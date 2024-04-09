@@ -1,4 +1,4 @@
-﻿using ThirteenIsh.Entities;
+﻿using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Game.Dragonbane;
@@ -27,9 +27,9 @@ internal class SkillLevelCounter(GameAbilityCounter attribute, GameCounter skill
 
     public override bool CanStore => false;
 
-    public override int? GetValue(CharacterSheet characterSheet)
+    public override int? GetValue(CounterSheet sheet)
     {
-        var attributeValue = attribute.GetValue(characterSheet);
+        var attributeValue = attribute.GetValue(sheet);
         int? baseChance = attributeValue switch
         {
             >= 1 and <= 5 => 3,
@@ -40,7 +40,7 @@ internal class SkillLevelCounter(GameAbilityCounter attribute, GameCounter skill
             _ => null
         };
 
-        var skillValue = skill.GetValue(characterSheet);
+        var skillValue = skill.GetValue(sheet);
         if (!baseChance.HasValue || !skillValue.HasValue) return null;
         return skillValue >= 1
             ? Math.Min(18, baseChance.Value * 2 + skillValue.Value - 1)
