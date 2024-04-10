@@ -1,9 +1,8 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ThirteenIsh.Entities;
-using ThirteenIsh.Entities.Messages;
+using ThirteenIsh.Database.Entities;
+using ThirteenIsh.Database.Entities.Messages;
 using ThirteenIsh.Services;
-using CharacterType = ThirteenIsh.Database.Entities.CharacterType;
 
 namespace ThirteenIsh.Commands.Character;
 
@@ -28,7 +27,7 @@ internal sealed class CharacterRemoveSubCommand(CharacterType characterType)
             return;
         }
 
-        var dataService = serviceProvider.GetRequiredService<DataService>();
+        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var character = await dataService.GetCharacterAsync(name, command.User.Id, characterType, cancellationToken);
         if (character == null)
         {
@@ -40,8 +39,9 @@ internal sealed class CharacterRemoveSubCommand(CharacterType characterType)
         // I'm not going to delete this right away but instead give the user a confirm button
         DeleteCharacterMessage message = new()
         {
+            CharacterType = characterType,
             Name = name,
-            UserId = (long)command.User.Id
+            UserId = command.User.Id
         };
         await dataService.AddMessageAsync(message, cancellationToken);
 

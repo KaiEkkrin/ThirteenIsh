@@ -1,6 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ThirteenIsh.Entities.Messages;
+using ThirteenIsh.Database.Entities.Messages;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Pcs;
@@ -12,15 +12,17 @@ internal sealed class PcResetSubCommand() : SubCommandBase("reset", "Resets the 
     {
         if (command.GuildId is not { } guildId) return;
 
-        var dataService = serviceProvider.GetRequiredService<DataService>();
+        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var guild = await dataService.EnsureGuildAsync(guildId, cancellationToken);
-        if (guild.CurrentAdventure is null)
+        var adventure = await dataService.GetAdventureAsync(guild, null, cancellationToken);
+        if (adventure is null)
         {
             await command.RespondAsync($"There is no current adventure in this guild.");
             return;
         }
 
-        if (!guild.CurrentAdventure.Adventurers.TryGetValue(command.User.Id, out var adventurer))
+        var adventurer = await dataService.GetAdventurerAsync(adventure, command.User.Id, cancellationToken);
+        if (adventurer is null)
         {
             await command.RespondAsync("You do not have a character in the current adventure.", ephemeral: true);
             return;
@@ -29,9 +31,9 @@ internal sealed class PcResetSubCommand() : SubCommandBase("reset", "Resets the 
         // Supply a confirm button
         ResetAdventurerMessage message = new()
         {
-            GuildId = (long)guildId,
-            AdventureName = guild.CurrentAdventure.Name,
-            UserId = (long)command.User.Id
+            GuildId = guildId,
+            Name = adventure.Name,
+            UserId = command.User.Id
         };
 
         await dataService.AddMessageAsync(message, cancellationToken);

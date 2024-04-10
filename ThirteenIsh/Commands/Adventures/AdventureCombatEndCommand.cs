@@ -14,7 +14,8 @@ internal sealed class AdventureCombatEndCommand() : SubCommandBase("end", "Ends 
 
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var guild = await dataService.EnsureGuildAsync(guildId, cancellationToken);
-        if (!guild.Encounters.ContainsKey(channelId))
+        var encounter = await dataService.GetEncounterAsync(guild, channelId, cancellationToken);
+        if (encounter == null)
         {
             await command.RespondAsync("No active encounter in this channel.", ephemeral: true);
             return;
@@ -23,9 +24,10 @@ internal sealed class AdventureCombatEndCommand() : SubCommandBase("end", "Ends 
         // Give the user a confirm button
         EndEncounterMessage message = new()
         {
-            ChannelId = (long)channelId,
-            GuildId = (long)guildId,
-            UserId = (long)command.User.Id
+            ChannelId = channelId,
+            GuildId = guildId,
+            Name = encounter.AdventureName,
+            UserId = command.User.Id
         };
         await dataService.AddMessageAsync(message, cancellationToken);
 

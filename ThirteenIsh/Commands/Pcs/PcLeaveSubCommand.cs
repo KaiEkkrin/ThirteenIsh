@@ -1,6 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ThirteenIsh.Entities.Messages;
+using ThirteenIsh.Database.Entities.Messages;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Pcs;
@@ -12,9 +12,10 @@ internal sealed class PcLeaveSubCommand() : SubCommandBase("leave", "Leaves the 
     {
         if (command.GuildId is not { } guildId) return;
 
-        var dataService = serviceProvider.GetRequiredService<DataService>();
+        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var guild = await dataService.EnsureGuildAsync(guildId, cancellationToken);
-        if (guild.CurrentAdventure is null)
+        var adventure = await dataService.GetAdventureAsync(guild, null, cancellationToken);
+        if (adventure is null)
         {
             await command.RespondAsync($"There is no current adventure in this guild.");
             return;
@@ -23,9 +24,9 @@ internal sealed class PcLeaveSubCommand() : SubCommandBase("leave", "Leaves the 
         // Supply a confirm button
         LeaveAdventureMessage message = new()
         {
-            GuildId = (long)guildId,
-            Name = guild.CurrentAdventure.Name,
-            UserId = (long)command.User.Id
+            GuildId = guildId,
+            Name = adventure.Name,
+            UserId = command.User.Id
         };
 
         await dataService.AddMessageAsync(message, cancellationToken);
@@ -34,7 +35,7 @@ internal sealed class PcLeaveSubCommand() : SubCommandBase("leave", "Leaves the 
         builder.WithButton("Leave", message.GetMessageId(), ButtonStyle.Danger);
 
         await command.RespondAsync(
-            $"Do you really want to leave the adventure named '{guild.CurrentAdventure.Name}'? This cannot be undone.",
+            $"Do you really want to leave the adventure named '{adventure.Name}'? This cannot be undone.",
             ephemeral: true, components: builder.Build());
     }
 }

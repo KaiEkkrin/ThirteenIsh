@@ -1,6 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ThirteenIsh.Entities.Messages;
+using ThirteenIsh.Database.Entities.Messages;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Adventures;
@@ -24,9 +24,10 @@ internal sealed class AdventureRemoveSubCommand() : SubCommandBase("remove", "De
             return;
         }
 
-        var dataService = serviceProvider.GetRequiredService<DataService>();
+        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var guild = await dataService.EnsureGuildAsync(guildId, cancellationToken);
-        if (!guild.Adventures.Any(o => o.Name == name))
+        var adventure = await dataService.GetAdventureAsync(guild, name, cancellationToken);
+        if (adventure is null)
         {
             await command.RespondAsync($"Cannot find an adventure named '{name}'. Perhaps it was already deleted?");
             return;
@@ -35,9 +36,9 @@ internal sealed class AdventureRemoveSubCommand() : SubCommandBase("remove", "De
         // I'm not going to delete this right away but instead give the user a confirm button
         DeleteAdventureMessage message = new()
         {
-            GuildId = (long)guildId,
+            GuildId = guildId,
             Name = name,
-            UserId = (long)command.User.Id
+            UserId = command.User.Id
         };
         await dataService.AddMessageAsync(message, cancellationToken);
 

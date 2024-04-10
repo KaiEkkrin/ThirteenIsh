@@ -302,6 +302,11 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
             cancellationToken);
     }
 
+    public IAsyncEnumerable<Adventure> GetAdventuresAsync(Guild guild)
+    {
+        return _context.Adventures.Where(a => a.GuildId == guild.Id).AsAsyncEnumerable();
+    }
+
     public IAsyncEnumerable<Adventurer> GetAdventurersAsync(Adventure adventure)
     {
         return _context.Adventurers.Where(a => a.AdventureId == adventure.Id)

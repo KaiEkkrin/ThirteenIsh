@@ -13,13 +13,13 @@ internal sealed class AdventureListSubCommand() : SubCommandBase("list", "Lists 
     {
         if (command.GuildId is not { } guildId) return;
 
-        var dataService = serviceProvider.GetRequiredService<DataService>();
+        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var guild = await dataService.EnsureGuildAsync(guildId, cancellationToken);
 
         EmbedBuilder embedBuilder = new();
         embedBuilder.WithTitle("Adventures");
 
-        foreach (var adventure in guild.Adventures.OrderBy(o => o.Name))
+        await foreach (var adventure in dataService.GetAdventuresAsync(guild))
         {
             var nameStringBuilder = new StringBuilder()
                 .Append(CultureInfo.CurrentCulture, $"[{adventure.GameSystem}] {adventure.Name}");
