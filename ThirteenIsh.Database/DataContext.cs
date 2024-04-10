@@ -61,6 +61,12 @@ public class DataContext : DbContext
                 s.OwnsMany(s => s.Properties);
             });
 
+        modelBuilder.Entity<CombatantBase>()
+            .HasOne(c => c.Encounter)
+            .WithMany(e => e.Combatants)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+
         modelBuilder.Entity<Encounter>()
             .OwnsOne(c => c.Variables, v =>
             {

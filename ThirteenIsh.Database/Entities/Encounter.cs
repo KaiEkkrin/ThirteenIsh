@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
 using ThirteenIsh.Database.Entities.Combatants;
 
 namespace ThirteenIsh.Database.Entities;
@@ -49,8 +50,9 @@ public class Encounter : EntityBase
     /// <summary>
     /// The combatants, in the current initiative order.
     /// </summary>
+    [NotMapped]
     public IEnumerable<CombatantBase> CombatantsInTurnOrder => Variables.TurnOrder
-        .Join(Combatants, o => o, c => c.Alias, (_, c) => c);
+        .Join(Combatants, o => o.Alias, c => c.Alias, (_, c) => c);
 
     /// <summary>
     /// Gets the current combatant, if any.
@@ -65,21 +67,19 @@ public class Encounter : EntityBase
     /// </summary>
     public void InsertCombatantIntoTurnOrder(CombatantBase combatant)
     {
-        if (Variables.TurnOrder.Contains(combatant.Alias)) return;
+        CombatantAlias combatantAlias = new() { Alias = combatant.Alias };
+        if (Variables.TurnOrder.Contains(combatantAlias)) return;
 
         var insertBefore = Combatants.FirstOrDefault(c => c.Initiative < combatant.Initiative);
         if (insertBefore != null &&
-            Variables.TurnOrder.IndexOf(insertBefore.Alias) is >= 0 and var insertIndex)
+            Variables.TurnOrder.IndexOf(new CombatantAlias { Alias = insertBefore.Alias }) is >= 0 and var insertIndex)
         {
-            Variables.TurnOrder.Insert(insertIndex, combatant.Alias);
+            Variables.TurnOrder.Insert(insertIndex, combatantAlias);
         }
         else
         {
-            Variables.TurnOrder.Add(combatant.Alias);
+            Variables.TurnOrder.Add(combatantAlias);
         }
-
-        // TODO will this suffice to get the combatant written into the database?
-        Combatants.Add(combatant);
     }
 
     /// <summary>
@@ -88,7 +88,7 @@ public class Encounter : EntityBase
     public CombatantBase? NextTurn(out bool newRound)
     {
         var currentIndex = !string.IsNullOrEmpty(TurnAlias)
-            ? Variables.TurnOrder.IndexOf(TurnAlias)
+            ? Variables.TurnOrder.IndexOf(new CombatantAlias { Alias = TurnAlias })
             : -1;
 
         var nextIndex = currentIndex + 1;
@@ -103,7 +103,7 @@ public class Encounter : EntityBase
             newRound = false;
         }
 
-        TurnAlias = Variables.TurnOrder.ElementAtOrDefault(nextIndex);
+        TurnAlias = Variables.TurnOrder.ElementAtOrDefault(nextIndex)?.Alias;
         return GetCurrentCombatant();
     }
 
@@ -115,7 +115,7 @@ public class Encounter : EntityBase
         Variables.TurnOrder.Clear();
         foreach (var combatant in Combatants.OrderByDescending(c => c.Initiative).ThenBy(c => c.Alias))
         {
-            Variables.TurnOrder.Add(combatant.Alias);
+            Variables.TurnOrder.Add(new CombatantAlias { Alias = combatant.Alias });
         }
     }
 }
@@ -125,5 +125,10 @@ public class EncounterVariables : CounterSheet
     /// <summary>
     /// The aliases in the initiative in the order in which turns are taken.
     /// </summary>
-    public IList<string> TurnOrder { get; set; } = [];
+    public IList<CombatantAlias> TurnOrder { get; set; } = [];
+}
+
+public record CombatantAlias
+{
+    public required string Alias { get; set; }
 }

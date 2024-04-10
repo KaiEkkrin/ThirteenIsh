@@ -4,6 +4,10 @@ namespace ThirteenIsh.Database.Entities;
 
 /// <summary>
 /// Defines an object containing counters, e.g. the sheet or variables.
+/// TODO This is breaking EF Core, which doesn't support inheritance of owned types.
+/// I need to break the class hierarchy (have CharacterSheet and EncounterVariables
+/// no longer be derived classes) while still sharing code.
+/// Try a few things.
 /// </summary>
 public class CounterSheet
 {
@@ -35,7 +39,6 @@ public class CounterSheet
 
 /// <summary>
 /// Defines a character sheet.
-/// 
 /// </summary>
 public class CharacterSheet : CounterSheet
 {

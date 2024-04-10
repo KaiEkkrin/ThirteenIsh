@@ -5,7 +5,6 @@ using ThirteenIsh.Services;
 namespace ThirteenIsh;
 
 internal sealed class Worker(
-    SqlDataService dataService,
     DiscordService discordService,
     ILogger<Worker> logger,
     IServiceProvider serviceProvider)
@@ -59,6 +58,8 @@ internal sealed class Worker(
                 WorkerRunningMessage(logger, DateTimeOffset.Now, null);
                 await Task.Delay(TimerInterval, stoppingToken);
 
+                await using var scope = serviceProvider.CreateAsyncScope();
+                var dataService = scope.ServiceProvider.GetRequiredService<SqlDataService>();
                 await dataService.DeleteOldMessagesAsync(stoppingToken);
             }
         }

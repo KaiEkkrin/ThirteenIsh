@@ -1,4 +1,5 @@
-﻿using ThirteenIsh.Database.Entities;
+﻿using ThirteenIsh.Database;
+using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Database.Entities.Combatants;
 using ThirteenIsh.Services;
 
@@ -120,6 +121,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
     }
 
     public override GameCounterRollResult? EncounterAdd(
+        DataContext dataContext,
         Character character,
         Encounter encounter,
         NameAliasCollection nameAliasCollection,
@@ -151,6 +153,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         combatant.Initiative = initiative.Roll;
         combatant.InitiativeRollWorking = initiative.Working;
 
+        dataContext.Combatants.Add(combatant);
         encounter.InsertCombatantIntoTurnOrder(combatant);
         alias = combatant.Alias;
         return initiative;
@@ -162,6 +165,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
     }
 
     public override GameCounterRollResult? EncounterJoin(
+        DataContext dataContext,
         Adventurer adventurer,
         Encounter encounter,
         NameAliasCollection nameAliasCollection,
@@ -184,6 +188,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
             UserId = userId
         };
 
+        dataContext.Combatants.Add(combatant);
         encounter.InsertCombatantIntoTurnOrder(combatant);
         return initiative;
     }

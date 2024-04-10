@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ThirteenIsh.Database.Entities.Combatants;
 
@@ -6,6 +7,8 @@ namespace ThirteenIsh.Database.Entities.Combatants;
 public abstract class CombatantBase : EntityBase
 {
     public long EncounterId { get; set; }
+
+    [ForeignKey(nameof(EncounterId))]
     public Encounter Encounter { get; set; } = null!;
 
     /// <summary>
@@ -18,6 +21,9 @@ public abstract class CombatantBase : EntityBase
     /// even if it's got the same name as another one (e.g. for monsters.)
     /// </summary>
     public required string Alias { get; set; }
+
+    [NotMapped]
+    public CombatantAlias CombatantAlias => new() { Alias = Alias };
 
     /// <summary>
     /// This combatant's initiative roll result.

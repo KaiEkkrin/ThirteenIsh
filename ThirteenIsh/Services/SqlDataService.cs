@@ -59,6 +59,9 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
         return new ResultOrMessage<AdventureResult>(new AdventureResult(guild, adventure));
     }
 
+    // TODO instead, only reveal this when a transaction object is opened
+    public DataContext DataContext => _context;
+
     public async Task<ResultOrMessage<EncounterResult>> AddEncounterAsync(
         ulong guildId, ulong channelId, CancellationToken cancellationToken = default)
     {

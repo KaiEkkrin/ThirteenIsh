@@ -1,4 +1,5 @@
-﻿using ThirteenIsh.Database.Entities;
+﻿using ThirteenIsh.Database;
+using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Database.Entities.Combatants;
 using ThirteenIsh.Services;
 
@@ -167,6 +168,7 @@ internal sealed class DragonbaneSystem : GameSystem
     }
 
     public override GameCounterRollResult? EncounterAdd(
+        DataContext dataContext,
         Character character,
         Encounter encounter,
         NameAliasCollection nameAliasCollection,
@@ -185,6 +187,7 @@ internal sealed class DragonbaneSystem : GameSystem
     }
 
     public override GameCounterRollResult? EncounterJoin(
+        DataContext dataContext,
         Adventurer adventurer,
         Encounter encounter,
         NameAliasCollection nameAliasCollection,
@@ -205,6 +208,7 @@ internal sealed class DragonbaneSystem : GameSystem
             UserId = userId
         };
 
+        dataContext.Combatants.Add(newCombatant);
         encounter.InsertCombatantIntoTurnOrder(newCombatant);
         return new GameCounterRollResult { Roll = card.Value, Working = working };
     }
@@ -256,7 +260,7 @@ internal sealed class DragonbaneSystem : GameSystem
         }
 
         encounter.RebuildTurnOrder();
-        encounter.TurnAlias = encounter.Variables.TurnOrder.FirstOrDefault();
+        encounter.TurnAlias = encounter.Variables.TurnOrder.FirstOrDefault()?.Alias;
         return encounter.GetCurrentCombatant();
     }
 

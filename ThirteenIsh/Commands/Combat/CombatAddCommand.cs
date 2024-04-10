@@ -44,7 +44,7 @@ internal sealed class CombatAddCommand() : SubCommandBase("add", "Adds a monster
 
         var random = serviceProvider.GetRequiredService<IRandomWrapper>();
         var (output, message) = await dataService.EditEncounterAsync(guildId, channelId,
-            new EditOperation(character, random, rerolls, command.User.Id), cancellationToken);
+            new EditOperation(dataService, character, random, rerolls, command.User.Id), cancellationToken);
 
         if (!string.IsNullOrEmpty(message))
         {
@@ -71,8 +71,8 @@ internal sealed class CombatAddCommand() : SubCommandBase("add", "Adds a monster
         await command.RespondAsync(embed: embedBuilder.Build());
     }
 
-    private sealed class EditOperation(Database.Entities.Character character, IRandomWrapper random, int rerolls,
-        ulong userId)
+    private sealed class EditOperation(SqlDataService dataService, Database.Entities.Character character,
+        IRandomWrapper random, int rerolls, ulong userId)
         : SyncEditOperation<ResultOrMessage<EditOutput>, EncounterResult, MessageEditResult<EditOutput>>
     {
         public override MessageEditResult<EditOutput> DoEdit(EncounterResult encounterResult)
@@ -84,8 +84,8 @@ internal sealed class CombatAddCommand() : SubCommandBase("add", "Adds a monster
 
             var gameSystem = GameSystem.Get(adventure.GameSystem);
             NameAliasCollection nameAliasCollection = new(encounter);
-            var result = gameSystem.EncounterAdd(character, encounter, nameAliasCollection, random, rerolls, userId,
-                out var alias);
+            var result = gameSystem.EncounterAdd(dataService.DataContext, character, encounter, nameAliasCollection,
+                random, rerolls, userId, out var alias);
 
             if (!result.HasValue) return new MessageEditResult<EditOutput>(
                 null, $"You are not able to add a '{character.Name}' to this encounter at this time.");

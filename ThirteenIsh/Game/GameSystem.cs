@@ -72,6 +72,7 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
     /// If this monster cannot join the encounter, returns null.
     /// </summary>
     public abstract GameCounterRollResult? EncounterAdd(
+        DataContext dataContext,
         Character character,
         Encounter encounter,
         NameAliasCollection nameAliasCollection,
@@ -91,6 +92,7 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
     /// If this adventurer cannot join the encounter, returns null.
     /// </summary>
     public abstract GameCounterRollResult? EncounterJoin(
+        DataContext dataContext,
         Adventurer adventurer,
         Encounter encounter,
         NameAliasCollection nameAliasCollection,
@@ -104,7 +106,7 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
     /// </summary>
     public CombatantBase? EncounterNext(Encounter encounter, IRandomWrapper random)
     {
-        if (encounter.Combatants.Count == 0) return null;
+        if (!encounter.Combatants.Any()) return null;
 
         var nextCombatant = encounter.NextTurn(out var newRound);
         return newRound ? EncounterNextRound(encounter, random) : nextCombatant;
