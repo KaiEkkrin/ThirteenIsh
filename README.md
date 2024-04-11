@@ -30,7 +30,11 @@ Configure these via command line, environment variables or user secrets.
 
 ## Docker-compose based deployment
 
-* Create a file "my.docker.env" in the project root and add to it `BotToken="...my bot token..."`.
+* Create a file "my.docker.env" in the project root and add to it the following:
+	* `BotToken="...my bot token..."`.
+	* `DbConnectionString="...my database connection string..."` (as above)
+	* `POSTGRES_USER="...my postgres user name..."`
+	* `POSTGRES_PASSWORD="...my postgres user password..."`
 * Run e.g. `docker-compose up -d --build`
 
 ## If you make a change to the data model (ThirteenIsh.Database)

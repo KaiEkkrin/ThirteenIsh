@@ -8,13 +8,12 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D9CF6412-D136-4B97-8601-81E25F29F9D2}"
 	ProjectSection(SolutionItems) = preProject
 		docker-compose.yaml = docker-compose.yaml
-		docker.env = docker.env
 		README.md = README.md
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ThirteenIsh.Tests", "ThirteenIsh.Tests\ThirteenIsh.Tests.csproj", "{C255DC5D-E198-4C83-B29A-8D0C4D626821}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThirteenIsh.Database", "ThirteenIsh.Database\ThirteenIsh.Database.csproj", "{0BBB82C7-83C5-467C-93DD-F32C69D7AC1B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ThirteenIsh.Database", "ThirteenIsh.Database\ThirteenIsh.Database.csproj", "{0BBB82C7-83C5-467C-93DD-F32C69D7AC1B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

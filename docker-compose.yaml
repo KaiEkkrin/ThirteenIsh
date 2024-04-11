@@ -1,29 +1,20 @@
 version: '3.8'
 services:
-    mongo:
-        image: mongo:5
-        deploy:
-            resources:
-                limits:
-                    memory: 1G
-        ports:
-            - 27018:27017
+    postgres:
+        image: postgres:16
+        env_file:
+            - my.docker.env
         volumes:
-            - mongo-data:/data/db
+            - postgres-data:/var/lib/postgresql/data
     service:
         build:
             context: .
             dockerfile: ./ThirteenIsh/Dockerfile
             target: final
         depends_on:
-            - mongo
-        deploy:
-            resources:
-                limits:
-                    memory: 1G
+            - postgres
         env_file:
-            - docker.env
             - my.docker.env
 volumes:
-    mongo-data:
+    postgres-data:
 
