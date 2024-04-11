@@ -23,7 +23,7 @@ public class MessageBase
     /// <summary>
     /// When the message was created.
     /// </summary>
-    public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.Now;
+    public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
 
     /// <summary>
     /// The owning user ID.

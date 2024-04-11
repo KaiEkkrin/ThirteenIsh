@@ -233,7 +233,7 @@ internal class CharacterSystem
             }
         }
 
-        character.LastUpdated = DateTimeOffset.Now;
+        character.LastUpdated = DateTimeOffset.UtcNow;
     }
 
     public bool TryBuildPropertyValueChoiceComponent(string messageId, string propertyName, CharacterSheet sheet,

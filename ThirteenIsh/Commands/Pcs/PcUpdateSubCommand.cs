@@ -49,7 +49,7 @@ internal sealed class PcUpdateSubCommand() : SubCommandBase("update", "Syncs the
             if (character is null)
                 return new MessageEditResult<EditResult>(null, $"Character {adventurer.Name} not found.");
 
-            adventurer.LastUpdated = DateTimeOffset.Now;
+            adventurer.LastUpdated = DateTimeOffset.UtcNow;
             adventurer.Sheet = character.Sheet;
             return new MessageEditResult<EditResult>(new EditResult(adventure, adventurer));
         }

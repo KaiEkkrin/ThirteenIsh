@@ -55,7 +55,7 @@ internal sealed class Worker(
             while (!stoppingToken.IsCancellationRequested)
             {
                 // Wake up every now and again to run timer tasks
-                WorkerRunningMessage(logger, DateTimeOffset.Now, null);
+                WorkerRunningMessage(logger, DateTimeOffset.UtcNow, null);
                 await Task.Delay(TimerInterval, stoppingToken);
 
                 await using var scope = serviceProvider.CreateAsyncScope();

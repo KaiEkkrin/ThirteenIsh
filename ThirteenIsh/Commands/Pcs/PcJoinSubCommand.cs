@@ -69,7 +69,7 @@ internal sealed class PcJoinSubCommand() : SubCommandBase("join", "Joins the cur
                 Adventurer adventurer = new()
                 {
                     Name = character.Name,
-                    LastUpdated = DateTimeOffset.Now,
+                    LastUpdated = DateTimeOffset.UtcNow,
                     Sheet = character.Sheet,
                     UserId = character.UserId
                 };

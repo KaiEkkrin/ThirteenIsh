@@ -137,7 +137,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         MonsterCombatant combatant = new()
         {
             Alias = nameAliasCollection.Add(character.Name, 5, true),
-            LastUpdated = DateTimeOffset.Now,
+            LastUpdated = DateTimeOffset.UtcNow,
             Name = character.Name,
             Sheet = character.Sheet,
             UserId = userId

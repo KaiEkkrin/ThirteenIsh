@@ -97,7 +97,7 @@ public class DataContext : DbContext
         {
             if (e.Entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
             {
-                lastEditedEntity.LastEdited = DateTimeOffset.Now;
+                lastEditedEntity.LastEdited = DateTimeOffset.UtcNow;
             }
         }
     }

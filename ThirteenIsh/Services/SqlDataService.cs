@@ -175,7 +175,7 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
         {
             var stopwatch = Stopwatch.StartNew();
 
-            var expiredTime = DateTimeOffset.Now - MessageBase.Timeout;
+            var expiredTime = DateTimeOffset.UtcNow - MessageBase.Timeout;
             var count = await _context.Messages.Where(m => m.Timestamp < expiredTime).ExecuteDeleteAsync(cancellationToken);
 
             stopwatch.Stop();
