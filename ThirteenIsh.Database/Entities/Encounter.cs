@@ -120,8 +120,13 @@ public class Encounter : EntityBase
     }
 }
 
-public class EncounterVariables : CounterSheet
+public class EncounterVariables : ICounterSheet
 {
+    /// <summary>
+    /// The encounter variable values.
+    /// </summary>
+    public IList<PropertyValue<int>> Counters { get; set; } = [];
+
     /// <summary>
     /// The aliases in the initiative in the order in which turns are taken.
     /// </summary>

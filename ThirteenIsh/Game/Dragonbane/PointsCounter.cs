@@ -10,7 +10,7 @@ internal class PointsCounter(string name, string alias, GameAbilityCounter abili
 {
     public override bool CanStore => false;
 
-    public override int? GetValue(CounterSheet sheet)
+    public override int? GetValue(ICounterSheet sheet)
     {
         return abilityCounter.GetValue(sheet);
     }

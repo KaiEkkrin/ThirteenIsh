@@ -8,7 +8,7 @@ internal class AbilityBonusCounter(GameCounter levelCounter, GameCounter scoreCo
 {
     public override bool CanStore => false;
 
-    public override int? GetValue(CounterSheet sheet)
+    public override int? GetValue(ICounterSheet sheet)
     {
         var score = scoreCounter.GetValue(sheet);
         if (!score.HasValue) return null;

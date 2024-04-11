@@ -1,69 +1,30 @@
-﻿using System.Diagnostics.CodeAnalysis;
-
-namespace ThirteenIsh.Database.Entities;
+﻿namespace ThirteenIsh.Database.Entities;
 
 /// <summary>
 /// Defines an object containing counters, e.g. the sheet or variables.
-/// TODO This is breaking EF Core, which doesn't support inheritance of owned types.
-/// I need to break the class hierarchy (have CharacterSheet and EncounterVariables
-/// no longer be derived classes) while still sharing code.
-/// Try a few things.
+/// Must be an interface -- EF Core doesn't support inheritance of owned types (JSON)
 /// </summary>
-public class CounterSheet
+public interface ICounterSheet
 {
-    public virtual IList<CounterValue> Counters { get; set; } = [];
+    public IList<PropertyValue<int>> Counters { get; set; }
+}
 
-    public void Clear()
-    {
-        Counters.Clear();
-    }
-
-    public int? GetCounter(string name)
-    {
-        return Counters.FirstOrDefault(c => c.Name == name)?.Value;
-    }
-
-    public void SetCounter(string name, int value)
-    {
-        for (var i = 0; i < Counters.Count; ++i)
-        {
-            if (Counters[i].Name != name) continue;
-
-            Counters[i] = Counters[i] with { Value = value };
-            return;
-        }
-
-        Counters.Add(new CounterValue(name, value));
-    }
+/// <summary>
+/// A concrete sheet of counters.
+/// </summary>
+public class CounterSheet : ICounterSheet
+{
+    public IList<PropertyValue<int>> Counters { get; set; } = [];
 }
 
 /// <summary>
 /// Defines a character sheet.
 /// </summary>
-public class CharacterSheet : CounterSheet
+public class CharacterSheet : ICounterSheet
 {
-    public virtual IList<PropertyValue> Properties { get; set; } = [];
-
-    public string? GetProperty(string name)
-    {
-        return Properties.FirstOrDefault(c => c.Name == name)?.Value;
-    }
-
-    public void SetProperty(string name, string value)
-    {
-        for (var i = 0; i < Properties.Count; ++i)
-        {
-            if (Properties[i].Name != name) continue;
-
-            Properties[i] = Properties[i] with { Value = value };
-            return;
-        }
-
-        Properties.Add(new PropertyValue(name, value));
-    }
+    public virtual IList<PropertyValue<int>> Counters { get; set; } = [];
+    public virtual IList<PropertyValue<string>> Properties { get; set; } = [];
 }
 
-public record PropertyValue(string Name, string Value);
-
-public record CounterValue(string Name, int Value);
+public record PropertyValue<TValue>(string Name, TValue Value);
 

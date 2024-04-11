@@ -16,5 +16,5 @@ public interface ITrackedCharacter
 
     public ulong UserId { get; }
 
-    public CounterSheet Variables { get; }
+    public ICounterSheet Variables { get; }
 }

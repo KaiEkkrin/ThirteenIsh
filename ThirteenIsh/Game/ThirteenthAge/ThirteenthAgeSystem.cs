@@ -161,7 +161,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
 
     public override void EncounterBegin(Encounter encounter)
     {
-        encounter.Variables.SetCounter(EscalationDie, 0);
+        encounter.Variables.Counters.SetValue(EscalationDie, 0);
     }
 
     public override GameCounterRollResult? EncounterJoin(
@@ -216,7 +216,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
     {
         base.AddEncounterHeadingRow(data, encounter);
         data.Add(new TableRow(new TableCell("Escalation Die"), TableCell.Integer(
-            encounter.Variables.GetCounter(EscalationDie) ?? 0)));
+            encounter.Variables.Counters.TryGetValue(EscalationDie, out var escalationDieValue) ? escalationDieValue : 0)));
     }
 
     protected override async Task BuildEncounterInitiativeTableRowsAsync(
@@ -239,8 +239,9 @@ internal sealed class ThirteenthAgeSystem : GameSystem
     {
         // When we roll over to the next round, increase the escalation die, to a maximum of 6.
         // TODO Add commands to explicitly set and modify an encounter variable?
-        encounter.Variables.SetCounter(EscalationDie,
-            Math.Min(6, (encounter.Variables.GetCounter(EscalationDie) ?? 0) + 1));
+        encounter.Variables.Counters.SetValue(EscalationDie,
+            Math.Min(6, (encounter.Variables.Counters.TryGetValue(EscalationDie, out var escalationDieValue)
+                ? escalationDieValue : 0) + 1));
 
         return encounter.GetCurrentCombatant();
     }

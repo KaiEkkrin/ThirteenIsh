@@ -1,6 +1,7 @@
 ﻿using Discord;
 using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
+using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 
 namespace ThirteenIsh.Game;
@@ -222,13 +223,13 @@ internal class CharacterSystem
     public void ResetVariables(ITrackedCharacter character)
     {
         // TODO support custom counters (I'll need to declare information about those somewhere)
-        character.Variables.Clear();
+        character.Variables.Counters.Clear();
         foreach (var group in VariableCounterGroups)
         {
             foreach (var counter in group.Properties)
             {
                 if (counter.GetValue(character.Sheet) is { } counterValue)
-                    character.Variables.SetCounter(counter.Name, counterValue);
+                    character.Variables.Counters.SetValue(counter.Name, counterValue);
             }
         }
 

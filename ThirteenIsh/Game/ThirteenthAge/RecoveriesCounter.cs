@@ -6,7 +6,7 @@ internal class RecoveriesCounter() : GameCounter("Recoveries", options: GameCoun
 {
     public override bool CanStore => false;
 
-    public override int? GetValue(CounterSheet sheet)
+    public override int? GetValue(ICounterSheet sheet)
     {
         // TODO implement a customised bonus for this
         return 8;

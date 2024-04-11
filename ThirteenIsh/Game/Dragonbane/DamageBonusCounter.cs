@@ -11,7 +11,7 @@ internal class DamageBonusCounter(string name, GameAbilityCounter abilityCounter
 {
     public override bool CanStore => false;
 
-    public override int? GetValue(CounterSheet sheet)
+    public override int? GetValue(ICounterSheet sheet)
     {
         return abilityCounter.GetValue(sheet) switch
         {

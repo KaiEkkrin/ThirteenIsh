@@ -27,7 +27,7 @@ internal class SkillLevelCounter(GameAbilityCounter attribute, GameCounter skill
 
     public override bool CanStore => false;
 
-    public override int? GetValue(CounterSheet sheet)
+    public override int? GetValue(ICounterSheet sheet)
     {
         var attributeValue = attribute.GetValue(sheet);
         int? baseChance = attributeValue switch

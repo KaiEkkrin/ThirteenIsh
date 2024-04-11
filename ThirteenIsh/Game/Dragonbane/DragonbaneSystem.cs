@@ -266,7 +266,7 @@ internal sealed class DragonbaneSystem : GameSystem
 
     private static int? DrawInitiativeDeck(Encounter encounter, IRandomWrapper random, out string working)
     {
-        var deck = encounter.Variables.GetCounter(InitiativeDeck) ?? 0;
+        var deck = encounter.Variables.Counters.TryGetValue(InitiativeDeck, out var deckValue) ? deckValue : 0;
         List<int> cards = [];
         for (var i = 0; i < 10; ++i)
         {
@@ -283,12 +283,12 @@ internal sealed class DragonbaneSystem : GameSystem
         var card = cards[cardIndex];
         working = "🎲 " + string.Join(", ", cards.Select((c, i) => i == cardIndex ? $"{c}" : $"~~{c}~~"));
 
-        encounter.Variables.SetCounter(InitiativeDeck, deck & ~(1 << cardIndex));
+        encounter.Variables.Counters.SetValue(InitiativeDeck, deck & ~(1 << cardIndex));
         return card;
     }
 
     private static void ResetInitiativeDeck(Encounter encounter)
     {
-        encounter.Variables.SetCounter(InitiativeDeck, (1 << 10) - 1);
+        encounter.Variables.Counters.SetValue(InitiativeDeck, (1 << 10) - 1);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Discord;
 using System.Diagnostics.CodeAnalysis;
+using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Parsing;
 
@@ -108,7 +109,7 @@ internal class GameCounter(string name, string? alias = null,
     /// Gets the maximum value of this counter's variable
     /// (only relevant if it has an associated variable.)
     /// </summary>
-    public virtual int? GetMaxVariableValue(CounterSheet sheet)
+    public virtual int? GetMaxVariableValue(ICounterSheet sheet)
     {
         return GetValue(sheet);
     }
@@ -117,7 +118,7 @@ internal class GameCounter(string name, string? alias = null,
     /// Gets the starting value of this counter's variable from the character sheet
     /// (only relevant if it has an associated variable.)
     /// </summary>
-    public virtual int? GetStartingValue(CounterSheet sheet)
+    public virtual int? GetStartingValue(ICounterSheet sheet)
     {
         return GetValue(sheet);
     }
@@ -125,9 +126,9 @@ internal class GameCounter(string name, string? alias = null,
     /// <summary>
     /// Gets this counter's value from the sheet.
     /// </summary>
-    public virtual int? GetValue(CounterSheet sheet)
+    public virtual int? GetValue(ICounterSheet sheet)
     {
-        return sheet.GetCounter(Name);
+        return sheet.Counters.TryGetValue(Name, out var value) ? value : null;
     }
 
     /// <summary>
@@ -172,7 +173,7 @@ internal class GameCounter(string name, string? alias = null,
             newValue = Math.Max(minValue, newValue);
         }
 
-        adventurer.Variables.SetCounter(Name, newValue);
+        adventurer.Variables.Counters.SetValue(Name, newValue);
     }
 
     public override bool TryEditCharacterProperty(string newValue, CharacterSheet sheet,
@@ -201,7 +202,7 @@ internal class GameCounter(string name, string? alias = null,
             }
         }
 
-        sheet.SetCounter(Name, newValueInt);
+        sheet.Counters.SetValue(Name, newValueInt);
         errorMessage = null;
         return true;
     }
@@ -215,7 +216,7 @@ internal class GameCounter(string name, string? alias = null,
             return false;
         }
 
-        adventurer.Variables.SetCounter(Name, newValue);
+        adventurer.Variables.Counters.SetValue(Name, newValue);
         errorMessage = null;
         return true;
     }

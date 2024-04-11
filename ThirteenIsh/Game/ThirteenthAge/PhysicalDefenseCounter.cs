@@ -12,7 +12,7 @@ internal class PhysicalDefenseCounter(
 {
     public override bool CanStore => false;
 
-    public override int? GetValue(CounterSheet sheet)
+    public override int? GetValue(ICounterSheet sheet)
     {
         if (sheet is not CharacterSheet characterSheet) return null;
         int? basePD = classProperty.GetValue(characterSheet) switch

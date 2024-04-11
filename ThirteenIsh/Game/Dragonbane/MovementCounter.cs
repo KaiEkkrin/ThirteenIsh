@@ -7,7 +7,7 @@ internal class MovementCounter(GameProperty kinProperty, GameAbilityCounter agil
 {
     public override bool CanStore => false;
 
-    public override int? GetValue(CounterSheet sheet)
+    public override int? GetValue(ICounterSheet sheet)
     {
         if (sheet is not CharacterSheet characterSheet) return null;
         int? baseMovement = kinProperty.GetValue(characterSheet) switch
