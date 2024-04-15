@@ -1,4 +1,5 @@
 ﻿using Discord.WebSocket;
+using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Game;
 using ThirteenIsh.Services;
@@ -36,7 +37,7 @@ internal sealed class PcUpdateSubCommand() : SubCommandBase("update", "Syncs the
     private sealed class EditOperation(SqlDataService dataService, SocketSlashCommand command)
         : EditOperation<ResultOrMessage<EditResult>, Adventure, MessageEditResult<EditResult>>
     {
-        public override async Task<MessageEditResult<EditResult>> DoEditAsync(Adventure adventure,
+        public override async Task<MessageEditResult<EditResult>> DoEditAsync(DataContext context, Adventure adventure,
             CancellationToken cancellationToken)
         {
             var adventurer = await dataService.GetAdventurerAsync(adventure, command.User.Id, cancellationToken);

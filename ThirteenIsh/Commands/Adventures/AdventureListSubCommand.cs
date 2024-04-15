@@ -14,7 +14,7 @@ internal sealed class AdventureListSubCommand() : SubCommandBase("list", "Lists 
         if (command.GuildId is not { } guildId) return;
 
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var guild = await dataService.EnsureGuildAsync(guildId, cancellationToken);
+        var guild = await dataService.GetGuildAsync(guildId, cancellationToken);
 
         EmbedBuilder embedBuilder = new();
         embedBuilder.WithTitle("Adventures");

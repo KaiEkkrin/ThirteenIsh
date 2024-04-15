@@ -1,4 +1,5 @@
 ﻿using Discord.WebSocket;
+using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Game;
 using ThirteenIsh.Services;
@@ -8,8 +9,8 @@ namespace ThirteenIsh.EditOperations;
 internal abstract class EditVariableOperationBase(SqlDataService dataService, SocketInteraction interaction)
     : EditOperation<ResultOrMessage<EditVariableResult>, Adventure, MessageEditResult<EditVariableResult>>
 {
-    public sealed override async Task<MessageEditResult<EditVariableResult>> DoEditAsync(Adventure adventure,
-        CancellationToken cancellationToken = default)
+    public sealed override async Task<MessageEditResult<EditVariableResult>> DoEditAsync(DataContext context,
+        Adventure adventure, CancellationToken cancellationToken = default)
     {
         var adventurer = await dataService.GetAdventurerAsync(adventure, interaction.User.Id, cancellationToken);
         if (adventurer is null)

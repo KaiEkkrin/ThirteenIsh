@@ -1,4 +1,5 @@
 ﻿using Discord.WebSocket;
+using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Results;
 
@@ -59,7 +60,7 @@ internal sealed class PinnedMessageService(
         string encounterMessage)
         : EditOperation<Encounter, EncounterResult, EditResult<Encounter>>()
     {
-        public override async Task<EditResult<Encounter>> DoEditAsync(EncounterResult encounterResult,
+        public override async Task<EditResult<Encounter>> DoEditAsync(DataContext context, EncounterResult encounterResult,
             CancellationToken cancellationToken)
         {
             var (adventure, encounter) = encounterResult;

@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
-using Polly.Retry;
 using System.Diagnostics;
 using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
@@ -37,14 +36,12 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
 
     // Retry policy
     private static readonly IEnumerable<TimeSpan> Delays = Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromMilliseconds(5), 6);
-    private readonly AsyncRetryPolicy _retryPolicy = Policy.Handle<WriteConflictException>().WaitAndRetryAsync(Delays);
 
     public async Task<ResultOrMessage<AdventureResult>> AddAdventureAsync(ulong guildId, string name, string description,
         string gameSystem, CancellationToken cancellationToken = default)
     {
-        // TODO Find a sensible way to deal with optimistic concurrency using the retry policy.
         // TODO find out what error to handle when the adventure already exists.
-        var guild = await EnsureGuildAsync(guildId, cancellationToken);
+        var guild = await GetGuildAsync(guildId, cancellationToken);
         guild.CurrentAdventureName = name;
         Adventure adventure = new()
         {
@@ -59,14 +56,11 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
         return new ResultOrMessage<AdventureResult>(new AdventureResult(guild, adventure));
     }
 
-    // TODO instead, only reveal this when a transaction object is opened
-    public DataContext DataContext => _context;
-
     public async Task<ResultOrMessage<EncounterResult>> AddEncounterAsync(
         ulong guildId, ulong channelId, CancellationToken cancellationToken = default)
     {
-        // TODO Find a sensible way to deal with optimistic concurrency using the retry policy.
-        var guild = await EnsureGuildAsync(guildId, cancellationToken);
+        // TODO find out what error to handle when the encounter already exists due to conflict...
+        var guild = await GetGuildAsync(guildId, cancellationToken);
         var encounter = await GetEncounterAsync(guild, channelId, cancellationToken);
         if (encounter is not null) return new ResultOrMessage<EncounterResult>(
             null, "There is already an active encounter in this channel.");
@@ -114,8 +108,8 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
     public async Task<Adventure?> DeleteAdventureAsync(ulong guildId, string name,
         CancellationToken cancellationToken = default)
     {
-        // TODO Find a sensible way to deal with optimistic concurrency using the retry policy.
-        var guild = await EnsureGuildAsync(guildId, cancellationToken);
+        // TODO Find a sensible way to deal with the adventure being concurrently deleted.
+        var guild = await GetGuildAsync(guildId, cancellationToken);
         var adventure = await GetAdventureAsync(guild, name, cancellationToken);
         if (adventure == null) return null;
 
@@ -129,7 +123,7 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
         CancellationToken cancellationToken = default)
     {
         // TODO Find a sensible way to deal with optimistic concurrency using the retry policy.
-        var guild = await EnsureGuildAsync(guildId, cancellationToken);
+        var guild = await GetGuildAsync(guildId, cancellationToken);
         var adventure = await GetAdventureAsync(guild, adventureName, cancellationToken);
         if (adventure == null) return null;
 
@@ -155,7 +149,7 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
     public async Task<Encounter?> DeleteEncounterAsync(ulong guildId, ulong channelId,
         CancellationToken cancellationToken = default)
     {
-        var guild = await EnsureGuildAsync(guildId, cancellationToken);
+        var guild = await GetGuildAsync(guildId, cancellationToken);
         var encounter = await GetEncounterAsync(guild, channelId, cancellationToken);
         if (encounter == null) return null;
 
@@ -187,6 +181,30 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
         }
     }
 
+    /// <summary>
+    /// Call this to write changes to the database, within a retry loop that reloads entities
+    /// and reruns the operation if there is a conflict.
+    /// TODO With this pattern, the operation should always be synchronous -- correct?
+    /// </summary>
+    public async Task<T?> EditAsync<T, TParam, TResult>(
+        EditOperation<T, TParam, TResult> operation,
+        TParam parameter,
+        CancellationToken cancellationToken = default)
+        where TResult : EditResult<T>
+    {
+        var retryPolicy = Policy.Handle<DbUpdateConcurrencyException>()
+            .WaitAndRetryAsync(Delays, (exception, _) => OnRetryAsync(exception, cancellationToken));
+
+        return await retryPolicy.ExecuteAsync(async () =>
+        {
+            var result = await operation.DoEditAsync(_context, parameter, cancellationToken);
+            if (!result.Success) return result.Value;
+
+            await _context.SaveChangesAsync(cancellationToken);
+            return result.Value;
+        });
+    }
+
     public async Task<T?> EditAdventureAsync<T, TResult>(
         ulong guildId, EditOperation<T, Adventure, TResult> operation,
         string? adventureName = null,
@@ -194,17 +212,13 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
         where TResult : EditResult<T>
     {
         // TODO Find a sensible way to deal with optimistic concurrency using the retry policy.
-        var guild = await EnsureGuildAsync(guildId, cancellationToken);
+        var guild = await GetGuildAsync(guildId, cancellationToken);
         adventureName ??= guild.CurrentAdventureName;
 
         var adventure = await GetAdventureAsync(guild, adventureName, cancellationToken);
         if (adventure == null) return operation.CreateError($"Adventure '{adventureName}' not found.").Value;
 
-        var editResult = await operation.DoEditAsync(adventure, cancellationToken);
-        if (!editResult.Success) return editResult.Value;
-
-        await _context.SaveChangesAsync(cancellationToken);
-        return editResult.Value;
+        return await EditAsync(operation, adventure, cancellationToken);
     }
 
     public async Task<T?> EditCharacterAsync<T, TResult>(
@@ -216,11 +230,7 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
         var character = await GetCharacterAsync(name, userId, characterType, cancellationToken);
         if (character == null) return operation.CreateError($"Character '{name}' not found.").Value;
 
-        var editResult = await operation.DoEditAsync(character, cancellationToken);
-        if (!editResult.Success) return editResult.Value;
-
-        await _context.SaveChangesAsync(cancellationToken);
-        return editResult.Value;
+        return await EditAsync(operation, character, cancellationToken);
     }
 
     public async Task<T?> EditEncounterAsync<T, TResult>(
@@ -228,7 +238,7 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
         CancellationToken cancellationToken = default)
         where TResult : EditResult<T>
     {
-        var guild = await EnsureGuildAsync(guildId, cancellationToken);
+        var guild = await GetGuildAsync(guildId, cancellationToken);
         var result = await GetEncounterResultAsync(guild, channelId, cancellationToken);
         if (!string.IsNullOrEmpty(result.Value.ErrorMessage))
             return operation.CreateError(result.Value.ErrorMessage).Value;
@@ -236,11 +246,7 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
         if (result.Value.Value == null)
             throw new InvalidOperationException("GetEncounterResultAsync did not return a value");
 
-        var editResult = await operation.DoEditAsync(result.Value.Value, cancellationToken);
-        if (!editResult.Success) return editResult.Value;
-
-        await _context.SaveChangesAsync(cancellationToken);
-        return editResult.Value;
+        return await EditAsync(operation, result.Value.Value, cancellationToken);
     }
 
     // TODO I should possibly extend this with helpers that fish up current adventurer(s), encounter(s), etc...?
@@ -251,22 +257,15 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
         // TODO Find a sensible way to deal with optimistic concurrency using the retry policy.
         // TODO can I use EditResult as the basis for one method that deals with transactions, refreshing
         // all entities with the database versions and re-attempting the operation on conflict?
-        var guild = await EnsureGuildAsync(guildId, cancellationToken);
+        var guild = await GetGuildAsync(guildId, cancellationToken);
         if (guild == null) return operation.CreateError($"Guild '{guildId}' cannot be created for some reason?").Value;
 
-        var editResult = await operation.DoEditAsync(guild, cancellationToken);
-        if (!editResult.Success) return editResult.Value;
-
-        await _context.SaveChangesAsync(cancellationToken);
-        return editResult.Value;
+        return await EditAsync(operation, guild, cancellationToken);
     }
 
     public async Task<Guild> EnsureGuildAsync(ulong guildId, CancellationToken cancellationToken = default)
     {
         // TODO Find a sensible way to deal with optimistic concurrency using the retry policy.
-        // TODO *2 Stop calling EnsureGuildAsync from within other SqlDataService methods, it's dangerous
-        // because it calls SaveChangesAsync.
-        // Instead just assume the guild row is already present (it should be.)
         var guild = await _context.Guilds.SingleOrDefaultAsync(g => g.GuildId == guildId, cancellationToken);
         if (guild is null)
         {
@@ -367,6 +366,12 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
         return new MessageEditResult<EncounterResult>(new EncounterResult(adventure, encounter));
     }
 
+    public async Task<Guild> GetGuildAsync(ulong guildId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Guilds.SingleOrDefaultAsync(g => g.GuildId == guildId, cancellationToken)
+            ?? throw new InvalidOperationException($"No guild record found for {guildId}");
+    }
+
     public Task<MessageBase?> GetMessageAsync(long id, CancellationToken cancellationToken = default)
     {
         return _context.Messages.SingleOrDefaultAsync(m => m.Id == id, cancellationToken);
@@ -390,9 +395,22 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
     public async Task UpdateGuildCommandVersionAsync(Guild guild, int commandVersion,
         CancellationToken cancellationToken = default)
     {
-        // TODO Find a sensible way to deal with optimistic concurrency using the retry policy.
+        // We really shouldn't encounter a concurrent modification of this one
         guild.CommandVersion = commandVersion;
         await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task OnRetryAsync(Exception exception, CancellationToken cancellationToken = default)
+    {
+        if (exception is not DbUpdateConcurrencyException updateException)
+            throw new ArgumentException($"Unexpected exception type to OnRetryAsync : {exception.GetType()}", exception);
+
+        // Reload all affected entries from database. The change should be retried
+        foreach (var entry in updateException.Entries)
+        {
+            await entry.ReloadAsync(cancellationToken);
+            if (entry.State == EntityState.Detached) throw exception; // can't handle this one for now
+        }
     }
 }
 

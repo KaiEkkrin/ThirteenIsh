@@ -1,7 +1,11 @@
-﻿namespace ThirteenIsh;
+﻿using ThirteenIsh.Database;
+
+namespace ThirteenIsh;
 
 /// <summary>
 /// A functor for editing data within a retry loop.
+/// TODO make all of these synchronous, move all of the entity fetches outside of the operation loop?
+/// Seems to be the right approach...
 /// </summary>
 public abstract class EditOperation<T, TParam, TResult> where TResult : EditResult<T>
 {
@@ -16,17 +20,17 @@ public abstract class EditOperation<T, TParam, TResult> where TResult : EditResu
     /// <summary>
     /// Does the operation.
     /// </summary>
-    public abstract Task<TResult> DoEditAsync(TParam param, CancellationToken cancellationToken);
+    public abstract Task<TResult> DoEditAsync(DataContext context, TParam param, CancellationToken cancellationToken);
 }
 
 public abstract class SyncEditOperation<T, TParam, TResult> : EditOperation<T, TParam, TResult>
     where TResult : EditResult<T>
 {
-    public abstract TResult DoEdit(TParam param);
+    public abstract TResult DoEdit(DataContext context, TParam param);
 
-    public sealed override Task<TResult> DoEditAsync(TParam param, CancellationToken cancellationToken)
+    public sealed override Task<TResult> DoEditAsync(DataContext context, TParam param, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return Task.FromResult(DoEdit(param));
+        return Task.FromResult(DoEdit(context, param));
     }
 }

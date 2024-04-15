@@ -71,7 +71,7 @@ internal sealed class PcCombatAttackCommand()
         }
 
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var guild = await dataService.EnsureGuildAsync(guildId, cancellationToken);
+        var guild = await dataService.GetGuildAsync(guildId, cancellationToken);
         var encounterResult = await dataService.GetEncounterResultAsync(guild, channelId, cancellationToken);
         if (!string.IsNullOrEmpty(encounterResult.Value.ErrorMessage))
         {

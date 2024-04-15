@@ -19,7 +19,7 @@ internal sealed class PcGetSubCommand() : SubCommandBase("get", "Shows your play
         if (command.GuildId is not { } guildId) return;
 
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var guild = await dataService.EnsureGuildAsync(guildId, cancellationToken);
+        var guild = await dataService.GetGuildAsync(guildId, cancellationToken);
         if (await dataService.GetAdventureAsync(guild, null, cancellationToken) is not { } adventure ||
             await dataService.GetAdventurerAsync(adventure, command.User.Id, cancellationToken) is not { } adventurer)
         {

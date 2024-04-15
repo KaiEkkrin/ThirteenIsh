@@ -13,7 +13,7 @@ internal sealed class PcResetSubCommand() : SubCommandBase("reset", "Resets the 
         if (command.GuildId is not { } guildId) return;
 
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var guild = await dataService.EnsureGuildAsync(guildId, cancellationToken);
+        var guild = await dataService.GetGuildAsync(guildId, cancellationToken);
         var adventure = await dataService.GetAdventureAsync(guild, null, cancellationToken);
         if (adventure is null)
         {

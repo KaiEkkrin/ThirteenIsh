@@ -1,5 +1,6 @@
 ﻿using Discord.WebSocket;
 using ThirteenIsh.Commands;
+using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Database.Entities.Messages;
 using ThirteenIsh.Game;
@@ -37,7 +38,7 @@ internal sealed class ResetAdventureMessageHandler(SqlDataService dataService) :
     private sealed class EditOperation(SqlDataService dataService, string adventureName, ulong userId)
         : EditOperation<ResultOrMessage<EditResult>, Adventure, MessageEditResult<EditResult>>
     {
-        public override async Task<MessageEditResult<EditResult>> DoEditAsync(Adventure adventure,
+        public override async Task<MessageEditResult<EditResult>> DoEditAsync(DataContext context, Adventure adventure,
             CancellationToken cancellationToken = default)
         {
             var adventurer = await dataService.GetAdventurerAsync(adventure, userId, cancellationToken);

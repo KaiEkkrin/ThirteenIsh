@@ -13,7 +13,7 @@ internal sealed class AdventureCombatEndCommand() : SubCommandBase("end", "Ends 
         if (command is not { ChannelId: { } channelId, GuildId: { } guildId }) return;
 
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var guild = await dataService.EnsureGuildAsync(guildId, cancellationToken);
+        var guild = await dataService.GetGuildAsync(guildId, cancellationToken);
         var encounter = await dataService.GetEncounterAsync(guild, channelId, cancellationToken);
         if (encounter == null)
         {

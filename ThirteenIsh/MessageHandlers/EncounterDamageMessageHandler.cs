@@ -12,7 +12,7 @@ internal sealed class EncounterDamageMessageHandler(SqlDataService dataService) 
     protected override async Task<bool> HandleInternalAsync(SocketMessageComponent component, string controlId,
         EncounterDamageMessage message, CancellationToken cancellationToken = default)
     {
-        var guild = await dataService.EnsureGuildAsync(message.GuildId, cancellationToken);
+        var guild = await dataService.GetGuildAsync(message.GuildId, cancellationToken);
         var encounter = await dataService.GetEncounterAsync(guild, message.ChannelId, cancellationToken);
         if (encounter == null)
         {

@@ -43,7 +43,7 @@ internal sealed class PcRollSubCommand() : SubCommandBase("roll", "Rolls against
         if (!CommandUtil.TryGetOption<int>(option, "rerolls", out var rerolls)) rerolls = 0;
 
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var guild = await dataService.EnsureGuildAsync(guildId, cancellationToken);
+        var guild = await dataService.GetGuildAsync(guildId, cancellationToken);
         if (string.IsNullOrEmpty(guild.CurrentAdventureName) ||
             await dataService.GetAdventureAsync(guild, guild.CurrentAdventureName, cancellationToken) is not { } adventure ||
             await dataService.GetAdventurerAsync(adventure, command.User.Id, cancellationToken) is not { } adventurer)

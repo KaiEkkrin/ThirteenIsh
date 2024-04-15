@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Game;
 using ThirteenIsh.Services;
@@ -55,7 +56,7 @@ internal sealed class PcJoinSubCommand() : SubCommandBase("join", "Joins the cur
     private sealed class EditOperation(SqlDataService dataService, Database.Entities.Character character)
         : EditOperation<ResultOrMessage<Adventure>, Adventure, MessageEditResult<Adventure>>
     {
-        public override async Task<MessageEditResult<Adventure>> DoEditAsync(Adventure adventure,
+        public override async Task<MessageEditResult<Adventure>> DoEditAsync(DataContext context, Adventure adventure,
             CancellationToken cancellationToken = default)
         {
             if (adventure.GameSystem != character.GameSystem)

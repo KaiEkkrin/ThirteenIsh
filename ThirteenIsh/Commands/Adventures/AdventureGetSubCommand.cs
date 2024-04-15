@@ -23,7 +23,7 @@ internal sealed class AdventureGetSubCommand() : SubCommandBase("get", "Gets the
         }
 
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var guild = await dataService.EnsureGuildAsync(guildId, cancellationToken);
+        var guild = await dataService.GetGuildAsync(guildId, cancellationToken);
         var adventure = await dataService.GetAdventureAsync(guild, adventureName, cancellationToken);
         if (adventure == null)
         {

@@ -25,7 +25,7 @@ internal sealed class AdventureRemoveSubCommand() : SubCommandBase("remove", "De
         }
 
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var guild = await dataService.EnsureGuildAsync(guildId, cancellationToken);
+        var guild = await dataService.GetGuildAsync(guildId, cancellationToken);
         var adventure = await dataService.GetAdventureAsync(guild, name, cancellationToken);
         if (adventure is null)
         {

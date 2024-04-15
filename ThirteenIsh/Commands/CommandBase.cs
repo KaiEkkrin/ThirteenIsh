@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using Microsoft.EntityFrameworkCore;
 
 namespace ThirteenIsh.Commands;
 
@@ -52,8 +53,9 @@ internal abstract class CommandBase(string name, string description, params Comm
         {
             await subOption.HandleAsync(command, option, serviceProvider, cancellationToken);
         }
-        catch (WriteConflictException)
+        catch (DbUpdateConcurrencyException)
         {
+            // If we got here, we ran out of retries
             await command.RespondAsync("These data were concurrently modified. Please try again.",
                 ephemeral: true);
         }

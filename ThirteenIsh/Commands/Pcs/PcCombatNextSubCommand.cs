@@ -2,6 +2,7 @@
 using Discord.WebSocket;
 using System.Globalization;
 using System.Text;
+using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Game;
 using ThirteenIsh.Results;
@@ -67,7 +68,7 @@ internal sealed class PcCombatNextSubCommand() : SubCommandBase("next", "Moves o
     private sealed class EditOperation(IRandomWrapper random)
         : SyncEditOperation<ResultOrMessage<EditOutput>, EncounterResult, MessageEditResult<EditOutput>>
     {
-        public override MessageEditResult<EditOutput> DoEdit(EncounterResult result)
+        public override MessageEditResult<EditOutput> DoEdit(DataContext context, EncounterResult result)
         {
             var (adventure, encounter) = result;
             var previousCombatantAlias = encounter.TurnAlias;

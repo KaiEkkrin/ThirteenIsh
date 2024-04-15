@@ -1,4 +1,5 @@
-﻿using ThirteenIsh.Database.Entities;
+﻿using ThirteenIsh.Database;
+using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Game;
 
 namespace ThirteenIsh.EditOperations;
@@ -11,7 +12,7 @@ internal sealed class SetCharacterPropertyOperation(GamePropertyBase property, s
         return new MessageEditResult<Character>(null, message);
     }
 
-    public override MessageEditResult<Character> DoEdit(Character character)
+    public override MessageEditResult<Character> DoEdit(DataContext context, Character character)
     {
         if (!property.TryEditCharacterProperty(newValue, character.Sheet, out var errorMessage))
         {

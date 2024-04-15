@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Results;
 using ThirteenIsh.Services;
@@ -44,7 +45,7 @@ internal sealed class AdventureSwitchSubCommand() : SubCommandBase("switch", "Se
     private sealed class EditOperation(SqlDataService dataService, string name)
         : EditOperation<ResultOrMessage<AdventureResult>, Guild, MessageEditResult<AdventureResult>>
     {
-        public override async Task<MessageEditResult<AdventureResult>> DoEditAsync(Guild guild,
+        public override async Task<MessageEditResult<AdventureResult>> DoEditAsync(DataContext context, Guild guild,
             CancellationToken cancellationToken = default)
         {
             var adventure = await dataService.GetAdventureAsync(guild, name, cancellationToken);

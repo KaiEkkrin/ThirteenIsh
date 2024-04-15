@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Database.Entities.Combatants;
 using ThirteenIsh.Game;
@@ -56,8 +57,8 @@ internal sealed class PcCombatJoinSubCommand() : SubCommandBase("join", "Joins t
     private sealed class EditOperation(SqlDataService dataService, ulong userId, IRandomWrapper random, int rerolls)
         : EditOperation<ResultOrMessage<EditOutput>, EncounterResult, MessageEditResult<EditOutput>>
     {
-        public override async Task<MessageEditResult<EditOutput>> DoEditAsync(EncounterResult encounterResult,
-            CancellationToken cancellationToken = default)
+        public override async Task<MessageEditResult<EditOutput>> DoEditAsync(DataContext context,
+            EncounterResult encounterResult, CancellationToken cancellationToken = default)
         {
             var (adventure, encounter) = encounterResult;
             if (encounter.Combatants.OfType<AdventurerCombatant>().Any(o => o.UserId == userId))
@@ -73,7 +74,7 @@ internal sealed class PcCombatJoinSubCommand() : SubCommandBase("join", "Joins t
             var gameSystem = GameSystem.Get(adventure.GameSystem);
             NameAliasCollection nameAliasCollection = new(encounter);
 
-            var result = gameSystem.EncounterJoin(dataService.DataContext, adventurer, encounter, nameAliasCollection,
+            var result = gameSystem.EncounterJoin(context, adventurer, encounter, nameAliasCollection,
                 random, rerolls, userId);
 
             if (!result.HasValue) return new MessageEditResult<EditOutput>(

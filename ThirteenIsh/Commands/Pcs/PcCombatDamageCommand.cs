@@ -77,7 +77,7 @@ internal sealed class PcCombatDamageCommand()
         }
 
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var guild = await dataService.EnsureGuildAsync(guildId, cancellationToken);
+        var guild = await dataService.GetGuildAsync(guildId, cancellationToken);
 
         // TODO This code should be able to change to handle the current monster, too (?)
         // Should I be able to share this with PcCombatAttackCommand (generalise to making attacks with
