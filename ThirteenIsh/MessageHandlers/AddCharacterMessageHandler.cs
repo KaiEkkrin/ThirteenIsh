@@ -22,7 +22,7 @@ internal sealed class AddCharacterMessageHandler(SqlDataService dataService) : M
         }
 
         var character = await dataService.GetCharacterAsync(message.Name, component.User.Id, message.CharacterType,
-            cancellationToken);
+            cancellationToken: cancellationToken);
         if (character is null)
         {
             await component.RespondAsync(

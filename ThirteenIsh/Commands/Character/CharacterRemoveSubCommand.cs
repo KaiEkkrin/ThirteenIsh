@@ -28,7 +28,8 @@ internal sealed class CharacterRemoveSubCommand(CharacterType characterType)
         }
 
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var character = await dataService.GetCharacterAsync(name, command.User.Id, characterType, cancellationToken);
+        var character = await dataService.GetCharacterAsync(name, command.User.Id, characterType, 
+            cancellationToken: cancellationToken);
         if (character == null)
         {
             await command.RespondAsync(

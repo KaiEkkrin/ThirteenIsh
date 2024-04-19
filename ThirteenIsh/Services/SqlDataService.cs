@@ -138,7 +138,7 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
     public async Task<Character?> DeleteCharacterAsync(string name, ulong userId, CharacterType characterType,
         CancellationToken cancellationToken = default)
     {
-        var character = await GetCharacterAsync(name, userId, characterType, cancellationToken);
+        var character = await GetCharacterAsync(name, userId, characterType, cancellationToken: cancellationToken);
         if (character is null) return null;
 
         _context.Characters.Remove(character);
@@ -227,7 +227,7 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
         where TResult : EditResult<T>
     {
         // TODO Find a sensible way to deal with optimistic concurrency using the retry policy.
-        var character = await GetCharacterAsync(name, userId, characterType, cancellationToken);
+        var character = await GetCharacterAsync(name, userId, characterType, cancellationToken: cancellationToken);
         if (character == null) return operation.CreateError($"Character '{name}' not found.").Value;
 
         return await EditAsync(operation, character, cancellationToken);
@@ -317,17 +317,18 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
     }
 
     public async Task<Character?> GetCharacterAsync(string name, ulong userId, CharacterType characterType,
-        CancellationToken cancellationToken = default)
+        bool asTracking = true, CancellationToken cancellationToken = default)
     {
         // Look for an exact match first
         var character = await _context.Characters
+            .AsTracking(asTracking ? QueryTrackingBehavior.TrackAll : QueryTrackingBehavior.NoTracking)
             .SingleOrDefaultAsync(c => c.UserId == userId && c.CharacterType == characterType && c.Name == name,
                 cancellationToken);
 
         if (character != null) return character;
 
         // Only accept an unambiguous match
-        var matchingCharacters = await ListCharactersAsync(name, userId, characterType)
+        var matchingCharacters = await ListCharactersAsync(name, userId, characterType, asTracking)
             .Take(2)
             .ToListAsync(cancellationToken);
 
@@ -378,16 +379,20 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
         return _context.Messages.SingleOrDefaultAsync(m => m.Id == id, cancellationToken);
     }
 
-    public IAsyncEnumerable<Character> ListCharactersAsync(ulong userId, CharacterType characterType)
+    public IAsyncEnumerable<Character> ListCharactersAsync(ulong userId, CharacterType characterType,
+        bool asTracking = true)
     {
         return _context.Characters
+            .AsTracking(asTracking ? QueryTrackingBehavior.TrackAll : QueryTrackingBehavior.NoTracking)
             .Where(c => c.UserId == userId && c.CharacterType == characterType)
             .AsAsyncEnumerable();
     }
 
-    public IAsyncEnumerable<Character> ListCharactersAsync(string name, ulong userId, CharacterType characterType)
+    private IAsyncEnumerable<Character> ListCharactersAsync(string name, ulong userId, CharacterType characterType,
+        bool asTracking)
     {
         return _context.Characters
+            .AsTracking(asTracking ? QueryTrackingBehavior.TrackAll : QueryTrackingBehavior.NoTracking)
             .Where(c => c.UserId == userId && c.CharacterType == characterType &&
                         c.NameUpper.StartsWith(name.ToUpperInvariant()))
             .OrderBy(c => c.Name)

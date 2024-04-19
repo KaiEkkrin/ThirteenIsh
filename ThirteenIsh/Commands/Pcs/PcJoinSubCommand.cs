@@ -27,7 +27,7 @@ internal sealed class PcJoinSubCommand() : SubCommandBase("join", "Joins the cur
 
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var character = await dataService.GetCharacterAsync(characterName, command.User.Id, CharacterType.PlayerCharacter,
-            cancellationToken);
+            false, cancellationToken);
 
         if (character is null)
         {

@@ -44,7 +44,8 @@ internal sealed class CharacterSetSubCommand(CharacterType characterType)
         }
 
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var character = await dataService.GetCharacterAsync(name, command.User.Id, characterType, cancellationToken);
+        var character = await dataService.GetCharacterAsync(name, command.User.Id, characterType, 
+            cancellationToken: cancellationToken);
         if (character is null)
         {
             await command.RespondAsync(

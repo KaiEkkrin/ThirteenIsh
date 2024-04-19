@@ -34,7 +34,8 @@ internal sealed class CombatAddCommand() : SubCommandBase("add", "Adds a monster
         if (!CommandUtil.TryGetOption<int>(option, "rerolls", out var rerolls)) rerolls = 0;
 
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var character = await dataService.GetCharacterAsync(name, command.User.Id, CharacterType.Monster, cancellationToken);
+        var character = await dataService.GetCharacterAsync(name, command.User.Id, CharacterType.Monster, false,
+            cancellationToken);
         if (character is null)
         {
             await command.RespondAsync(
