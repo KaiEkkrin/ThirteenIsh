@@ -136,7 +136,7 @@ internal class GameCounter(string name, string? alias = null,
     /// </summary>
     public virtual int? GetVariableValue(ITrackedCharacter character)
     {
-        return GetValue(character.Variables);
+        return character.GetVariables().Counters.TryGetValue(Name, out var value) ? value : null;
     }
 
     /// <summary>

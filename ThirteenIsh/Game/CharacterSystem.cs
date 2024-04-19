@@ -223,13 +223,14 @@ internal class CharacterSystem
     public void ResetVariables(ITrackedCharacter character)
     {
         // TODO support custom counters (I'll need to declare information about those somewhere)
-        character.Variables.Counters.Clear();
+        var variables = character.GetVariables();
+        variables.Counters.Clear();
         foreach (var group in VariableCounterGroups)
         {
             foreach (var counter in group.Properties)
             {
                 if (counter.GetValue(character.Sheet) is { } counterValue)
-                    character.Variables.Counters.SetValue(counter.Name, counterValue);
+                    variables.Counters.SetValue(counter.Name, counterValue);
             }
         }
 

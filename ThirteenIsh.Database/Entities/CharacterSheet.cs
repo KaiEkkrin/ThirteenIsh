@@ -14,7 +14,7 @@ public interface ICounterSheet
 /// </summary>
 public class CounterSheet : ICounterSheet
 {
-    public IList<PropertyValue<int>> Counters { get; set; } = [];
+    public virtual IList<PropertyValue<int>> Counters { get; set; } = [];
 }
 
 /// <summary>

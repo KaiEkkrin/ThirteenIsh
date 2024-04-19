@@ -39,5 +39,5 @@ public class Adventurer : SearchableNamedEntityBase, ITrackedCharacter
     /// </summary>
     public CounterSheet Variables { get; set; } = new();
 
-    ICounterSheet ITrackedCharacter.Variables => Variables;
+    public ICounterSheet GetVariables() => Variables;
 }
