@@ -25,6 +25,8 @@ internal class AbilityBonusCounter(GameCounter levelCounter, GameCounter scoreCo
         int rerolls,
         ref int? targetValue)
     {
+        // TODO throwing GamePropertyException here currently fails the whole command, instead fix it
+        // so that a suitable error message is returned
         var value = GetValue(character.Sheet);
         if (!value.HasValue) throw new GamePropertyException(Name);
 

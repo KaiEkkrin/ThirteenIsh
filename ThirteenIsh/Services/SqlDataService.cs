@@ -291,6 +291,7 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
         // Only accept an unambiguous match
         var matchingAdventures = await _context.Adventures
             .Where(a => a.GuildId == guild.Id && a.NameUpper.StartsWith(name.ToUpperInvariant()))
+            .OrderBy(a => a.Name)
             .Take(2)
             .ToListAsync(cancellationToken);
 
@@ -389,6 +390,7 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
         return _context.Characters
             .Where(c => c.UserId == userId && c.CharacterType == characterType &&
                         c.NameUpper.StartsWith(name.ToUpperInvariant()))
+            .OrderBy(c => c.Name)
             .AsAsyncEnumerable();
     }
 

@@ -59,7 +59,6 @@ internal static class CommandUtil
         string title,
         params string[] onlyTheseProperties)
     {
-        // TODO new-style character summaries
         EmbedBuilder embedBuilder = new();
         embedBuilder.WithAuthor(command.User);
         embedBuilder.WithTitle(title);

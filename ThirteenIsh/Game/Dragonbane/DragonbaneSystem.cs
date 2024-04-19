@@ -202,6 +202,7 @@ internal sealed class DragonbaneSystem : GameSystem
         AdventurerCombatant newCombatant = new()
         {
             Alias = nameAliasCollection.Add(adventurer.Name, 10, false),
+            Encounter = encounter,
             Initiative = card.Value,
             InitiativeRollWorking = working,
             Name = adventurer.Name,

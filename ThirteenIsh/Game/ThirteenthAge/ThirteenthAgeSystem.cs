@@ -182,6 +182,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         AdventurerCombatant combatant = new()
         {
             Alias = nameAliasCollection.Add(adventurer.Name, 10, false),
+            Encounter = encounter,
             Initiative = initiative.Roll,
             InitiativeRollWorking = initiative.Working,
             Name = adventurer.Name,
