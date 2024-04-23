@@ -149,9 +149,8 @@ internal sealed class PcCombatDamageCommand()
             parseTree = new BinaryOperationParseTree(0, parseTree, counterParseTree, '+');
         }
 
-        // The next bit could take a while so we'll defer our response
-        // TODO tbh, as soon as any command starts doing an async thing that isn't a reply
-        // it should defer
+        // The next bit could take a while (sending messages to potentially many targets)
+        // so we'll defer our response
         await command.DeferAsync();
 
         var random = serviceProvider.GetRequiredService<IRandomWrapper>();
