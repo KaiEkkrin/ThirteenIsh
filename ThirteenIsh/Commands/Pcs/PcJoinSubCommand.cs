@@ -78,7 +78,7 @@ internal sealed class PcJoinSubCommand() : SubCommandBase("join", "Joins the cur
                 var gameSystem = GameSystem.Get(character.GameSystem);
                 var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
                 characterSystem.ResetVariables(adventurer);
-                adventure.Adventurers.Add(adventurer); // TODO will this cause the entity to be added?
+                adventure.Adventurers.Add(adventurer);
                 return new MessageEditResult<Adventure>(adventure);
             }
             else if (currentAdventurer.Name == character.Name)

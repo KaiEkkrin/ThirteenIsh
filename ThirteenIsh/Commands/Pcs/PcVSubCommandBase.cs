@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using System.Data;
 using ThirteenIsh.EditOperations;
 using ThirteenIsh.Parsing;
 using ThirteenIsh.Services;
@@ -46,15 +47,12 @@ internal abstract class PcVSubCommandBase(string name, string description,
             return;
         }
 
-        // TODO move all these database gets into the edit operation?
-        // (I should check for well-accepted patterns of using EF Core with retry on conflict, though. But
-        // I suspect that as a rule, anything I'm going to read that contributes to what I would write, should
-        // be read within the edit operation so it gets retried on conflict?)
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var random = serviceProvider.GetRequiredService<IRandomWrapper>();
-        var editOperation = CreateEditOperation(dataService, command, namePart, parseTree, random);
-        var (result, errorMessage) = await dataService.EditAdventureAsync(
-            guildId, editOperation, null, cancellationToken);
+        var editOperation = CreateEditOperation(namePart, parseTree, random);
+
+        var (result, errorMessage) = await dataService.EditAdventurerAsync(
+            guildId, command.User.Id, editOperation, cancellationToken);
 
         if (errorMessage is not null)
         {
@@ -83,6 +81,6 @@ internal abstract class PcVSubCommandBase(string name, string description,
             });
     }
 
-    protected abstract EditVariableOperationBase CreateEditOperation(SqlDataService dataService, SocketSlashCommand command,
+    protected abstract EditVariableOperationBase CreateEditOperation(
         string counterNamePart, ParseTreeBase parseTree, IRandomWrapper random);
 }

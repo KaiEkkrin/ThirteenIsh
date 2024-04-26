@@ -30,20 +30,19 @@ internal static class CommandUtil
         this DiscordService discordService,
         SqlDataService dataService,
         IDiscordInteraction command,
-        Guild guild,
         Adventure adventure,
         string title)
     {
         EmbedBuilder embedBuilder = new();
         embedBuilder.WithAuthor(command.User);
-        embedBuilder.WithTitle(adventure.Name == guild.CurrentAdventureName ? $"{title} [Current]" : title);
+        embedBuilder.WithTitle(adventure.Name == adventure.Guild.CurrentAdventureName ? $"{title} [Current]" : title);
         embedBuilder.WithDescription(adventure.Description);
         embedBuilder.AddField("Game System", adventure.GameSystem);
 
         var gameSystem = GameSystem.Get(adventure.GameSystem);
         await foreach (var adventurer in dataService.GetAdventurersAsync(adventure).OrderBy(a => a.Name))
         {
-            var guildUser = await discordService.GetGuildUserAsync(guild.GuildId, adventurer.UserId);
+            var guildUser = await discordService.GetGuildUserAsync(adventure.Guild.GuildId, adventurer.UserId);
             embedBuilder.AddField(new EmbedFieldBuilder()
                 .WithIsInline(true)
                 .WithName($"{adventurer.Name} [{guildUser.DisplayName}]")
@@ -102,11 +101,10 @@ internal static class CommandUtil
         this DiscordService discordService,
         SqlDataService dataService,
         IDiscordInteraction command,
-        Guild guild,
         Adventure adventure,
         string title)
     {
-        var embed = await discordService.BuildAdventureSummaryEmbedAsync(dataService, command, guild, adventure, title);
+        var embed = await discordService.BuildAdventureSummaryEmbedAsync(dataService, command, adventure, title);
         await command.RespondAsync(embed: embed);
     }
 

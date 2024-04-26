@@ -32,6 +32,6 @@ internal sealed class AdventureGetSubCommand() : SubCommandBase("get", "Gets the
         }
 
         var discordService = serviceProvider.GetRequiredService<DiscordService>();
-        await discordService.RespondWithAdventureSummaryAsync(dataService, command, guild, adventure, adventure.Name);
+        await discordService.RespondWithAdventureSummaryAsync(dataService, command, adventure, adventure.Name);
     }
 }

@@ -50,7 +50,7 @@ internal sealed class AdventureAddSubCommand() : SubCommandBase("add", "Adds a n
         if (result is null) throw new InvalidOperationException("AddAdventureAsync returned null result");
 
         var discordService = serviceProvider.GetRequiredService<DiscordService>();
-        await discordService.RespondWithAdventureSummaryAsync(dataService, command, result.Guild, result.Adventure,
+        await discordService.RespondWithAdventureSummaryAsync(dataService, command, result.Adventure,
             $"Created adventure: {name}");
     }
 }

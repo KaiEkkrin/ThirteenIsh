@@ -27,8 +27,8 @@ internal sealed class AdventureSwitchSubCommand() : SubCommandBase("switch", "Se
         }
 
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var (result, message) = await dataService.EditGuildAsync(
-            new EditOperation(dataService, name), guildId, cancellationToken);
+        var (adventure, message) = await dataService.EditAdventureAsync(
+            guildId, new EditOperation(), name, cancellationToken);
 
         if (!string.IsNullOrEmpty(message))
         {
@@ -36,24 +36,19 @@ internal sealed class AdventureSwitchSubCommand() : SubCommandBase("switch", "Se
             return;
         }
 
-        if (result is null) throw new InvalidOperationException(nameof(result));
+        if (adventure is null) throw new InvalidOperationException(nameof(adventure));
 
         var discordService = serviceProvider.GetRequiredService<DiscordService>();
-        await discordService.RespondWithAdventureSummaryAsync(dataService, command, result.Guild, result.Adventure, name);
+        await discordService.RespondWithAdventureSummaryAsync(dataService, command, adventure, name);
     }
 
-    private sealed class EditOperation(SqlDataService dataService, string name)
-        : EditOperation<ResultOrMessage<AdventureResult>, Guild, MessageEditResult<AdventureResult>>
+    private sealed class EditOperation()
+        : SyncEditOperation<ResultOrMessage<Adventure>, Adventure, MessageEditResult<Adventure>>
     {
-        public override async Task<MessageEditResult<AdventureResult>> DoEditAsync(DataContext context, Guild guild,
-            CancellationToken cancellationToken = default)
+        public override MessageEditResult<Adventure> DoEdit(DataContext context, Adventure adventure)
         {
-            var adventure = await dataService.GetAdventureAsync(guild, name, cancellationToken);
-            if (adventure == null) return new MessageEditResult<AdventureResult>(
-                null, $"No adventure found matching name '{name}'.");
-
-            guild.CurrentAdventureName = adventure.Name;
-            return new MessageEditResult<AdventureResult>(new AdventureResult(guild, adventure));
+            adventure.Guild.CurrentAdventureName = adventure.Name;
+            return new MessageEditResult<Adventure>(adventure);
         }
     }
 }

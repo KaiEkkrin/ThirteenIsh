@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using System.Diagnostics;
@@ -35,7 +36,7 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
     private readonly ILogger<SqlDataService> _logger = logger;
 
     // Retry policy
-    private static readonly IEnumerable<TimeSpan> Delays = Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromMilliseconds(5), 6);
+    private static readonly IEnumerable<TimeSpan> Delays = Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromMilliseconds(5), 4);
 
     public async Task<ResultOrMessage<AdventureResult>> AddAdventureAsync(ulong guildId, string name, string description,
         string gameSystem, CancellationToken cancellationToken = default)
@@ -45,7 +46,7 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
         guild.CurrentAdventureName = name;
         Adventure adventure = new()
         {
-            GuildId = guild.Id,
+            Guild = guild,
             Name = name,
             Description = description,
             GameSystem = gameSystem
@@ -184,7 +185,6 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
     /// <summary>
     /// Call this to write changes to the database, within a retry loop that reloads entities
     /// and reruns the operation if there is a conflict.
-    /// TODO With this pattern, the operation should always be synchronous -- correct?
     /// </summary>
     public async Task<T?> EditAsync<T, TParam, TResult>(
         EditOperation<T, TParam, TResult> operation,
@@ -211,14 +211,34 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
         CancellationToken cancellationToken = default)
         where TResult : EditResult<T>
     {
-        // TODO Find a sensible way to deal with optimistic concurrency using the retry policy.
         var guild = await GetGuildAsync(guildId, cancellationToken);
         adventureName ??= guild.CurrentAdventureName;
 
         var adventure = await GetAdventureAsync(guild, adventureName, cancellationToken);
         if (adventure == null) return operation.CreateError($"Adventure '{adventureName}' not found.").Value;
 
-        return await EditAsync(operation, adventure, cancellationToken);
+        var result = await EditAsync(operation, adventure, cancellationToken);
+        return result;
+    }
+
+    public async Task<T?> EditAdventurerAsync<T, TResult>(
+        ulong guildId, ulong userId, EditOperation<T, Adventurer, TResult> operation,
+        CancellationToken cancellationToken = default)
+        where TResult : EditResult<T>
+    {
+        // This one always fetches the user's character in the current adventure (if any.)
+        var guild = await GetGuildAsync(guildId, cancellationToken);
+        if (string.IsNullOrEmpty(guild.CurrentAdventureName))
+            return operation.CreateError("There is no current adventure in this guild.").Value;
+
+        var adventure = await GetAdventureAsync(guild, null, cancellationToken);
+        if (adventure == null) return operation.CreateError($"Adventure '{guild.CurrentAdventureName}' not found.").Value;
+
+        var adventurer = await GetAdventurerAsync(adventure, userId, cancellationToken);
+        if (adventurer == null) return operation.CreateError("You have not joined the current adventure.").Value;
+
+        var result = await EditAsync(operation, adventurer, cancellationToken);
+        return result;
     }
 
     public async Task<T?> EditCharacterAsync<T, TResult>(
@@ -226,7 +246,6 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
         CancellationToken cancellationToken = default)
         where TResult : EditResult<T>
     {
-        // TODO Find a sensible way to deal with optimistic concurrency using the retry policy.
         var character = await GetCharacterAsync(name, userId, characterType, cancellationToken: cancellationToken);
         if (character == null) return operation.CreateError($"Character '{name}' not found.").Value;
 
@@ -247,20 +266,6 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
             throw new InvalidOperationException("GetEncounterResultAsync did not return a value");
 
         return await EditAsync(operation, result.Value.Value, cancellationToken);
-    }
-
-    // TODO I should possibly extend this with helpers that fish up current adventurer(s), encounter(s), etc...?
-    public async Task<T?> EditGuildAsync<T, TResult>(EditOperation<T, Guild, TResult> operation, ulong guildId,
-        CancellationToken cancellationToken = default)
-        where TResult : EditResult<T>
-    {
-        // TODO Find a sensible way to deal with optimistic concurrency using the retry policy.
-        // TODO can I use EditResult as the basis for one method that deals with transactions, refreshing
-        // all entities with the database versions and re-attempting the operation on conflict?
-        var guild = await GetGuildAsync(guildId, cancellationToken);
-        if (guild == null) return operation.CreateError($"Guild '{guildId}' cannot be created for some reason?").Value;
-
-        return await EditAsync(operation, guild, cancellationToken);
     }
 
     public async Task<Guild> EnsureGuildAsync(ulong guildId, CancellationToken cancellationToken = default)
@@ -284,12 +289,14 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
 
         // Look for an exact match first
         var adventure = await _context.Adventures
+            .Include(c => c.Guild)
             .SingleOrDefaultAsync(c => c.GuildId == guild.Id && c.Name == name, cancellationToken);
 
         if (adventure != null || name == null) return adventure;
 
         // Only accept an unambiguous match
         var matchingAdventures = await _context.Adventures
+            .Include(c => c.Guild)
             .Where(a => a.GuildId == guild.Id && a.NameUpper.StartsWith(name.ToUpperInvariant()))
             .OrderBy(a => a.Name)
             .Take(2)
@@ -301,8 +308,10 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
     public Task<Adventurer?> GetAdventurerAsync(Adventure adventure, ulong userId,
         CancellationToken cancellationToken = default)
     {
-        return _context.Adventurers.SingleOrDefaultAsync(a => a.AdventureId == adventure.Id && a.UserId == userId,
-            cancellationToken);
+        return _context.Adventurers
+            .Include(a => a.Adventure)
+            .Where(a => a.AdventureId == adventure.Id && a.UserId == userId)
+            .SingleOrDefaultAsync(cancellationToken);
     }
 
     public IAsyncEnumerable<Adventure> GetAdventuresAsync(Guild guild)

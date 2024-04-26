@@ -14,8 +14,8 @@ internal sealed class ResetAdventureMessageHandler(SqlDataService dataService) :
     protected override async Task<bool> HandleInternalAsync(SocketMessageComponent component, string controlId,
         ResetAdventurerMessage message, CancellationToken cancellationToken = default)
     {
-        var result = await dataService.EditAdventureAsync(
-            message.GuildId, new EditOperation(dataService, message.Name, message.UserId), message.Name, cancellationToken);
+        var result = await dataService.EditAdventurerAsync(
+            message.GuildId, message.UserId, new EditOperation(), cancellationToken);
         
         if (!string.IsNullOrEmpty(result.ErrorMessage))
         {
@@ -35,17 +35,12 @@ internal sealed class ResetAdventureMessageHandler(SqlDataService dataService) :
         return true;
     }
 
-    private sealed class EditOperation(SqlDataService dataService, string adventureName, ulong userId)
-        : EditOperation<ResultOrMessage<EditResult>, Adventure, MessageEditResult<EditResult>>
+    private sealed class EditOperation()
+        : SyncEditOperation<ResultOrMessage<EditResult>, Adventurer, MessageEditResult<EditResult>>
     {
-        public override async Task<MessageEditResult<EditResult>> DoEditAsync(DataContext context, Adventure adventure,
-            CancellationToken cancellationToken = default)
+        public override MessageEditResult<EditResult> DoEdit(DataContext context, Adventurer adventurer)
         {
-            var adventurer = await dataService.GetAdventurerAsync(adventure, userId, cancellationToken);
-            if (adventurer == null)
-                return new MessageEditResult<EditResult>(null, $"You do not have a character in the adventure '{adventureName}'.");
-
-            var gameSystem = GameSystem.Get(adventure.GameSystem);
+            var gameSystem = GameSystem.Get(adventurer.Adventure.GameSystem);
             var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
             characterSystem.ResetVariables(adventurer);
             return new MessageEditResult<EditResult>(new EditResult(adventurer, gameSystem));
