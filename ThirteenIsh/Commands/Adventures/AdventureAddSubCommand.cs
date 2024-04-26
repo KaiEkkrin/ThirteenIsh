@@ -39,18 +39,13 @@ internal sealed class AdventureAddSubCommand() : SubCommandBase("add", "Adds a n
 
         // This will also make it the current adventure
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var (result, message) = await dataService.AddAdventureAsync(guildId, name, description, gameSystem.Name,
+        var adventure = await dataService.AddAdventureAsync(guildId, name, description, gameSystem.Name,
             cancellationToken);
-        if (!string.IsNullOrEmpty(message))
-        {
-            await command.RespondAsync(message, ephemeral: true);
-            return;
-        }
 
-        if (result is null) throw new InvalidOperationException("AddAdventureAsync returned null result");
+        if (adventure is null) throw new InvalidOperationException("AddAdventureAsync returned null result");
 
         var discordService = serviceProvider.GetRequiredService<DiscordService>();
-        await discordService.RespondWithAdventureSummaryAsync(dataService, command, result.Adventure,
+        await discordService.RespondWithAdventureSummaryAsync(dataService, command, adventure.Adventure,
             $"Created adventure: {name}");
     }
 }

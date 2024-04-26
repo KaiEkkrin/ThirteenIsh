@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using Polly.Caching;
 using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Game;
@@ -45,54 +46,50 @@ internal sealed class CombatAddCommand() : SubCommandBase("add", "Adds a monster
         }
 
         var random = serviceProvider.GetRequiredService<IRandomWrapper>();
-        var (output, message) = await dataService.EditEncounterAsync(guildId, channelId,
+        var result = await dataService.EditEncounterAsync(guildId, channelId,
             new EditOperation(character, random, rerolls, command.User.Id), cancellationToken);
 
-        if (!string.IsNullOrEmpty(message))
-        {
-            await command.RespondAsync(message, ephemeral: true);
-            return;
-        }
+        await result.Handle(
+            errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
+            async output =>
+            {
+                // Update the encounter table
+                var encounterTable = await output.GameSystem.BuildEncounterTableAsync(dataService, output.Adventure,
+                    output.Encounter, cancellationToken);
 
-        if (output is null) throw new InvalidOperationException(nameof(output));
+                var pinnedMessageService = serviceProvider.GetRequiredService<PinnedMessageService>();
+                await pinnedMessageService.SetEncounterMessageAsync(command.Channel, output.Encounter.AdventureName,
+                    guildId, encounterTable, cancellationToken);
 
-        // Update the encounter table
-        var encounterTable = await output.GameSystem.BuildEncounterTableAsync(dataService, output.Adventure,
-            output.Encounter, cancellationToken);
+                // Send an appropriate response
+                var embedBuilder = new EmbedBuilder()
+                    .WithAuthor(command.User)
+                    .WithTitle($"A {character.Name} joined the encounter as {output.Alias} : {output.Result.Roll}")
+                    .WithDescription($"{output.Result.Working}\n{encounterTable}");
 
-        var pinnedMessageService = serviceProvider.GetRequiredService<PinnedMessageService>();
-        await pinnedMessageService.SetEncounterMessageAsync(command.Channel, output.Encounter.AdventureName, guildId,
-            encounterTable, cancellationToken);
-
-        // Send an appropriate response
-        var embedBuilder = new EmbedBuilder()
-            .WithAuthor(command.User)
-            .WithTitle($"A {character.Name} joined the encounter as {output.Alias} : {output.Result.Roll}")
-            .WithDescription($"{output.Result.Working}\n{encounterTable}");
-
-        await command.RespondAsync(embed: embedBuilder.Build());
+                await command.RespondAsync(embed: embedBuilder.Build());
+            });
     }
 
     private sealed class EditOperation(Database.Entities.Character character,
         IRandomWrapper random, int rerolls, ulong userId)
-        : SyncEditOperation<ResultOrMessage<EditOutput>, EncounterResult, MessageEditResult<EditOutput>>
+        : SyncEditOperation<EditOutput, EncounterResult>
     {
-        public override MessageEditResult<EditOutput> DoEdit(DataContext context, EncounterResult encounterResult)
+        public override EditResult<EditOutput> DoEdit(DataContext context, EncounterResult encounterResult)
         {
             var (adventure, encounter) = encounterResult;
             if (adventure.GameSystem != character.GameSystem)
-                return new MessageEditResult<EditOutput>(null,
-                    "This monster was not created in the same game system as the adventure.");
+                return CreateError("This monster was not created in the same game system as the adventure.");
 
             var gameSystem = GameSystem.Get(adventure.GameSystem);
             NameAliasCollection nameAliasCollection = new(encounter);
             var result = gameSystem.EncounterAdd(context, character, encounter, nameAliasCollection,
                 random, rerolls, userId, out var alias);
 
-            if (!result.HasValue) return new MessageEditResult<EditOutput>(
-                null, $"You are not able to add a '{character.Name}' to this encounter at this time.");
+            if (!result.HasValue) return CreateError(
+                $"You are not able to add a '{character.Name}' to this encounter at this time.");
 
-            return new MessageEditResult<EditOutput>(new EditOutput(alias, adventure, encounter, gameSystem, result.Value));
+            return new EditResult<EditOutput>(new EditOutput(alias, adventure, encounter, gameSystem, result.Value));
         }
     }
 

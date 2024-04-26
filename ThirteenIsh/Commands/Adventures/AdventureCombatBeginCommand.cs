@@ -12,24 +12,21 @@ internal sealed class AdventureCombatBeginCommand() : SubCommandBase("begin", "B
         if (command is not { ChannelId: { } channelId, GuildId: { } guildId }) return;
 
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var (output, message) = await dataService.AddEncounterAsync(guildId, channelId, cancellationToken);
+        var result = await dataService.AddEncounterAsync(guildId, channelId, cancellationToken);
 
-        if (!string.IsNullOrEmpty(message))
-        {
-            await command.RespondAsync(message, ephemeral: true);
-            return;
-        }
+        await result.Handle(
+            errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
+            async output =>
+            {
+                var gameSystem = GameSystem.Get(output.Adventure.GameSystem);
+                var encounterTable = await gameSystem.BuildEncounterTableAsync(dataService, output.Adventure,
+                    output.Encounter, cancellationToken);
 
-        if (output is null) throw new InvalidOperationException(nameof(output));
+                var pinnedMessageService = serviceProvider.GetRequiredService<PinnedMessageService>();
+                await pinnedMessageService.SetEncounterMessageAsync(command.Channel, output.Encounter.AdventureName,
+                    guildId, encounterTable, cancellationToken);
 
-        var gameSystem = GameSystem.Get(output.Adventure.GameSystem);
-        var encounterTable = await gameSystem.BuildEncounterTableAsync(dataService, output.Adventure,
-            output.Encounter, cancellationToken);
-
-        var pinnedMessageService = serviceProvider.GetRequiredService<PinnedMessageService>();
-        await pinnedMessageService.SetEncounterMessageAsync(command.Channel, output.Encounter.AdventureName, guildId,
-            encounterTable, cancellationToken);
-
-        await command.RespondAsync("Encounter begun.", ephemeral: true);
+                await command.RespondAsync("Encounter begun.", ephemeral: true);
+            });
     }
 }

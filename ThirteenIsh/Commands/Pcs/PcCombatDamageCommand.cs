@@ -84,130 +84,132 @@ internal sealed class PcCombatDamageCommand()
         // monsters, too)?
         // For now, this only deals damage as the current player's character
         var encounterResult = await dataService.GetEncounterResultAsync(guild, channelId, cancellationToken);
-        if (!string.IsNullOrEmpty(encounterResult.Value.ErrorMessage))
-        {
-            await command.RespondAsync(encounterResult.Value.ErrorMessage, ephemeral: true);
-            return;
-        }
 
-        var (adventure, encounter) = encounterResult.Value.Value ?? throw new InvalidOperationException(
-            "GetEncounterResultAsync did not return a value");
-
-        var combatant = encounter.Combatants.FirstOrDefault(c => c.CharacterType == CharacterType.PlayerCharacter &&
-                                                                 c.UserId == command.User.Id);
-        if (combatant == null ||
-            await dataService.GetCharacterAsync(combatant, cancellationToken) is not { } character)
-        {
-            await command.RespondAsync("You have not joined this encounter.", ephemeral: true);
-            return;
-        }
-
-        var gameSystem = GameSystem.Get(adventure.GameSystem);
-        var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
-        if (!TryGetCounter(characterSystem, option, out var counter, out var errorMessage))
-        {
-            await command.RespondAsync(errorMessage);
-            return;
-        }
-
-        // If there is a counter it must have a value
-        int? counterValue = counter is null
-            ? null
-            : counter.GetValue(character.Sheet) is { } realCounterValue
-                ? realCounterValue
-                : throw new GamePropertyException(counter.Name);
-
-        if (!CommandUtil.TryGetOption<int>(option, "multiplier", out var multiplier)) multiplier = 1;
-        if (!CommandUtil.TryGetOption<bool>(option, "roll-separately", out var rollSeparately)) rollSeparately = false;
-
-        List<CombatantBase> targetCombatants = [];
-        if (!CommandUtil.TryFindCombatants(targets, encounter, targetCombatants, out errorMessage))
-        {
-            await command.RespondAsync(errorMessage);
-            return;
-        }
-
-        var vsCounterByType = CommandUtil.FindCounterByType(gameSystem, vsNamePart,
-            c => c.Options.HasFlag(GameCounterOptions.HasVariable), targetCombatants);
-
-        if (vsCounterByType.Count == 0)
-        {
-            await command.RespondAsync($"'{vsNamePart}' does not uniquely match a variable property.", ephemeral: true);
-            return;
-        }
-
-        // If we have a counter include that in the overall parse tree
-        if (counter is not null && counterValue.HasValue)
-        {
-            ParseTreeBase counterParseTree = multiplier == 1
-                ? new IntegerParseTree(0, counterValue.Value, counter.Name)
-                : new BinaryOperationParseTree(0,
-                    new IntegerParseTree(0, counterValue.Value, counter.Name),
-                    new IntegerParseTree(0, multiplier, "multiplier"),
-                    '*');
-
-            parseTree = new BinaryOperationParseTree(0, parseTree, counterParseTree, '+');
-        }
-
-        // The next bit could take a while (sending messages to potentially many targets)
-        // so we'll defer our response
-        await command.DeferAsync();
-
-        var random = serviceProvider.GetRequiredService<IRandomWrapper>();
-        DamageRoller damageRoller = rollSeparately
-            ? new DamageRoller(parseTree, random)
-            : new CombinedDamageRoller(parseTree, random);
-
-        var discordService = serviceProvider.GetRequiredService<DiscordService>();
-        StringBuilder stringBuilder = new();
-        for (var i = 0; i < targetCombatants.Count; ++i)
-        {
-            if (i > 0) stringBuilder.AppendLine(); // space things out
-            var targetCharacter = await dataService.GetCharacterAsync(targetCombatants[i], cancellationToken);
-            if (targetCharacter is null) continue;
-            await RollDamageVsAsync(targetCombatants[i], targetCharacter);
-        }
-
-        var embedBuilder = new EmbedBuilder()
-            .WithAuthor(command.User)
-            .WithTitle($"{adventure.Name} : Rolled damage to {vsCounterByType.Values.First().Name}")
-            .WithDescription(stringBuilder.ToString());
-
-        await command.ModifyOriginalResponseAsync(properties => properties.Embed = embedBuilder.Build());
-        return;
-
-        async Task RollDamageVsAsync(CombatantBase target, ITrackedCharacter targetCharacter)
-        {
-            stringBuilder.Append(CultureInfo.CurrentCulture, $"vs {target.Alias}");
-
-            var result = damageRoller.Roll();
-            stringBuilder.AppendLine(CultureInfo.CurrentCulture, $" : {result.Roll}");
-            stringBuilder.AppendLine(result.Working);
-
-            var vsCounter = vsCounterByType[target.CharacterType];
-            EncounterDamageMessage message = new()
+        await encounterResult.Handle(
+            errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
+            async output =>
             {
-                Alias = target.Alias,
-                ChannelId = channelId,
-                CharacterType = targetCharacter.Type,
-                Damage = -result.Roll,
-                GuildId = guildId,
-                Name = adventure.Name,
-                UserId = targetCharacter.UserId,
-                VariableName = vsCounter.Name
-            };
-            await dataService.AddMessageAsync(message, cancellationToken);
+                var (adventure, encounter) = output;
+                var combatant = encounter.Combatants.FirstOrDefault(c =>
+                    c.CharacterType == CharacterType.PlayerCharacter &&
+                    c.UserId == command.User.Id);
 
-            var component = new ComponentBuilder()
-                .WithButton("Take full", message.GetMessageId(EncounterDamageMessage.TakeFullControlId))
-                .WithButton("Take half", message.GetMessageId(EncounterDamageMessage.TakeHalfControlId))
-                .WithButton("Take none", message.GetMessageId(EncounterDamageMessage.TakeNoneControlId));
+                if (combatant == null ||
+                    await dataService.GetCharacterAsync(combatant, cancellationToken) is not { } character)
+                {
+                    await command.RespondAsync("You have not joined this encounter.", ephemeral: true);
+                    return;
+                }
 
-            var targetUser = await discordService.GetGuildUserAsync(guildId, targetCharacter.UserId);
-            await targetUser.SendMessageAsync(
-                $"{character.Name} dealt {result.Roll} damage to {target.Alias}'s {vsCounter.Name}",
-                components: component.Build());
-        }
+                var gameSystem = GameSystem.Get(adventure.GameSystem);
+                var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
+                if (!TryGetCounter(characterSystem, option, out var counter, out var message))
+                {
+                    await command.RespondAsync(message);
+                    return;
+                }
+
+                // If there is a counter it must have a value
+                int? counterValue = counter is null
+                    ? null
+                    : counter.GetValue(character.Sheet) is { } realCounterValue
+                        ? realCounterValue
+                        : throw new GamePropertyException(counter.Name);
+
+                if (!CommandUtil.TryGetOption<int>(option, "multiplier", out var multiplier)) multiplier = 1;
+                if (!CommandUtil.TryGetOption<bool>(option, "roll-separately", out var rollSeparately))
+                    rollSeparately = false;
+
+                List<CombatantBase> targetCombatants = [];
+                if (!CommandUtil.TryFindCombatants(targets, encounter, targetCombatants, out message))
+                {
+                    await command.RespondAsync(message);
+                    return;
+                }
+
+                var vsCounterByType = CommandUtil.FindCounterByType(gameSystem, vsNamePart,
+                    c => c.Options.HasFlag(GameCounterOptions.HasVariable), targetCombatants);
+
+                if (vsCounterByType.Count == 0)
+                {
+                    await command.RespondAsync($"'{vsNamePart}' does not uniquely match a variable property.",
+                        ephemeral: true);
+                    return;
+                }
+
+                // If we have a counter include that in the overall parse tree
+                if (counter is not null && counterValue.HasValue)
+                {
+                    ParseTreeBase counterParseTree = multiplier == 1
+                        ? new IntegerParseTree(0, counterValue.Value, counter.Name)
+                        : new BinaryOperationParseTree(0,
+                            new IntegerParseTree(0, counterValue.Value, counter.Name),
+                            new IntegerParseTree(0, multiplier, "multiplier"),
+                            '*');
+
+                    parseTree = new BinaryOperationParseTree(0, parseTree, counterParseTree, '+');
+                }
+
+                // The next bit could take a while (sending messages to potentially many targets)
+                // so we'll defer our response
+                await command.DeferAsync();
+
+                var random = serviceProvider.GetRequiredService<IRandomWrapper>();
+                DamageRoller damageRoller = rollSeparately
+                    ? new DamageRoller(parseTree, random)
+                    : new CombinedDamageRoller(parseTree, random);
+
+                var discordService = serviceProvider.GetRequiredService<DiscordService>();
+                StringBuilder stringBuilder = new();
+                for (var i = 0; i < targetCombatants.Count; ++i)
+                {
+                    if (i > 0) stringBuilder.AppendLine(); // space things out
+                    var targetCharacter = await dataService.GetCharacterAsync(targetCombatants[i], cancellationToken);
+                    if (targetCharacter is null) continue;
+                    await RollDamageVsAsync(targetCombatants[i], targetCharacter);
+                }
+
+                var embedBuilder = new EmbedBuilder()
+                    .WithAuthor(command.User)
+                    .WithTitle($"{adventure.Name} : Rolled damage to {vsCounterByType.Values.First().Name}")
+                    .WithDescription(stringBuilder.ToString());
+
+                await command.ModifyOriginalResponseAsync(properties => properties.Embed = embedBuilder.Build());
+                return;
+
+                async Task RollDamageVsAsync(CombatantBase target, ITrackedCharacter targetCharacter)
+                {
+                    stringBuilder.Append(CultureInfo.CurrentCulture, $"vs {target.Alias}");
+
+                    var result = damageRoller.Roll();
+                    stringBuilder.AppendLine(CultureInfo.CurrentCulture, $" : {result.Roll}");
+                    stringBuilder.AppendLine(result.Working);
+
+                    var vsCounter = vsCounterByType[target.CharacterType];
+                    EncounterDamageMessage message = new()
+                    {
+                        Alias = target.Alias,
+                        ChannelId = channelId,
+                        CharacterType = targetCharacter.Type,
+                        Damage = -result.Roll,
+                        GuildId = guildId,
+                        Name = adventure.Name,
+                        UserId = targetCharacter.UserId,
+                        VariableName = vsCounter.Name
+                    };
+                    await dataService.AddMessageAsync(message, cancellationToken);
+
+                    var component = new ComponentBuilder()
+                        .WithButton("Take full", message.GetMessageId(EncounterDamageMessage.TakeFullControlId))
+                        .WithButton("Take half", message.GetMessageId(EncounterDamageMessage.TakeHalfControlId))
+                        .WithButton("Take none", message.GetMessageId(EncounterDamageMessage.TakeNoneControlId));
+
+                    var targetUser = await discordService.GetGuildUserAsync(guildId, targetCharacter.UserId);
+                    await targetUser.SendMessageAsync(
+                        $"{character.Name} dealt {result.Roll} damage to {target.Alias}'s {vsCounter.Name}",
+                        components: component.Build());
+                }
+            });
     }
 
     private static bool TryGetCounter(CharacterSystem characterSystem, SocketSlashCommandDataOption option,

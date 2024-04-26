@@ -64,20 +64,16 @@ internal sealed class CharacterSetSubCommand(CharacterType characterType)
             return;
         }
 
-        var (updatedCharacter, errorMessage) = await dataService.EditCharacterAsync(
+        var result = await dataService.EditCharacterAsync(
             name, new SetCharacterPropertyOperation(property, newValue), command.User.Id, characterType,
             cancellationToken);
 
-        if (errorMessage is not null)
-        {
-            await command.RespondAsync(errorMessage, ephemeral: true);
-            return;
-        }
-
-        if (updatedCharacter is null) throw new InvalidOperationException(
-            $"{characterType.FriendlyName(FriendlyNameOptions.CapitalizeFirstCharacter)} object was null after update");
-
-        await CommandUtil.RespondWithCharacterSheetAsync(command, updatedCharacter,
-            $"Edited {characterType.FriendlyName()} '{updatedCharacter.Name}'", property.Name);
+        await result.Handle(
+            errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
+            updatedCharacter =>
+            {
+                return CommandUtil.RespondWithCharacterSheetAsync(command, updatedCharacter,
+                    $"Edited {characterType.FriendlyName()} '{updatedCharacter.Name}'", property.Name);
+            });
     }
 }

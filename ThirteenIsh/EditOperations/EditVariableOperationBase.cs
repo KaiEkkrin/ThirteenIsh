@@ -5,16 +5,16 @@ using ThirteenIsh.Game;
 namespace ThirteenIsh.EditOperations;
 
 internal abstract class EditVariableOperationBase()
-    : SyncEditOperation<ResultOrMessage<EditVariableResult>, Adventurer, MessageEditResult<EditVariableResult>>
+    : SyncEditOperation<EditVariableResult, Adventurer>
 {
-    public sealed override MessageEditResult<EditVariableResult> DoEdit(DataContext context, Adventurer adventurer)
+    public sealed override EditResult<EditVariableResult> DoEdit(DataContext context, Adventurer adventurer)
     {
         var gameSystem = GameSystem.Get(adventurer.Adventure.GameSystem);
         var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
         return DoEditInternal(adventurer, characterSystem, gameSystem);
     }
 
-    protected abstract MessageEditResult<EditVariableResult> DoEditInternal(Adventurer adventurer,
+    protected abstract EditResult<EditVariableResult> DoEditInternal(Adventurer adventurer,
         CharacterSystem characterSystem, GameSystem gameSystem);
 }
 

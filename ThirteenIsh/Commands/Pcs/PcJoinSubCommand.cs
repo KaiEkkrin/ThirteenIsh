@@ -35,33 +35,29 @@ internal sealed class PcJoinSubCommand() : SubCommandBase("join", "Joins the cur
             return;
         }
 
-        var (updatedAdventure, errorMessage) = await dataService.EditAdventureAsync(
+        var result = await dataService.EditAdventureAsync(
             guildId, new EditOperation(dataService, character), cancellationToken: cancellationToken);
 
-        if (errorMessage is not null)
-        {
-            await command.RespondAsync(errorMessage, ephemeral: true);
-            return;
-        }
+        await result.Handle(
+            errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
+            adventure =>
+            {
+                EmbedBuilder embedBuilder = new();
+                embedBuilder.WithAuthor(command.User);
+                embedBuilder.WithTitle($"Joined {adventure.Name} as {character.Name}");
 
-        if (updatedAdventure is null) throw new InvalidOperationException("updatedAdventure was null after update");
-
-        EmbedBuilder embedBuilder = new();
-        embedBuilder.WithAuthor(command.User);
-        embedBuilder.WithTitle($"Joined {updatedAdventure.Name} as {character.Name}");
-
-        await command.RespondAsync(embed: embedBuilder.Build());
+                return command.RespondAsync(embed: embedBuilder.Build());
+            });
     }
 
     private sealed class EditOperation(SqlDataService dataService, Database.Entities.Character character)
-        : EditOperation<ResultOrMessage<Adventure>, Adventure, MessageEditResult<Adventure>>
+        : EditOperation<Adventure, Adventure>
     {
-        public override async Task<MessageEditResult<Adventure>> DoEditAsync(DataContext context, Adventure adventure,
+        public override async Task<EditResult<Adventure>> DoEditAsync(DataContext context, Adventure adventure,
             CancellationToken cancellationToken = default)
         {
             if (adventure.GameSystem != character.GameSystem)
-                return new MessageEditResult<Adventure>(null,
-                    "This character was not created in the same game system as the adventure.");
+                return CreateError("This character was not created in the same game system as the adventure.");
 
             var currentAdventurer = await dataService.GetAdventurerAsync(adventure, character.UserId,
                 cancellationToken);
@@ -79,16 +75,15 @@ internal sealed class PcJoinSubCommand() : SubCommandBase("join", "Joins the cur
                 var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
                 characterSystem.ResetVariables(adventurer);
                 adventure.Adventurers.Add(adventurer);
-                return new MessageEditResult<Adventure>(adventure);
+                return new EditResult<Adventure>(adventure);
             }
             else if (currentAdventurer.Name == character.Name)
             {
-                return new MessageEditResult<Adventure>(null, "This character is already joined to the current adventure.");
+                return CreateError("This character is already joined to the current adventure.");
             }
             else
             {
-                return new MessageEditResult<Adventure>(null,
-                    "You have already joined this adventure with a different character.");
+                return CreateError("You have already joined this adventure with a different character.");
             }
         }
     }

@@ -29,55 +29,53 @@ internal sealed class PcCombatNextSubCommand() : SubCommandBase("next", "Moves o
 
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var random = serviceProvider.GetRequiredService<IRandomWrapper>();
-        var (output, message) = await dataService.EditEncounterAsync(
+        var result = await dataService.EditEncounterAsync(
             guildId, channelId, new EditOperation(random), cancellationToken);
 
-        if (!string.IsNullOrEmpty(message))
-        {
-            await command.RespondAsync(message, ephemeral: true);
-            return;
-        }
+        await result.Handle(
+            errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
+            async output =>
+            {
+                // Update the encounter table
+                var encounterTable = await output.GameSystem.BuildEncounterTableAsync(dataService, output.Adventure,
+                    output.Encounter, cancellationToken);
 
-        if (output is null) throw new InvalidOperationException(nameof(output));
+                var pinnedMessageService = serviceProvider.GetRequiredService<PinnedMessageService>();
+                await pinnedMessageService.SetEncounterMessageAsync(command.Channel, output.Encounter.AdventureName,
+                    guildId, encounterTable, cancellationToken);
 
-        // Update the encounter table
-        var encounterTable = await output.GameSystem.BuildEncounterTableAsync(dataService, output.Adventure,
-            output.Encounter, cancellationToken);
+                // Send an appropriate response
+                StringBuilder titleBuilder = new();
+                if (!string.IsNullOrEmpty(output.PreviousCombatantAlias))
+                {
+                    titleBuilder.Append(CultureInfo.CurrentCulture,
+                        $"{output.PreviousCombatantAlias} finished their turn. ");
+                }
 
-        var pinnedMessageService = serviceProvider.GetRequiredService<PinnedMessageService>();
-        await pinnedMessageService.SetEncounterMessageAsync(command.Channel, output.Encounter.AdventureName, guildId,
-            encounterTable, cancellationToken);
+                titleBuilder.Append(CultureInfo.CurrentCulture, $"It is now {output.CurrentCombatantAlias}'s turn.");
 
-        // Send an appropriate response
-        StringBuilder titleBuilder = new();
-        if (!string.IsNullOrEmpty(output.PreviousCombatantAlias))
-        {
-            titleBuilder.Append(CultureInfo.CurrentCulture, $"{output.PreviousCombatantAlias} finished their turn. ");
-        }
+                var embedBuilder = new EmbedBuilder()
+                    .WithAuthor(command.User)
+                    .WithTitle(titleBuilder.ToString())
+                    .WithDescription(encounterTable);
 
-        titleBuilder.Append(CultureInfo.CurrentCulture, $"It is now {output.CurrentCombatantAlias}'s turn.");
-
-        var embedBuilder = new EmbedBuilder()
-            .WithAuthor(command.User)
-            .WithTitle(titleBuilder.ToString())
-            .WithDescription(encounterTable);
-
-        await command.RespondAsync(embed: embedBuilder.Build());
+                await command.RespondAsync(embed: embedBuilder.Build());
+            });
     }
 
     private sealed class EditOperation(IRandomWrapper random)
-        : SyncEditOperation<ResultOrMessage<EditOutput>, EncounterResult, MessageEditResult<EditOutput>>
+        : SyncEditOperation<EditOutput, EncounterResult>
     {
-        public override MessageEditResult<EditOutput> DoEdit(DataContext context, EncounterResult result)
+        public override EditResult<EditOutput> DoEdit(DataContext context, EncounterResult result)
         {
             var (adventure, encounter) = result;
             var previousCombatantAlias = encounter.TurnAlias;
 
             var gameSystem = GameSystem.Get(adventure.GameSystem);
             if (gameSystem.EncounterNext(encounter, random) is not { } nextCombatant)
-                return new MessageEditResult<EditOutput>(null, "This encounter cannot be progressed at this time.");
+                return CreateError("This encounter cannot be progressed at this time.");
 
-            return new MessageEditResult<EditOutput>(new EditOutput(
+            return new EditResult<EditOutput>(new EditOutput(
                 previousCombatantAlias, nextCombatant.Alias, adventure, encounter, gameSystem));
         }
     }

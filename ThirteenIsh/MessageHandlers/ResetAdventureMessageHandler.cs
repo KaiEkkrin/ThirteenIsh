@@ -16,34 +16,31 @@ internal sealed class ResetAdventureMessageHandler(SqlDataService dataService) :
     {
         var result = await dataService.EditAdventurerAsync(
             message.GuildId, message.UserId, new EditOperation(), cancellationToken);
-        
-        if (!string.IsNullOrEmpty(result.ErrorMessage))
-        {
-            await component.RespondAsync(result.ErrorMessage, ephemeral: true);
-            return true;
-        }
 
-        if (result.Value is null) throw new InvalidOperationException(nameof(result.Value));
-
-        await CommandUtil.RespondWithAdventurerSummaryAsync(component, result.Value.Adventurer, result.Value.GameSystem,
-            new CommandUtil.AdventurerSummaryOptions
+        await result.Handle(
+            errorMessage => component.RespondAsync(errorMessage, ephemeral: true),
+            output =>
             {
-                OnlyVariables = true,
-                Title = $"Reset adventurer {result.Value.Adventurer.Name}"
+                return CommandUtil.RespondWithAdventurerSummaryAsync(component, output.Adventurer, output.GameSystem,
+                    new CommandUtil.AdventurerSummaryOptions
+                    {
+                        OnlyVariables = true,
+                        Title = $"Reset adventurer {output.Adventurer.Name}"
+                    });
             });
 
         return true;
     }
 
     private sealed class EditOperation()
-        : SyncEditOperation<ResultOrMessage<EditResult>, Adventurer, MessageEditResult<EditResult>>
+        : SyncEditOperation<EditResult, Adventurer>
     {
-        public override MessageEditResult<EditResult> DoEdit(DataContext context, Adventurer adventurer)
+        public override EditResult<EditResult> DoEdit(DataContext context, Adventurer adventurer)
         {
             var gameSystem = GameSystem.Get(adventurer.Adventure.GameSystem);
             var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
             characterSystem.ResetVariables(adventurer);
-            return new MessageEditResult<EditResult>(new EditResult(adventurer, gameSystem));
+            return new EditResult<EditResult>(new EditResult(adventurer, gameSystem));
         }
     }
 

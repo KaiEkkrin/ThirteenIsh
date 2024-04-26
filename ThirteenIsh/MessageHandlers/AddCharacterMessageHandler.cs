@@ -59,17 +59,20 @@ internal sealed class AddCharacterMessageHandler(SqlDataService dataService) : M
         }
 
         var newValue = component.Data.Values.SingleOrDefault() ?? string.Empty;
-        var (_, errorMessage) = await dataService.EditCharacterAsync(
+        var result = await dataService.EditCharacterAsync(
             message.Name, new SetCharacterPropertyOperation(property, newValue), component.User.Id, message.CharacterType,
             cancellationToken);
 
-        if (errorMessage is not null)
-        {
-            await component.RespondAsync(errorMessage, ephemeral: true);
-            return true;
-        }
-
-        await component.DeferAsync(true);
-        return false; // keep this message around, the user might make more selections
+        return await result.Handle(
+            async errorMessage =>
+            {
+                await component.RespondAsync(errorMessage, ephemeral: true);
+                return true;
+            },
+            async _ =>
+            {
+                await component.DeferAsync(true);
+                return false; // keep this message around, the user might make more selections
+            });
     }
 }

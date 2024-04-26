@@ -31,28 +31,24 @@ internal sealed class AdventureSetSubCommand() : SubCommandBase("set", "Sets an 
         if (!CommandUtil.TryGetOption<string>(option, "description", out var description)) description = string.Empty;
 
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var (adventure, message) = await dataService.EditAdventureAsync(
+        var result = await dataService.EditAdventureAsync(
             guildId, new EditOperation(description), name, cancellationToken);
 
-        if (!string.IsNullOrEmpty(message))
-        {
-            await command.RespondAsync(message, ephemeral: true);
-            return;
-        }
-
-        if (adventure is null) throw new InvalidOperationException(nameof(adventure));
-
-        var discordService = serviceProvider.GetRequiredService<DiscordService>();
-        await discordService.RespondWithAdventureSummaryAsync(dataService, command, adventure, name);
+        await result.Handle(
+            errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
+            adventure =>
+            {
+                var discordService = serviceProvider.GetRequiredService<DiscordService>();
+                return discordService.RespondWithAdventureSummaryAsync(dataService, command, adventure, name);
+            });
     }
 
-    private sealed class EditOperation(string description)
-        : SyncEditOperation<ResultOrMessage<Adventure>, Adventure, MessageEditResult<Adventure>>
+    private sealed class EditOperation(string description) : SyncEditOperation<Adventure, Adventure>
     {
-        public override MessageEditResult<Adventure> DoEdit(DataContext context, Adventure adventure)
+        public override EditResult<Adventure> DoEdit(DataContext context, Adventure adventure)
         {
             adventure.Description = description;
-            return new MessageEditResult<Adventure>(adventure);
+            return new EditResult<Adventure>(adventure);
         }
     }
 }

@@ -7,13 +7,12 @@ namespace ThirteenIsh.EditOperations;
 internal sealed class ModVariableOperation(string counterNamePart, ParseTreeBase parseTree, IRandomWrapper random)
     : EditVariableOperationBase()
 {
-    protected override MessageEditResult<EditVariableResult> DoEditInternal(Adventurer adventurer,
+    protected override EditResult<EditVariableResult> DoEditInternal(Adventurer adventurer,
         CharacterSystem characterSystem, GameSystem gameSystem)
     {
         var counter = characterSystem.FindCounter(counterNamePart, c => c.Options.HasFlag(GameCounterOptions.HasVariable));
         if (counter == null)
-            return new MessageEditResult<EditVariableResult>(null,
-                $"'{counterNamePart}' does not uniquely match a variable name.");
+            return CreateError($"'{counterNamePart}' does not uniquely match a variable name.");
 
         var currentValue = counter.GetVariableValue(adventurer)
             ?? counter.GetStartingValue(adventurer.Sheet)
@@ -26,7 +25,7 @@ internal sealed class ModVariableOperation(string counterNamePart, ParseTreeBase
 
         var newValue = modParseTree.Evaluate(random, out var working);
         counter.SetVariableClamped(newValue, adventurer);
-        return new MessageEditResult<EditVariableResult>(new EditVariableResult(adventurer, counter, gameSystem,
+        return new EditResult<EditVariableResult>(new EditVariableResult(adventurer, counter, gameSystem,
             working));
     }
 }

@@ -51,33 +51,30 @@ internal abstract class PcVSubCommandBase(string name, string description,
         var random = serviceProvider.GetRequiredService<IRandomWrapper>();
         var editOperation = CreateEditOperation(namePart, parseTree, random);
 
-        var (result, errorMessage) = await dataService.EditAdventurerAsync(
+        var result = await dataService.EditAdventurerAsync(
             guildId, command.User.Id, editOperation, cancellationToken);
 
-        if (errorMessage is not null)
-        {
-            await command.RespondAsync(errorMessage, ephemeral: true);
-            return;
-        }
-
-        if (result is null) throw new InvalidOperationException("result was null after update");
-
-        // If this wasn't a simple integer, show the working
-        List<EmbedFieldBuilder> extraFields = [];
-        if (parseTree is not IntegerParseTree)
-        {
-            extraFields.Add(new EmbedFieldBuilder()
-                .WithName("Roll")
-                .WithValue(result.Working));
-        }
-
-        await CommandUtil.RespondWithAdventurerSummaryAsync(command, result.Adventurer, result.GameSystem,
-            new CommandUtil.AdventurerSummaryOptions
+        await result.Handle(
+            errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
+            output =>
             {
-                ExtraFields = extraFields,
-                OnlyTheseProperties = [result.GameCounter.Name],
-                OnlyVariables = true,
-                Title = $"Set {result.GameCounter.Name} on {result.Adventurer.Name}"
+                // If this wasn't a simple integer, show the working
+                List<EmbedFieldBuilder> extraFields = [];
+                if (parseTree is not IntegerParseTree)
+                {
+                    extraFields.Add(new EmbedFieldBuilder()
+                        .WithName("Roll")
+                        .WithValue(output.Working));
+                }
+
+                return CommandUtil.RespondWithAdventurerSummaryAsync(command, output.Adventurer, output.GameSystem,
+                    new CommandUtil.AdventurerSummaryOptions
+                    {
+                        ExtraFields = extraFields,
+                        OnlyTheseProperties = [output.GameCounter.Name],
+                        OnlyVariables = true,
+                        Title = $"Set {output.GameCounter.Name} on {output.Adventurer.Name}"
+                    });
             });
     }
 

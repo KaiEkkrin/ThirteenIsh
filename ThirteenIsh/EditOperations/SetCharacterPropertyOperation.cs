@@ -5,20 +5,15 @@ using ThirteenIsh.Game;
 namespace ThirteenIsh.EditOperations;
 
 internal sealed class SetCharacterPropertyOperation(GamePropertyBase property, string newValue)
-    : SyncEditOperation<ResultOrMessage<Character>, Character, MessageEditResult<Character>>
+    : SyncEditOperation<Character, Character>
 {
-    public override EditResult<ResultOrMessage<Character>> CreateError(string message)
-    {
-        return new MessageEditResult<Character>(null, message);
-    }
-
-    public override MessageEditResult<Character> DoEdit(DataContext context, Character character)
+    public override EditResult<Character> DoEdit(DataContext context, Character character)
     {
         if (!property.TryEditCharacterProperty(newValue, character.Sheet, out var errorMessage))
         {
-            return new MessageEditResult<Character>(null, errorMessage);
+            return CreateError(errorMessage);
         }
 
-        return new MessageEditResult<Character>(character);
+        return new EditResult<Character>(character);
     }
 }

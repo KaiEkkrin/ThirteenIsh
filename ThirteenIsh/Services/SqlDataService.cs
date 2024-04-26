@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using System.Diagnostics;
@@ -38,7 +37,7 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
     // Retry policy
     private static readonly IEnumerable<TimeSpan> Delays = Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromMilliseconds(5), 4);
 
-    public async Task<ResultOrMessage<AdventureResult>> AddAdventureAsync(ulong guildId, string name, string description,
+    public async Task<AdventureResult> AddAdventureAsync(ulong guildId, string name, string description,
         string gameSystem, CancellationToken cancellationToken = default)
     {
         // TODO find out what error to handle when the adventure already exists.
@@ -54,20 +53,20 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
 
         _context.Adventures.Add(adventure);
         await _context.SaveChangesAsync(cancellationToken);
-        return new ResultOrMessage<AdventureResult>(new AdventureResult(guild, adventure));
+        return new AdventureResult(guild, adventure);
     }
 
-    public async Task<ResultOrMessage<EncounterResult>> AddEncounterAsync(
+    public async Task<EditResult<EncounterResult>> AddEncounterAsync(
         ulong guildId, ulong channelId, CancellationToken cancellationToken = default)
     {
         // TODO find out what error to handle when the encounter already exists due to conflict...
         var guild = await GetGuildAsync(guildId, cancellationToken);
         var encounter = await GetEncounterAsync(guild, channelId, cancellationToken);
-        if (encounter is not null) return new ResultOrMessage<EncounterResult>(
+        if (encounter is not null) return new EditResult<EncounterResult>(
             null, "There is already an active encounter in this channel.");
 
         var adventure = await GetAdventureAsync(guild, guild.CurrentAdventureName, cancellationToken);
-        if (adventure == null) return new ResultOrMessage<EncounterResult>(
+        if (adventure == null) return new EditResult<EncounterResult>(
             null, "There is no current adventure.");
 
         encounter = new Encounter()
@@ -79,7 +78,7 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
         };
         _context.Encounters.Add(encounter);
         await _context.SaveChangesAsync(cancellationToken);
-        return new ResultOrMessage<EncounterResult>(new EncounterResult(adventure, encounter));
+        return new EditResult<EncounterResult>(new EncounterResult(adventure, encounter));
     }
 
     public async Task AddMessageAsync(MessageBase message, CancellationToken cancellationToken = default)
@@ -186,11 +185,11 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
     /// Call this to write changes to the database, within a retry loop that reloads entities
     /// and reruns the operation if there is a conflict.
     /// </summary>
-    public async Task<T?> EditAsync<T, TParam, TResult>(
-        EditOperation<T, TParam, TResult> operation,
+    public async Task<EditResult<T>> EditAsync<T, TParam>(
+        EditOperation<T, TParam> operation,
         TParam parameter,
         CancellationToken cancellationToken = default)
-        where TResult : EditResult<T>
+        where T : class
     {
         var retryPolicy = Policy.Handle<DbUpdateConcurrencyException>()
             .WaitAndRetryAsync(Delays, (exception, _) => OnRetryAsync(exception, cancellationToken));
@@ -198,74 +197,66 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
         return await retryPolicy.ExecuteAsync(async () =>
         {
             var result = await operation.DoEditAsync(_context, parameter, cancellationToken);
-            if (!result.Success) return result.Value;
-
-            await _context.SaveChangesAsync(cancellationToken);
-            return result.Value;
+            if (result.Success) await _context.SaveChangesAsync(cancellationToken);
+            return result;
         });
     }
 
-    public async Task<T?> EditAdventureAsync<T, TResult>(
-        ulong guildId, EditOperation<T, Adventure, TResult> operation,
+    public async Task<EditResult<T>> EditAdventureAsync<T>(
+        ulong guildId, EditOperation<T, Adventure> operation,
         string? adventureName = null,
         CancellationToken cancellationToken = default)
-        where TResult : EditResult<T>
+        where T : class
     {
         var guild = await GetGuildAsync(guildId, cancellationToken);
         adventureName ??= guild.CurrentAdventureName;
 
         var adventure = await GetAdventureAsync(guild, adventureName, cancellationToken);
-        if (adventure == null) return operation.CreateError($"Adventure '{adventureName}' not found.").Value;
+        if (adventure == null) return operation.CreateError($"Adventure '{adventureName}' not found.");
 
         var result = await EditAsync(operation, adventure, cancellationToken);
         return result;
     }
 
-    public async Task<T?> EditAdventurerAsync<T, TResult>(
-        ulong guildId, ulong userId, EditOperation<T, Adventurer, TResult> operation,
+    public async Task<EditResult<T>> EditAdventurerAsync<T>(
+        ulong guildId, ulong userId, EditOperation<T, Adventurer> operation,
         CancellationToken cancellationToken = default)
-        where TResult : EditResult<T>
+        where T : class
     {
         // This one always fetches the user's character in the current adventure (if any.)
         var guild = await GetGuildAsync(guildId, cancellationToken);
         if (string.IsNullOrEmpty(guild.CurrentAdventureName))
-            return operation.CreateError("There is no current adventure in this guild.").Value;
+            return operation.CreateError("There is no current adventure in this guild.");
 
         var adventure = await GetAdventureAsync(guild, null, cancellationToken);
-        if (adventure == null) return operation.CreateError($"Adventure '{guild.CurrentAdventureName}' not found.").Value;
+        if (adventure == null) return operation.CreateError($"Adventure '{guild.CurrentAdventureName}' not found.");
 
         var adventurer = await GetAdventurerAsync(adventure, userId, cancellationToken);
-        if (adventurer == null) return operation.CreateError("You have not joined the current adventure.").Value;
+        if (adventurer == null) return operation.CreateError("You have not joined the current adventure.");
 
         var result = await EditAsync(operation, adventurer, cancellationToken);
         return result;
     }
 
-    public async Task<T?> EditCharacterAsync<T, TResult>(
-        string name, EditOperation<T, Character, TResult> operation, ulong userId, CharacterType characterType,
+    public async Task<EditResult<T>> EditCharacterAsync<T>(
+        string name, EditOperation<T, Character> operation, ulong userId, CharacterType characterType,
         CancellationToken cancellationToken = default)
-        where TResult : EditResult<T>
+        where T : class
     {
         var character = await GetCharacterAsync(name, userId, characterType, cancellationToken: cancellationToken);
-        if (character == null) return operation.CreateError($"Character '{name}' not found.").Value;
+        if (character == null) return operation.CreateError($"Character '{name}' not found.");
 
         return await EditAsync(operation, character, cancellationToken);
     }
 
-    public async Task<T?> EditEncounterAsync<T, TResult>(
-        ulong guildId, ulong channelId, EditOperation<T, EncounterResult, TResult> operation,
+    public async Task<EditResult<T>> EditEncounterAsync<T>(
+        ulong guildId, ulong channelId, EditOperation<T, EncounterResult> operation,
         CancellationToken cancellationToken = default)
-        where TResult : EditResult<T>
+        where T : class
     {
         var guild = await GetGuildAsync(guildId, cancellationToken);
         var result = await GetEncounterResultAsync(guild, channelId, cancellationToken);
-        if (!string.IsNullOrEmpty(result.Value.ErrorMessage))
-            return operation.CreateError(result.Value.ErrorMessage).Value;
-
-        if (result.Value.Value == null)
-            throw new InvalidOperationException("GetEncounterResultAsync did not return a value");
-
-        return await EditAsync(operation, result.Value.Value, cancellationToken);
+        return await result.HandleAsync(operation.CreateError, value => EditAsync(operation, value, cancellationToken));
     }
 
     public async Task<Guild> EnsureGuildAsync(ulong guildId, CancellationToken cancellationToken = default)
@@ -360,21 +351,21 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
             .SingleOrDefaultAsync(e => e.GuildId == guild.Id && e.ChannelId == channelId, cancellationToken);
     }
 
-    public async Task<MessageEditResult<EncounterResult>> GetEncounterResultAsync(Guild guild, ulong channelId,
+    public async Task<EditResult<EncounterResult>> GetEncounterResultAsync(Guild guild, ulong channelId,
         CancellationToken cancellationToken = default)
     {
         var encounter = await GetEncounterAsync(guild, channelId, cancellationToken);
-        if (encounter is null) return new MessageEditResult<EncounterResult>(null,
+        if (encounter is null) return new EditResult<EncounterResult>(null,
             "There is no active encounter in this channel.");
 
-        if (encounter.AdventureName != guild.CurrentAdventureName) return new MessageEditResult<EncounterResult>(null,
+        if (encounter.AdventureName != guild.CurrentAdventureName) return new EditResult<EncounterResult>(null,
             $"The current encounter is in adventure '{encounter.AdventureName}', which is not the current adventure.");
 
         var adventure = await GetAdventureAsync(guild, encounter.AdventureName, cancellationToken);
-        if (adventure is null) return new MessageEditResult<EncounterResult>(null,
+        if (adventure is null) return new EditResult<EncounterResult>(null,
             $"The current encounter is in adventure '{encounter.AdventureName}', which was not found.");
 
-        return new MessageEditResult<EncounterResult>(new EncounterResult(adventure, encounter));
+        return new EditResult<EncounterResult>(new EncounterResult(adventure, encounter));
     }
 
     public async Task<Guild> GetGuildAsync(ulong guildId, CancellationToken cancellationToken = default)

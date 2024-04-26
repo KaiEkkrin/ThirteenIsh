@@ -58,7 +58,7 @@ internal sealed class PinnedMessageService(
         ISocketMessageChannel channel,
         string adventureName,
         string encounterMessage)
-        : EditOperation<Encounter, EncounterResult, EditResult<Encounter>>()
+        : EditOperation<Encounter, EncounterResult>
     {
         public override async Task<EditResult<Encounter>> DoEditAsync(DataContext context, EncounterResult encounterResult,
             CancellationToken cancellationToken)
@@ -67,14 +67,14 @@ internal sealed class PinnedMessageService(
             if (adventure.Name != adventureName)
             {
                 // The current encounter or adventure has changed and this message is no longer valid.
-                return new EditResult<Encounter>(null);
+                return CreateError($"'{adventureName}' is not the current adventure.");
             }
 
             if (encounter.PinnedMessageId is { } pinnedMessageId &&
                 await pinnedMessageService.UpdateAsync(channel, pinnedMessageId, encounterMessage))
             {
                 // No edit to the guild is needed.
-                return new EditResult<Encounter>(null);
+                return new EditResult<Encounter>(encounter);
             }
 
             pinnedMessageId = await CreateAsync(channel, encounterMessage);

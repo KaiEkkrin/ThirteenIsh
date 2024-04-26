@@ -2,7 +2,6 @@
 using Discord.WebSocket;
 using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
-using ThirteenIsh.Results;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Adventures;
@@ -27,28 +26,24 @@ internal sealed class AdventureSwitchSubCommand() : SubCommandBase("switch", "Se
         }
 
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var (adventure, message) = await dataService.EditAdventureAsync(
+        var result = await dataService.EditAdventureAsync(
             guildId, new EditOperation(), name, cancellationToken);
 
-        if (!string.IsNullOrEmpty(message))
-        {
-            await command.RespondAsync(message, ephemeral: true);
-            return;
-        }
-
-        if (adventure is null) throw new InvalidOperationException(nameof(adventure));
-
-        var discordService = serviceProvider.GetRequiredService<DiscordService>();
-        await discordService.RespondWithAdventureSummaryAsync(dataService, command, adventure, name);
+        await result.Handle(
+            errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
+            adventure =>
+            {
+                var discordService = serviceProvider.GetRequiredService<DiscordService>();
+                return discordService.RespondWithAdventureSummaryAsync(dataService, command, adventure, name);
+            });
     }
 
-    private sealed class EditOperation()
-        : SyncEditOperation<ResultOrMessage<Adventure>, Adventure, MessageEditResult<Adventure>>
+    private sealed class EditOperation() : SyncEditOperation<Adventure, Adventure>
     {
-        public override MessageEditResult<Adventure> DoEdit(DataContext context, Adventure adventure)
+        public override EditResult<Adventure> DoEdit(DataContext context, Adventure adventure)
         {
             adventure.Guild.CurrentAdventureName = adventure.Name;
-            return new MessageEditResult<Adventure>(adventure);
+            return new EditResult<Adventure>(adventure);
         }
     }
 }
