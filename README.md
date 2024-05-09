@@ -26,7 +26,7 @@ docker run --name thirteenish-postgres --restart unless-stopped -d -e POSTGRES_U
 Configure these via command line, environment variables or user secrets.
 
 * "BotToken": the Discord bot token.
-* "DbConnectionString": the Postgres connection string, e.g. TODO "Host=localhost;Database=thirteenish;Username=thirteenish;Password=<...password...>"
+* "DbConnectionString": the Postgres connection string, e.g. "Host=localhost;Database=thirteenish;Username=thirteenish;Password=<...password...>"
 
 ## Docker-compose based deployment
 
