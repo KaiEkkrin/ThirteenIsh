@@ -2,19 +2,16 @@
 using Discord.WebSocket;
 using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
-using ThirteenIsh.Results;
 using ThirteenIsh.Services;
 
-namespace ThirteenIsh.Commands.Adventures;
+namespace ThirteenIsh.Commands.Gm;
 
-internal sealed class AdventureSetSubCommand() : SubCommandBase("set", "Sets an adventure property.")
+internal sealed class GmAdventureSwitchSubCommand() : SubCommandBase("switch", "Sets the currently active adventure.")
 {
     public override SlashCommandOptionBuilder CreateBuilder()
     {
         return base.CreateBuilder()
             .AddOption("name", ApplicationCommandOptionType.String, "The adventure name.",
-                isRequired: true)
-            .AddOption("description", ApplicationCommandOptionType.String, "A description of the adventure.",
                 isRequired: true);
     }
 
@@ -28,11 +25,9 @@ internal sealed class AdventureSetSubCommand() : SubCommandBase("set", "Sets an 
             return;
         }
 
-        if (!CommandUtil.TryGetOption<string>(option, "description", out var description)) description = string.Empty;
-
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var result = await dataService.EditAdventureAsync(
-            guildId, new EditOperation(description), name, cancellationToken);
+            guildId, new EditOperation(), name, cancellationToken);
 
         await result.Handle(
             errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
@@ -43,11 +38,11 @@ internal sealed class AdventureSetSubCommand() : SubCommandBase("set", "Sets an 
             });
     }
 
-    private sealed class EditOperation(string description) : SyncEditOperation<Adventure, Adventure>
+    private sealed class EditOperation() : SyncEditOperation<Adventure, Adventure>
     {
         public override EditResult<Adventure> DoEdit(DataContext context, Adventure adventure)
         {
-            adventure.Description = description;
+            adventure.Guild.CurrentAdventureName = adventure.Name;
             return new EditResult<Adventure>(adventure);
         }
     }

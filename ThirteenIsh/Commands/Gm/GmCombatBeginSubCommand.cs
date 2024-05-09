@@ -2,9 +2,9 @@
 using ThirteenIsh.Game;
 using ThirteenIsh.Services;
 
-namespace ThirteenIsh.Commands.Adventures;
+namespace ThirteenIsh.Commands.Gm;
 
-internal sealed class AdventureCombatBeginCommand() : SubCommandBase("begin", "Begins an encounter in this channel.")
+internal sealed class GmCombatBeginSubCommand() : SubCommandBase("begin", "Begins an encounter in this channel.")
 {
     public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
         IServiceProvider serviceProvider, CancellationToken cancellationToken)

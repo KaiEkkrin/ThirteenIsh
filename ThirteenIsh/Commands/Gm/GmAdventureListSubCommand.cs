@@ -4,9 +4,9 @@ using System.Globalization;
 using System.Text;
 using ThirteenIsh.Services;
 
-namespace ThirteenIsh.Commands.Adventures;
+namespace ThirteenIsh.Commands.Gm;
 
-internal sealed class AdventureListSubCommand() : SubCommandBase("list", "Lists the adventures in this guild.")
+internal sealed class GmAdventureListSubCommand() : SubCommandBase("list", "Lists the adventures in this guild.")
 {
     public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
         IServiceProvider serviceProvider, CancellationToken cancellationToken)

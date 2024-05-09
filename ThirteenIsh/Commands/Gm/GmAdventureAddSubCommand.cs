@@ -3,9 +3,9 @@ using Discord.WebSocket;
 using ThirteenIsh.Game;
 using ThirteenIsh.Services;
 
-namespace ThirteenIsh.Commands.Adventures;
+namespace ThirteenIsh.Commands.Gm;
 
-internal sealed class AdventureAddSubCommand() : SubCommandBase("add", "Adds a new adventure.")
+internal sealed class GmAdventureAddSubCommand() : SubCommandBase("add", "Adds a new adventure.")
 {
     public override SlashCommandOptionBuilder CreateBuilder()
     {

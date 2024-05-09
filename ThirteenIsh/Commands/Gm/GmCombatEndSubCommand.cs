@@ -3,9 +3,9 @@ using Discord.WebSocket;
 using ThirteenIsh.Database.Entities.Messages;
 using ThirteenIsh.Services;
 
-namespace ThirteenIsh.Commands.Adventures;
+namespace ThirteenIsh.Commands.Gm;
 
-internal sealed class AdventureCombatEndCommand() : SubCommandBase("end", "Ends an encounter in the current channel.")
+internal sealed class GmCombatEndSubCommand() : SubCommandBase("end", "Ends an encounter in the current channel.")
 {
     public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
         IServiceProvider serviceProvider, CancellationToken cancellationToken)

@@ -2,9 +2,9 @@
 using Discord.WebSocket;
 using ThirteenIsh.Services;
 
-namespace ThirteenIsh.Commands.Adventures;
+namespace ThirteenIsh.Commands.Gm;
 
-internal sealed class AdventureGetSubCommand() : SubCommandBase("get", "Gets the details of an adventure.")
+internal sealed class GmAdventureGetSubCommand() : SubCommandBase("get", "Gets the details of an adventure.")
 {
     public override SlashCommandOptionBuilder CreateBuilder()
     {

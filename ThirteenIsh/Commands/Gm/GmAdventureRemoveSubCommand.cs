@@ -3,9 +3,9 @@ using Discord.WebSocket;
 using ThirteenIsh.Database.Entities.Messages;
 using ThirteenIsh.Services;
 
-namespace ThirteenIsh.Commands.Adventures;
+namespace ThirteenIsh.Commands.Gm;
 
-internal sealed class AdventureRemoveSubCommand() : SubCommandBase("remove", "Deletes an adventure.")
+internal sealed class GmAdventureRemoveSubCommand() : SubCommandBase("remove", "Deletes an adventure.")
 {
     public override SlashCommandOptionBuilder CreateBuilder()
     {
