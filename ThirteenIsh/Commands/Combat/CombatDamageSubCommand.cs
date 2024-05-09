@@ -10,7 +10,7 @@ using ThirteenIsh.Game;
 using ThirteenIsh.Parsing;
 using ThirteenIsh.Services;
 
-namespace ThirteenIsh.Commands.Pcs;
+namespace ThirteenIsh.Commands.Combat;
 
 // TODO Make an equivalent for dealing damage with a monster?
 // (or move this stuff to just `13-combat` and have it work off of the current combatant,
@@ -18,7 +18,7 @@ namespace ThirteenIsh.Commands.Pcs;
 // TODO maybe change this to `13-combat damage`, have it use the current combatant (if it's
 // added with your user ID) or the named combatant if an optional name is supplied (again if it's
 // added with your user ID.)
-internal sealed class PcCombatDamageCommand()
+internal sealed class CombatDamageSubCommand()
     : SubCommandBase("damage", "Deals damage to a player or monster in the encounter.")
 {
     public override SlashCommandOptionBuilder CreateBuilder()

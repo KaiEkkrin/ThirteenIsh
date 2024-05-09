@@ -1,6 +1,5 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using Polly.Caching;
 using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Game;
@@ -9,9 +8,9 @@ using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Combat;
 
-// Use `pc combat join` to join a combat as an adventurer -- done like that so only one
+// Use `combat join` to join a combat as an adventurer -- done like that so only one
 // copy of each adventurer can go into a combat (otherwise things would get very weird)!
-internal sealed class CombatAddCommand() : SubCommandBase("add", "Adds a monster to the current encounter.")
+internal sealed class CombatAddSubCommand() : SubCommandBase("add", "Adds a monster to the current encounter.")
 {
     public override SlashCommandOptionBuilder CreateBuilder()
     {

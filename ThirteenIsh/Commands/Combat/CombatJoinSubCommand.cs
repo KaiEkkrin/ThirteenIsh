@@ -7,9 +7,9 @@ using ThirteenIsh.Game;
 using ThirteenIsh.Results;
 using ThirteenIsh.Services;
 
-namespace ThirteenIsh.Commands.Pcs;
+namespace ThirteenIsh.Commands.Combat;
 
-internal sealed class PcCombatJoinSubCommand() : SubCommandBase("join", "Joins the current encounter.")
+internal sealed class CombatJoinSubCommand() : SubCommandBase("join", "Joins the current encounter.")
 {
     public override SlashCommandOptionBuilder CreateBuilder()
     {

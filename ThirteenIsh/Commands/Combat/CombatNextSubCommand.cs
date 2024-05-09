@@ -8,7 +8,7 @@ using ThirteenIsh.Game;
 using ThirteenIsh.Results;
 using ThirteenIsh.Services;
 
-namespace ThirteenIsh.Commands.Pcs;
+namespace ThirteenIsh.Commands.Combat;
 
 /// <summary>
 /// Moves to the next combatant in the encounter, i.e. the end-of-turn command.
@@ -20,7 +20,7 @@ namespace ThirteenIsh.Commands.Pcs;
 /// Also make a `prev` command to go to the previous combatant and a `swap` command to swap two
 /// combatants in the initiative.
 /// </summary>
-internal sealed class PcCombatNextSubCommand() : SubCommandBase("next", "Moves on to the next combatant in the encounter.")
+internal sealed class CombatNextSubCommand() : SubCommandBase("next", "Moves on to the next combatant in the encounter.")
 {
     public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
         IServiceProvider serviceProvider, CancellationToken cancellationToken)

@@ -8,7 +8,7 @@ using ThirteenIsh.Game;
 using ThirteenIsh.Parsing;
 using ThirteenIsh.Services;
 
-namespace ThirteenIsh.Commands.Pcs;
+namespace ThirteenIsh.Commands.Combat;
 
 // This is like `pc-roll`, but instead of rolling against a specified DC, here we roll against
 // the attribute of another player (or monster) in the current encounter
@@ -19,7 +19,7 @@ namespace ThirteenIsh.Commands.Pcs;
 // TODO maybe change this to `13-combat attack`, have it use the current combatant (if it's
 // added with your user ID) or the named combatant if an optional name is supplied (again if it's
 // added with your user ID.)
-internal sealed class PcCombatAttackCommand()
+internal sealed class CombatAttackSubCommand()
     : SubCommandBase("attack", "Rolls against a player or monster in the encounter.")
 {
     public override SlashCommandOptionBuilder CreateBuilder()
