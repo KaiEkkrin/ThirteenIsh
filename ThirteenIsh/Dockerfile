@@ -7,15 +7,17 @@ WORKDIR /app
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["ThirteenIsh.Database/ThirteenIsh.Database.csproj", "ThirteenIsh/ThirteenIsh.csproj", "ThirteenIsh/"]
+COPY ["ThirteenIsh.Database/ThirteenIsh.Database.csproj", "ThirteenIsh.Database/"]
+RUN dotnet restore "./ThirteenIsh.Database/./ThirteenIsh.Database.csproj"
+COPY ["ThirteenIsh/ThirteenIsh.csproj", "ThirteenIsh/"]
 RUN dotnet restore "./ThirteenIsh/./ThirteenIsh.csproj"
 COPY . .
 WORKDIR "/src/ThirteenIsh"
-RUN dotnet build "./ThirteenIsh.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet build "./ThirteenIsh.csproj" --no-restore -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./ThirteenIsh.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./ThirteenIsh.csproj" --no-restore -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
