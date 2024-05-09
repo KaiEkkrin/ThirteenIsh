@@ -17,20 +17,8 @@ internal sealed class DiceRollParser : ParserBase
     {
         CheckMaxDepth(offset, ref depth);
 
-        // Parse the dice count
-        var rawDiceCount = IntegerParser.Instance.Parse(input, offset, depth);
-        if (!string.IsNullOrEmpty(rawDiceCount.Error))
-            return rawDiceCount;
-
-        var (diceCount, diceSign) = rawDiceCount.LiteralValue < 0
-            ? (-rawDiceCount.LiteralValue, -1)
-            : (rawDiceCount.LiteralValue, 1);
-
-        if (diceCount == 0 || diceCount > MaxDiceCount)
-            return new ErrorParseTree(offset, $"Invalid dice count: {diceCount}");
-
-        // Parse the "d"
-        var d = DParser.Parse(input, rawDiceCount.Offset, depth);
+        // Parse the dice count and "d"
+        var d = ParseDiceCount(input, offset, depth, out var diceCount, out var diceSign);
         if (!string.IsNullOrEmpty(d.Error)) return d;
 
         // Parse the dice size
@@ -71,5 +59,35 @@ internal sealed class DiceRollParser : ParserBase
 
         return new DiceRollParseTree(
             lastOffset, diceCount, diceSign, diceSize.LiteralValue, keepHighest, keepLowest);
+    }
+
+    private static ParseTreeBase ParseDiceCount(string input, int offset, int depth, out int diceCount, out int diceSign)
+    {
+        // The "d" may or may not be preceded by a count.
+        // If it isn't, assume the count is 1.
+        var d = DParser.Parse(input, offset, depth);
+        if (string.IsNullOrEmpty(d.Error))
+        {
+            diceCount = diceSign = 1;
+            return d;
+        }
+
+        // Parse the dice count
+        var rawDiceCount = IntegerParser.Instance.Parse(input, offset, depth);
+        if (!string.IsNullOrEmpty(rawDiceCount.Error))
+        {
+            diceCount = diceSign = 0;
+            return rawDiceCount;
+        }
+
+        (diceCount, diceSign) = rawDiceCount.LiteralValue < 0
+            ? (-rawDiceCount.LiteralValue, -1)
+            : (rawDiceCount.LiteralValue, 1);
+
+        if (diceCount == 0 || diceCount > MaxDiceCount)
+            return new ErrorParseTree(offset, $"Invalid dice count: {diceCount}");
+
+        // Parse the "d"
+        return DParser.Parse(input, rawDiceCount.Offset, depth);
     }
 }

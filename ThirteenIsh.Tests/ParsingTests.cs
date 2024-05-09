@@ -58,6 +58,11 @@ public class ParsingTests
     }
 
     [Theory]
+    [InlineData("1d6", 3, 6, 3)]
+    [InlineData("3d6", 15, 6, 6, 6, 5, 6, 4)]
+    [InlineData("d6", 2, 6, 2)]
+    [InlineData("2d8 + 2d6", 12, 8, 4, 8, 5, 6, 2, 6, 1)]
+    [InlineData("2d8 + d6", 11, 8, 4, 8, 5, 6, 2)]
     [InlineData("1d20", 4, 20, 4)]
     [InlineData("1d20", 7, 20, 7)]
     [InlineData("4d20 - 2d6", 32,
