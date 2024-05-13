@@ -171,7 +171,7 @@ internal sealed class CombatDamageSubCommand()
 
                 var embedBuilder = new EmbedBuilder()
                     .WithAuthor(command.User)
-                    .WithTitle($"{adventure.Name} : Rolled damage to {vsCounterByType.Values.First().Name}")
+                    .WithTitle($"{combatant.Alias} : Rolled damage to {vsCounterByType.Values.First().Name}")
                     .WithDescription(stringBuilder.ToString());
 
                 await command.ModifyOriginalResponseAsync(properties => properties.Embed = embedBuilder.Build());

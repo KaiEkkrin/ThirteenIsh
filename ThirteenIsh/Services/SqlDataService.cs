@@ -256,7 +256,9 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
     {
         var guild = await GetGuildAsync(guildId, cancellationToken);
         var result = await GetEncounterResultAsync(guild, channelId, cancellationToken);
-        return await result.HandleAsync(operation.CreateError, value => EditAsync(operation, value, cancellationToken));
+        return await result.HandleAsync(
+            errorMessage => Task.FromResult(operation.CreateError(errorMessage)),
+            value => EditAsync(operation, value, cancellationToken));
     }
 
     public async Task<Guild> EnsureGuildAsync(ulong guildId, CancellationToken cancellationToken = default)

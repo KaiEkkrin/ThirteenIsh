@@ -44,11 +44,18 @@ internal sealed class EncounterDamageMessageHandler(SqlDataService dataService, 
         var result = await dataService.EditAsync(
             new EditOperation(random), new EditParam(adventure, combatant, message, controlId), cancellationToken);
 
-        await result.Handle(
-            errorMessage => component.RespondAsync(errorMessage, ephemeral: true),
-            output =>
+        return await result.HandleAsync(
+            async errorMessage =>
             {
-                return CommandUtil.RespondWithTrackedCharacterSummaryAsync(component, output.Character, output.GameSystem,
+                await component.RespondAsync(errorMessage, ephemeral: true);
+                return true;
+            },
+            async output =>
+            {
+                // TODO :
+                // - Write a summary of what happened to the channel.
+                // - Update the pinned combat message.
+                await CommandUtil.RespondWithTrackedCharacterSummaryAsync(component, output.Character, output.GameSystem,
                     new CommandUtil.AdventurerSummaryOptions
                     {
                         ExtraFields =
@@ -59,9 +66,9 @@ internal sealed class EncounterDamageMessageHandler(SqlDataService dataService, 
                         OnlyVariables = true,
                         Title = $"{combatant.Alias} took damage to {output.Counter.Name}"
                     });
-            });
 
-        return true;
+                return true;
+            });
     }
 
     private static ParseTreeBase BuildDamageParseTree(string controlId, EncounterDamageMessage message)
@@ -111,7 +118,7 @@ internal sealed class EncounterDamageMessageHandler(SqlDataService dataService, 
             var parseTree = new BinaryOperationParseTree(0,
                 new IntegerParseTree(0, currentValue),
                 BuildDamageParseTree(controlId, message),
-                '-');
+                '+');
 
             var newValue = parseTree.Evaluate(random, out var working);
             counter.SetVariableClamped(newValue, character);

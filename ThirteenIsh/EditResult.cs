@@ -27,11 +27,12 @@ public class EditResult<T>(T? value, string? errorMessage = null) where T : clas
         }
     }
 
-    public async Task<TOutput> HandleAsync<TOutput>(Func<string, TOutput> onError, Func<T, Task<TOutput>> onValueAsync)
+    public async Task<TOutput> HandleAsync<TOutput>(Func<string, Task<TOutput>> onErrorAsync,
+        Func<T, Task<TOutput>> onValueAsync)
     {
         if (!string.IsNullOrEmpty(errorMessage))
         {
-            return onError(errorMessage);
+            return await onErrorAsync(errorMessage);
         }
         else if (value != null)
         {
