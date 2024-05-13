@@ -4,8 +4,6 @@ namespace ThirteenIsh;
 
 /// <summary>
 /// A functor for editing data within a retry loop.
-/// TODO remove MessageEditResult and make the base EditResult always carry a message instead.
-/// Make CreateError sensible (right now it's always returning nulls.)
 /// </summary>
 public abstract class EditOperation<T, TParam> where T : class
 {

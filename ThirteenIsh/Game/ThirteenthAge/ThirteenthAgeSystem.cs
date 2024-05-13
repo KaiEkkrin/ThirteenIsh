@@ -206,7 +206,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
 
             case CharacterType.Monster:
                 // TODO Add a monster type and level or what have you to display here
-                return "TODO Monster";
+                return "Monster";
 
             default:
                 throw new ArgumentException("Unrecognised character type", nameof(type));

@@ -11,7 +11,6 @@ namespace ThirteenIsh.Commands.Pcs;
 /// Extend this to make the vset and vmod commands since they're extremely similar
 /// These, of course, don't apply to monsters, which don't have an equivalent to "player character" sheets
 /// copied into the adventure
-/// TODO This isn't working yet in the SQL branch
 /// </summary>
 internal abstract class PcVSubCommandBase(string name, string description,
     string nameOptionDescription, string valueOptionDescription)
