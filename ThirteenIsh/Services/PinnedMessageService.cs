@@ -1,4 +1,4 @@
-﻿using Discord.WebSocket;
+﻿using Discord;
 using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Results;
@@ -18,7 +18,7 @@ internal sealed class PinnedMessageService(
             new EventId(1, nameof(PinnedMessageService)),
             "Pinned message {Action} : {Message}");
 
-    public async Task SetEncounterMessageAsync(ISocketMessageChannel channel, string adventureName, ulong guildId, string text,
+    public async Task SetEncounterMessageAsync(IMessageChannel channel, string adventureName, ulong guildId, string text,
         CancellationToken cancellationToken = default)
     {
         await dataService.EditEncounterAsync(
@@ -27,14 +27,14 @@ internal sealed class PinnedMessageService(
             cancellationToken);
     }
 
-    private static async Task<ulong> CreateAsync(ISocketMessageChannel channel, string text)
+    private static async Task<ulong> CreateAsync(IMessageChannel channel, string text)
     {
         var message = await channel.SendMessageAsync(text);
         await message.PinAsync();
         return message.Id;
     }
 
-    private async Task<bool> UpdateAsync(ISocketMessageChannel channel, ulong messageId, string text)
+    private async Task<bool> UpdateAsync(IMessageChannel channel, ulong messageId, string text)
     {
         try
         {
@@ -55,7 +55,7 @@ internal sealed class PinnedMessageService(
 
     private sealed class SetEncounterMessageOperation(
         PinnedMessageService pinnedMessageService,
-        ISocketMessageChannel channel,
+        IMessageChannel channel,
         string adventureName,
         string encounterMessage)
         : EditOperation<Encounter, EncounterResult>

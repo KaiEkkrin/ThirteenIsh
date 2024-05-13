@@ -12,7 +12,8 @@ using ThirteenIsh.Services;
 namespace ThirteenIsh.MessageHandlers;
 
 [MessageHandler(MessageType = typeof(EncounterDamageMessage))]
-internal sealed class EncounterDamageMessageHandler(SqlDataService dataService, IRandomWrapper random)
+internal sealed class EncounterDamageMessageHandler(SqlDataService dataService, DiscordService discordService,
+    PinnedMessageService pinnedMessageService, IRandomWrapper random)
     : MessageHandlerBase<EncounterDamageMessage>
 {
     protected override async Task<bool> HandleInternalAsync(SocketMessageComponent component, string controlId,
@@ -52,10 +53,9 @@ internal sealed class EncounterDamageMessageHandler(SqlDataService dataService, 
             },
             async output =>
             {
-                // TODO :
-                // - Write a summary of what happened to the channel.
-                // - Update the pinned combat message.
-                await CommandUtil.RespondWithTrackedCharacterSummaryAsync(component, output.Character, output.GameSystem,
+                // Write a summary of what happened to the channel
+                var channel = await discordService.GetGuildMessageChannelAsync(message.GuildId, message.ChannelId);
+                var embed = CommandUtil.BuildTrackedCharacterSummaryEmbed(null, output.Character, output.GameSystem,
                     new CommandUtil.AdventurerSummaryOptions
                     {
                         ExtraFields =
@@ -67,6 +67,19 @@ internal sealed class EncounterDamageMessageHandler(SqlDataService dataService, 
                         Title = $"{combatant.Alias} took damage to {output.Counter.Name}"
                     });
 
+                if (channel != null)
+                {
+                    await channel.SendMessageAsync(embed: embed);
+
+                    // Update the encounter table
+                    var encounterTable = await output.GameSystem.BuildEncounterTableAsync(dataService, adventure,
+                        encounter, cancellationToken);
+
+                    await pinnedMessageService.SetEncounterMessageAsync(channel, encounter.AdventureName, message.GuildId,
+                        encounterTable, cancellationToken);
+                }
+
+                await component.RespondAsync(embed: embed);
                 return true;
             });
     }

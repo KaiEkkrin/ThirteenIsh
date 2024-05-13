@@ -71,13 +71,13 @@ internal static class CommandUtil
     }
 
     public static Embed BuildTrackedCharacterSummaryEmbed(
-        IDiscordInteraction command,
+        IDiscordInteraction? command,
         ITrackedCharacter character,
         GameSystem gameSystem,
         AdventurerSummaryOptions options)
     {
         EmbedBuilder embedBuilder = new();
-        embedBuilder.WithAuthor(command.User);
+        if (command != null) embedBuilder.WithAuthor(command.User);
         embedBuilder.WithTitle(options.Title);
 
         var characterSystem = gameSystem.GetCharacterSystem(character.Type);
