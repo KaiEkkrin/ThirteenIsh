@@ -1,4 +1,9 @@
-﻿using Discord.WebSocket;
+﻿using Discord;
+using Discord.WebSocket;
+using ThirteenIsh.Commands;
+using ThirteenIsh.Database;
+using ThirteenIsh.Database.Entities;
+using ThirteenIsh.Database.Entities.Combatants;
 using ThirteenIsh.Database.Entities.Messages;
 using ThirteenIsh.Game;
 using ThirteenIsh.Parsing;
@@ -7,7 +12,8 @@ using ThirteenIsh.Services;
 namespace ThirteenIsh.MessageHandlers;
 
 [MessageHandler(MessageType = typeof(EncounterDamageMessage))]
-internal sealed class EncounterDamageMessageHandler(SqlDataService dataService) : MessageHandlerBase<EncounterDamageMessage>
+internal sealed class EncounterDamageMessageHandler(SqlDataService dataService, IRandomWrapper random)
+    : MessageHandlerBase<EncounterDamageMessage>
 {
     protected override async Task<bool> HandleInternalAsync(SocketMessageComponent component, string controlId,
         EncounterDamageMessage message, CancellationToken cancellationToken = default)
@@ -35,46 +41,85 @@ internal sealed class EncounterDamageMessageHandler(SqlDataService dataService) 
             return true;
         }
 
-        var gameSystem = GameSystem.Get(adventure.GameSystem);
-        var characterSystem = gameSystem.GetCharacterSystem(combatant.CharacterType);
-        var counter = characterSystem.FindCounter(message.VariableName,
-            c => c.Options.HasFlag(GameCounterOptions.HasVariable));
-        if (counter == null)
-        {
-            await component.RespondAsync($"'{message.VariableName}' does not uniquely match a variable name.",
-                ephemeral: true);
-            return true;
-        }
+        var result = await dataService.EditAsync(
+            new EditOperation(random), new EditParam(adventure, combatant, message, controlId), cancellationToken);
 
-        // Illustrating this as a parse tree should make it clearer what has happened
-        var totalDamage = GetDamageAndParseTree(controlId, message, out var parseTree);
+        await result.Handle(
+            errorMessage => component.RespondAsync(errorMessage, ephemeral: true),
+            output =>
+            {
+                return CommandUtil.RespondWithTrackedCharacterSummaryAsync(component, output.Character, output.GameSystem,
+                    new CommandUtil.AdventurerSummaryOptions
+                    {
+                        ExtraFields =
+                        [
+                            new EmbedFieldBuilder().WithName("Damage").WithValue(output.Working)
+                        ],
+                        OnlyTheseProperties = [output.Counter.Name],
+                        OnlyVariables = true,
+                        Title = $"{combatant.Alias} took damage to {output.Counter.Name}"
+                    });
+            });
 
-        // TODO I need to complete this. Remember to deal with monsters as well as player characters,
-        // which the old code didn't do
-        throw new NotImplementedException();
+        return true;
     }
 
-    private static int GetDamageAndParseTree(string controlId, EncounterDamageMessage message, out ParseTreeBase parseTree)
+    private static ParseTreeBase BuildDamageParseTree(string controlId, EncounterDamageMessage message)
     {
         switch (controlId)
         {
             case EncounterDamageMessage.TakeHalfControlId:
-                parseTree = new BinaryOperationParseTree(0,
+                return new BinaryOperationParseTree(0,
                     new IntegerParseTree(0, message.Damage),
                     new IntegerParseTree(0, 2),
                     '/');
-                return message.Damage / 2;
 
             case EncounterDamageMessage.TakeNoneControlId:
-                parseTree = new BinaryOperationParseTree(0,
+                return new BinaryOperationParseTree(0,
                     new IntegerParseTree(0, message.Damage),
                     new IntegerParseTree(0, 0),
                     '*');
-                return 0;
 
             default:
-                parseTree = new IntegerParseTree(0, message.Damage);
-                return message.Damage;
+                return new IntegerParseTree(0, message.Damage);
         }
     }
+
+    private sealed class EditOperation(IRandomWrapper random) : EditOperation<DamageResult, EditParam>
+    {
+        public override async Task<EditResult<DamageResult>> DoEditAsync(DataContext context, EditParam param,
+            CancellationToken cancellationToken)
+        {
+            var (adventure, combatant, message, controlId) = param;
+
+            var character = await param.Combatant.GetCharacterAsync(context, cancellationToken);
+            if (character is null) return CreateError($"No character sheet found for combatant '{combatant.Alias}.");
+
+            var gameSystem = GameSystem.Get(adventure.GameSystem);
+            var characterSystem = gameSystem.GetCharacterSystem(combatant.CharacterType);
+            var counter = characterSystem.FindCounter(message.VariableName,
+                c => c.Options.HasFlag(GameCounterOptions.HasVariable));
+
+            if (counter == null)
+                return CreateError($"'{message.VariableName}' does not uniquely match a variable name.");
+
+            // Illustrating this as a parse tree should make it clearer what has happened
+            var currentValue = counter.GetVariableValue(character)
+                ?? counter.GetStartingValue(character.Sheet)
+                ?? throw new InvalidOperationException($"Variable {counter.Name} has no current or starting value");
+
+            var parseTree = new BinaryOperationParseTree(0,
+                new IntegerParseTree(0, currentValue),
+                BuildDamageParseTree(controlId, message),
+                '-');
+
+            var newValue = parseTree.Evaluate(random, out var working);
+            counter.SetVariableClamped(newValue, character);
+            return new EditResult<DamageResult>(new DamageResult(character, counter, gameSystem, working));
+        }
+    }
+
+    private record EditParam(Adventure Adventure, CombatantBase Combatant, EncounterDamageMessage Message, string ControlId);
+
+    private record DamageResult(ITrackedCharacter Character, GameCounter Counter, GameSystem GameSystem, string Working);
 }

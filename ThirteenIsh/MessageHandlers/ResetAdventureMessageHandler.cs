@@ -21,7 +21,7 @@ internal sealed class ResetAdventureMessageHandler(SqlDataService dataService) :
             errorMessage => component.RespondAsync(errorMessage, ephemeral: true),
             output =>
             {
-                return CommandUtil.RespondWithAdventurerSummaryAsync(component, output.Adventurer, output.GameSystem,
+                return CommandUtil.RespondWithTrackedCharacterSummaryAsync(component, output.Adventurer, output.GameSystem,
                     new CommandUtil.AdventurerSummaryOptions
                     {
                         OnlyVariables = true,

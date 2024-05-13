@@ -22,9 +22,6 @@ public abstract class CombatantBase : EntityBase
     /// </summary>
     public required string Alias { get; set; }
 
-    [NotMapped]
-    public CombatantAlias CombatantAlias => new() { Alias = Alias };
-
     /// <summary>
     /// This combatant's initiative roll result.
     /// </summary>

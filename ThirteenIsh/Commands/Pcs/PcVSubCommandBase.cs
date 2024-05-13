@@ -1,6 +1,5 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using System.Data;
 using ThirteenIsh.EditOperations;
 using ThirteenIsh.Parsing;
 using ThirteenIsh.Services;
@@ -11,6 +10,8 @@ namespace ThirteenIsh.Commands.Pcs;
 /// Extend this to make the vset and vmod commands since they're extremely similar
 /// These, of course, don't apply to monsters, which don't have an equivalent to "player character" sheets
 /// copied into the adventure
+/// TODO also make vmod and vset commands for tracked characters in combat -- maybe named `combat-vset` and
+/// `combat-vmod`? (would look very similar)
 /// </summary>
 internal abstract class PcVSubCommandBase(string name, string description,
     string nameOptionDescription, string valueOptionDescription)
@@ -66,7 +67,7 @@ internal abstract class PcVSubCommandBase(string name, string description,
                         .WithValue(output.Working));
                 }
 
-                return CommandUtil.RespondWithAdventurerSummaryAsync(command, output.Adventurer, output.GameSystem,
+                return CommandUtil.RespondWithTrackedCharacterSummaryAsync(command, output.Adventurer, output.GameSystem,
                     new CommandUtil.AdventurerSummaryOptions
                     {
                         ExtraFields = extraFields,

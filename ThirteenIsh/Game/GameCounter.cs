@@ -161,9 +161,9 @@ internal class GameCounter(string name, string? alias = null,
         throw new NotSupportedException(nameof(Roll));
     }
 
-    public void SetVariableClamped(int newValue, Adventurer adventurer)
+    public void SetVariableClamped(int newValue, ITrackedCharacter character)
     {
-        var maxValue = GetMaxVariableValue(adventurer.Sheet);
+        var maxValue = GetMaxVariableValue(character.Sheet);
         if (maxValue.HasValue)
         {
             newValue = Math.Min(maxValue.Value, Math.Max(minValue, newValue));
@@ -173,7 +173,8 @@ internal class GameCounter(string name, string? alias = null,
             newValue = Math.Max(minValue, newValue);
         }
 
-        adventurer.Variables.Counters.SetValue(Name, newValue);
+        var variables = character.GetVariables();
+        variables.Counters.SetValue(Name, newValue);
     }
 
     public override bool TryEditCharacterProperty(string newValue, CharacterSheet sheet,

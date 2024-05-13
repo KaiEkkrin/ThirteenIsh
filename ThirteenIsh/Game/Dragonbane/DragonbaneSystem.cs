@@ -261,7 +261,10 @@ internal sealed class DragonbaneSystem : GameSystem
         }
 
         encounter.RebuildTurnOrder();
-        encounter.TurnAlias = encounter.Variables.TurnOrder.FirstOrDefault()?.Alias;
+        encounter.TurnAlias = encounter.Variables.TurnOrder.Count > 0
+            ? encounter.Variables.TurnOrder[0]
+            : null;
+
         return encounter.GetCurrentCombatant();
     }
 

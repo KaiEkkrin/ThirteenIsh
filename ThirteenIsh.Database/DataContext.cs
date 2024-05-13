@@ -72,7 +72,6 @@ public class DataContext : DbContext
             {
                 v.ToJson();
                 v.OwnsMany(v => v.Counters);
-                v.OwnsMany(v => v.TurnOrder);
             });
 
         modelBuilder.Entity<MonsterCombatant>()

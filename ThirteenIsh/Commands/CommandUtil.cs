@@ -108,16 +108,6 @@ internal static class CommandUtil
         await command.RespondAsync(embed: embed);
     }
 
-    public static Task RespondWithAdventurerSummaryAsync(
-        IDiscordInteraction command,
-        Adventurer adventurer,
-        GameSystem gameSystem,
-        AdventurerSummaryOptions options)
-    {
-        var embed = BuildTrackedCharacterSummaryEmbed(command, adventurer, gameSystem, options);
-        return command.RespondAsync(embed: embed);
-    }
-
     public static Task RespondWithCharacterSheetAsync(
         IDiscordInteraction command,
         Database.Entities.Character character,
@@ -125,6 +115,16 @@ internal static class CommandUtil
         params string[] onlyTheseProperties)
     {
         var embed = BuildCharacterSheetEmbed(command, character, title, onlyTheseProperties);
+        return command.RespondAsync(embed: embed);
+    }
+
+    public static Task RespondWithTrackedCharacterSummaryAsync(
+        IDiscordInteraction command,
+        ITrackedCharacter character,
+        GameSystem gameSystem,
+        AdventurerSummaryOptions options)
+    {
+        var embed = BuildTrackedCharacterSummaryEmbed(command, character, gameSystem, options);
         return command.RespondAsync(embed: embed);
     }
 

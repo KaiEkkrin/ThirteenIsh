@@ -30,7 +30,7 @@ internal sealed class PcGetSubCommand() : SubCommandBase("get", "Shows your play
 
         var gameSystem = GameSystem.Get(adventure.GameSystem);
         var onlyVariables = !CommandUtil.TryGetOption<bool>(option, "full", out var full) || !full;
-        await CommandUtil.RespondWithAdventurerSummaryAsync(command, adventurer, gameSystem,
+        await CommandUtil.RespondWithTrackedCharacterSummaryAsync(command, adventurer, gameSystem,
             new CommandUtil.AdventurerSummaryOptions
             {
                 OnlyVariables = onlyVariables,

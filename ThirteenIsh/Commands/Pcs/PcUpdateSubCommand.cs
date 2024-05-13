@@ -22,7 +22,7 @@ internal sealed class PcUpdateSubCommand() : SubCommandBase("update", "Syncs the
             adventurer =>
             {
                 var gameSystem = GameSystem.Get(adventurer.Adventure.GameSystem);
-                return CommandUtil.RespondWithAdventurerSummaryAsync(command, adventurer, gameSystem,
+                return CommandUtil.RespondWithTrackedCharacterSummaryAsync(command, adventurer, gameSystem,
                     new CommandUtil.AdventurerSummaryOptions
                     {
                         OnlyVariables = false,
