@@ -137,7 +137,7 @@ internal sealed class EncounterDamageMessageHandler(SqlDataService dataService, 
             var parseTree = new BinaryOperationParseTree(0,
                 new IntegerParseTree(0, currentValue),
                 BuildDamageParseTree(controlId, message),
-                '+');
+                '-');
 
             var newValue = parseTree.Evaluate(random, out var working);
             counter.SetVariableClamped(newValue, character);

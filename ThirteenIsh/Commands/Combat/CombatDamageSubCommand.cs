@@ -191,7 +191,7 @@ internal sealed class CombatDamageSubCommand()
                         Alias = target.Alias,
                         ChannelId = channelId,
                         CharacterType = targetCharacter.Type,
-                        Damage = -result.Roll,
+                        Damage = result.Roll,
                         GuildId = guildId,
                         Name = adventure.Name,
                         UserId = targetCharacter.UserId,
