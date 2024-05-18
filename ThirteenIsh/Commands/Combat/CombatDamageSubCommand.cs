@@ -202,7 +202,8 @@ internal sealed class CombatDamageSubCommand()
                     var component = new ComponentBuilder()
                         .WithButton("Take full", message.GetMessageId(EncounterDamageMessage.TakeFullControlId))
                         .WithButton("Take half", message.GetMessageId(EncounterDamageMessage.TakeHalfControlId))
-                        .WithButton("Take none", message.GetMessageId(EncounterDamageMessage.TakeNoneControlId));
+                        .WithButton("Take none", message.GetMessageId(EncounterDamageMessage.TakeNoneControlId))
+                        .WithButton("Take double", message.GetMessageId(EncounterDamageMessage.TakeDoubleControlId));
 
                     var targetUser = await discordService.GetGuildUserAsync(guildId, targetCharacter.UserId);
                     await targetUser.SendMessageAsync(

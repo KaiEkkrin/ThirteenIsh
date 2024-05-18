@@ -100,6 +100,12 @@ internal sealed class EncounterDamageMessageHandler(SqlDataService dataService, 
                     new IntegerParseTree(0, 0),
                     '*');
 
+            case EncounterDamageMessage.TakeDoubleControlId:
+                return new BinaryOperationParseTree(0,
+                    new IntegerParseTree(0, message.Damage),
+                    new IntegerParseTree(0, 2),
+                    '*');
+
             default:
                 return new IntegerParseTree(0, message.Damage);
         }

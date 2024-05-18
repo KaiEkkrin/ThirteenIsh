@@ -5,6 +5,7 @@ public class EncounterDamageMessage : EncounterMessageBase
     public const string TakeFullControlId = "Full";
     public const string TakeHalfControlId = "Half";
     public const string TakeNoneControlId = "None";
+    public const string TakeDoubleControlId = "Double";
 
     /// <summary>
     /// The character type.
