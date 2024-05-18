@@ -130,7 +130,7 @@ internal sealed class CombatAttackSubCommand()
                         continue;
                     }
 
-                    var vsCounter = vsCounterByType[CharacterType.PlayerCharacter];
+                    var vsCounter = vsCounterByType[targetCharacter.Type];
                     var dc = vsCounter.GetValue(targetCharacter.Sheet);
                     if (!dc.HasValue)
                     {
