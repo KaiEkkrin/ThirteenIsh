@@ -44,7 +44,13 @@ internal sealed class ThirteenthAgeSystem : GameSystem
     public const string Barbarian = "Barbarian";
     public const string Bard = "Bard";
     public const string Cleric = "Cleric";
+    public const string ChaosMage = "Chaos Mage";
+    public const string Commander = "Commander";
+    public const string Druid = "Druid";
     public const string Fighter = "Fighter";
+    public const string Monk = "Monk";
+    public const string Necromancer = "Necromancer";
+    public const string Occultist = "Occultist";
     public const string Paladin = "Paladin";
     public const string Ranger = "Ranger";
     public const string Rogue = "Rogue";
@@ -60,7 +66,10 @@ internal sealed class ThirteenthAgeSystem : GameSystem
     public static GameSystem Build()
     {
         GameProperty classProperty = new(Class,
-                [Barbarian, Bard, Cleric, Fighter, Paladin, Ranger, Rogue, Sorcerer, Wizard],
+                [
+            Barbarian, Bard, Cleric, ChaosMage, Commander, Druid, Fighter, Monk, Necromancer,
+            Occultist, Paladin, Ranger, Rogue, Sorcerer, Wizard
+            ],
                 true);
 
         GameCounter levelCounter = new(Level, defaultValue: 1, minValue: 1, maxValue: 10);
