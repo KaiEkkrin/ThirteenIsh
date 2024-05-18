@@ -18,6 +18,11 @@ internal sealed class PinnedMessageService(
             new EventId(1, nameof(PinnedMessageService)),
             "Pinned message {Action} : {Message}");
 
+    public static async Task DeleteEncounterMessageAsync(IMessageChannel channel, ulong messageId)
+    {
+        await channel.DeleteMessageAsync(messageId);
+    }
+
     public async Task SetEncounterMessageAsync(IMessageChannel channel, string adventureName, ulong guildId, string text,
         CancellationToken cancellationToken = default)
     {
