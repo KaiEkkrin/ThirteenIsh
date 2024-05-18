@@ -55,6 +55,8 @@ internal sealed class CharacterAddSubCommand(CharacterType characterType)
         {
             await CommandUtil.RespondWithCharacterSheetAsync(command, character,
                 $"Added {characterType.FriendlyName()} '{character.Name}'");
+
+            return;
         }
 
         // This will prompt the user to select the show-on-add properties
