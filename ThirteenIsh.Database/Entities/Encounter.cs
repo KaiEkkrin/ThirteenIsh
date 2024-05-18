@@ -67,6 +67,9 @@ public class Encounter : EntityBase
     /// </summary>
     public void InsertCombatantIntoTurnOrder(CombatantBase combatant)
     {
+        if (combatant.Encounter != this)
+            throw new ArgumentException("Received a combatant in a different encounter", nameof(combatant));
+
         if (Variables.TurnOrder.Contains(combatant.Alias)) return;
 
         var insertBefore = Combatants.FirstOrDefault(c => c.Initiative < combatant.Initiative);
