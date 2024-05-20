@@ -46,6 +46,7 @@ public class DataContext : DbContext
                 s.ToJson();
                 s.OwnsMany(s => s.Counters);
                 s.OwnsMany(s => s.Properties);
+                s.OwnsMany(s => s.CustomCounters);
             })
             .OwnsOne(c => c.Variables, v =>
             {
@@ -59,6 +60,7 @@ public class DataContext : DbContext
                 s.ToJson();
                 s.OwnsMany(s => s.Counters);
                 s.OwnsMany(s => s.Properties);
+                s.OwnsMany(s => s.CustomCounters);
             });
 
         modelBuilder.Entity<CombatantBase>()
@@ -80,6 +82,7 @@ public class DataContext : DbContext
                 s.ToJson();
                 s.OwnsMany(s => s.Counters);
                 s.OwnsMany(s => s.Properties);
+                s.OwnsMany(s => s.CustomCounters);
             })
             .OwnsOne(c => c.Variables, v =>
             {

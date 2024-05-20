@@ -24,7 +24,18 @@ public class CharacterSheet : ICounterSheet
 {
     public virtual IList<PropertyValue<int>> Counters { get; set; } = [];
     public virtual IList<PropertyValue<string>> Properties { get; set; } = [];
+    public virtual IList<CustomCounter> CustomCounters { get; set; } = [];
 }
 
 public record PropertyValue<TValue>(string Name, TValue Value);
 
+public record CustomCounter(string Name, GameCounterOptions Options);
+
+[Flags]
+public enum GameCounterOptions
+{
+    None = 0,
+    CanRoll = 1,
+    HasVariable = 2,
+    IsHidden = 4
+}

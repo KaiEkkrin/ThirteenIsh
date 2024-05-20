@@ -6,15 +6,6 @@ using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Game;
 
-[Flags]
-internal enum GameCounterOptions
-{
-    None = 0,
-    CanRoll = 1,
-    HasVariable = 2,
-    IsHidden = 4
-}
-
 /// <summary>
 /// A game counter is a numeric value associated with a character, and possibly associated
 /// with an adventurer variable.
