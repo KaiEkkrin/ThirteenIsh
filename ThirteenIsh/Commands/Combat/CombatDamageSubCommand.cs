@@ -56,7 +56,7 @@ internal sealed class CombatDamageSubCommand()
         ParseTreeBase parseTree = Parser.Parse(diceString);
         if (!string.IsNullOrEmpty(parseTree.Error))
         {
-            await command.RespondAsync(parseTree.Error);
+            await command.RespondAsync(parseTree.Error, ephemeral: true);
             return;
         }
 
@@ -105,7 +105,7 @@ internal sealed class CombatDamageSubCommand()
                 var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
                 if (!TryGetCounter(characterSystem, option, out var counter, out var message))
                 {
-                    await command.RespondAsync(message);
+                    await command.RespondAsync(message, ephemeral: true);
                     return;
                 }
 
@@ -123,7 +123,7 @@ internal sealed class CombatDamageSubCommand()
                 List<CombatantBase> targetCombatants = [];
                 if (!CommandUtil.TryFindCombatants(targets, encounter, targetCombatants, out message))
                 {
-                    await command.RespondAsync(message);
+                    await command.RespondAsync(message, ephemeral: true);
                     return;
                 }
 

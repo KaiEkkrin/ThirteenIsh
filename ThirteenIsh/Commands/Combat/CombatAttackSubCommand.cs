@@ -25,7 +25,7 @@ internal sealed class CombatAttackSubCommand()
     public override SlashCommandOptionBuilder CreateBuilder()
     {
         return base.CreateBuilder()
-            .AddOption("name", ApplicationCommandOptionType.String, "The property name to roll.",
+            .AddOption("counter", ApplicationCommandOptionType.String, "The counter name to roll.",
                 isRequired: true)
             .AddOption("bonus", ApplicationCommandOptionType.String, "A bonus dice expression to add.")
             .AddRerollsOption("rerolls")
@@ -39,7 +39,7 @@ internal sealed class CombatAttackSubCommand()
         IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
         if (command is not { ChannelId: { } channelId, GuildId: { } guildId }) return;
-        if (!CommandUtil.TryGetOption<string>(option, "name", out var namePart))
+        if (!CommandUtil.TryGetOption<string>(option, "counter", out var namePart))
         {
             await command.RespondAsync("No name part supplied.", ephemeral: true);
             return;
@@ -103,7 +103,7 @@ internal sealed class CombatAttackSubCommand()
                 List<CombatantBase> targetCombatants = [];
                 if (!CommandUtil.TryFindCombatants(targets, encounter, targetCombatants, out var message))
                 {
-                    await command.RespondAsync(message);
+                    await command.RespondAsync(message, ephemeral: true);
                     return;
                 }
 
