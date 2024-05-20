@@ -24,7 +24,7 @@ internal sealed class CombatDamageSubCommand()
     public override SlashCommandOptionBuilder CreateBuilder()
     {
         return base.CreateBuilder()
-            .AddOption("counter", ApplicationCommandOptionType.String, "A counter to add.")
+            .AddOption("counter", ApplicationCommandOptionType.String, "An optional counter to add.")
             .AddOption("dice", ApplicationCommandOptionType.String, "The dice to roll.", isRequired: true)
             .AddOption(new SlashCommandOptionBuilder()
                 .WithName("multiplier")
