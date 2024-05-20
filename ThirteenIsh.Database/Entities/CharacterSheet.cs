@@ -29,7 +29,7 @@ public class CharacterSheet : ICounterSheet
 
 public record PropertyValue<TValue>(string Name, TValue Value);
 
-public record CustomCounter(string Name, GameCounterOptions Options);
+public record CustomCounter(string Name, int DefaultValue, GameCounterOptions Options);
 
 [Flags]
 public enum GameCounterOptions

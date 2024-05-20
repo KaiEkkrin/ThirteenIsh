@@ -128,22 +128,6 @@ internal static class CommandUtil
         return command.RespondAsync(embed: embed);
     }
 
-    public static Dictionary<CharacterType, GameCounter> FindCounterByType(
-        GameSystem gameSystem, string namePart, Func<GameCounter, bool> predicate, IEnumerable<CombatantBase> targets)
-    {
-        Dictionary<CharacterType, GameCounter> dictionary = [];
-        foreach (var target in targets)
-        {
-            if (dictionary.ContainsKey(target.CharacterType)) continue;
-
-            var characterSystem = gameSystem.GetCharacterSystem(target.CharacterType);
-            var counter = characterSystem.FindCounter(namePart, predicate);
-            if (counter is not null) dictionary.Add(target.CharacterType, counter);
-        }
-
-        return dictionary;
-    }
-
     public static bool TryConvertTo<T>(object? value, [MaybeNullWhen(false)] out T result)
     {
         try

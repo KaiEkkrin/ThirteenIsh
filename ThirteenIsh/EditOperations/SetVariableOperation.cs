@@ -10,7 +10,9 @@ internal sealed class SetVariableOperation(string counterNamePart, ParseTreeBase
     protected override EditResult<EditVariableResult> DoEditInternal(Adventurer adventurer,
         CharacterSystem characterSystem, GameSystem gameSystem)
     {
-        var counter = characterSystem.FindCounter(counterNamePart, c => c.Options.HasFlag(GameCounterOptions.HasVariable));
+        var counter = characterSystem.FindCounter(adventurer.Sheet, counterNamePart,
+            c => c.Options.HasFlag(GameCounterOptions.HasVariable));
+
         if (counter == null)
             return CreateError($"'{counterNamePart}' does not uniquely match a variable name.");
 

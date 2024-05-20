@@ -217,8 +217,8 @@ internal sealed class DragonbaneSystem : GameSystem
     public override string GetCharacterSummary(CharacterSheet sheet, CharacterType type)
     {
         var characterSystem = GetCharacterSystem(type);
-        var kin = characterSystem.GetProperty<GameProperty>(Kin).GetValue(sheet);
-        var profession = characterSystem.GetProperty<GameProperty>(Profession).GetValue(sheet);
+        var kin = characterSystem.GetProperty<GameProperty>(sheet, Kin).GetValue(sheet);
+        var profession = characterSystem.GetProperty<GameProperty>(sheet, Profession).GetValue(sheet);
         return $"{kin} {profession}";
     }
 
@@ -230,8 +230,10 @@ internal sealed class DragonbaneSystem : GameSystem
         CancellationToken cancellationToken = default)
     {
         var characterSystem = GetCharacterSystem(combatant.CharacterType);
+        var character = await dataService.GetCharacterAsync(combatant, cancellationToken)
+            ?? throw new InvalidOperationException($"Failed to get character sheet for '{combatant.Alias}'");
 
-        var hitPointsCounter = characterSystem.GetProperty<GameCounter>(HitPoints);
+        var hitPointsCounter = characterSystem.GetProperty<GameCounter>(character.Sheet, HitPoints);
         var hitPointsCell = await BuildPointsEncounterTableCellAsync(dataService, combatant, hitPointsCounter,
             cancellationToken);
 
@@ -239,7 +241,7 @@ internal sealed class DragonbaneSystem : GameSystem
             new TableCell(hitPointsCounter.Alias ?? hitPointsCounter.Name),
             new TableCell(hitPointsCell));
 
-        var willpowerPointsCounter = characterSystem.GetProperty<GameCounter>(WillpowerPoints);
+        var willpowerPointsCounter = characterSystem.GetProperty<GameCounter>(character.Sheet, WillpowerPoints);
         var willpowerPointsCell = await BuildPointsEncounterTableCellAsync(dataService, combatant, willpowerPointsCounter,
             cancellationToken);
 

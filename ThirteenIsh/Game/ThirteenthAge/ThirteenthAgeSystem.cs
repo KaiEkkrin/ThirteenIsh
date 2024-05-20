@@ -184,7 +184,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         ulong userId)
     {
         var dexterityBonusCounter = GetCharacterSystem(CharacterType.PlayerCharacter)
-            .GetProperty<GameCounter>(AbilityBonusCounter.GetBonusCounterName(Dexterity));
+            .GetProperty<GameCounter>(adventurer.Sheet, AbilityBonusCounter.GetBonusCounterName(Dexterity));
 
         int? targetValue = null;
         var initiative = dexterityBonusCounter.Roll(adventurer, null, random, rerolls, ref targetValue);
@@ -210,8 +210,8 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         switch (type)
         {
             case CharacterType.PlayerCharacter:
-                var characterClass = characterSystem.GetProperty<GameProperty>(Class).GetValue(sheet);
-                var level = characterSystem.GetProperty<GameCounter>(Level).GetValue(sheet);
+                var characterClass = characterSystem.GetProperty<GameProperty>(sheet, Class).GetValue(sheet);
+                var level = characterSystem.GetProperty<GameCounter>(sheet, Level).GetValue(sheet);
                 return $"Level {level} {characterClass}";
 
             case CharacterType.Monster:
@@ -237,7 +237,12 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         EncounterInitiativeTableBuilder builder,
         CancellationToken cancellationToken = default)
     {
-        var hitPointsCounter = GetCharacterSystem(combatant.CharacterType).GetProperty<GameCounter>(HitPoints);
+        var character = await dataService.GetCharacterAsync(combatant, cancellationToken)
+            ?? throw new InvalidOperationException($"Failed to get character sheet for '{combatant.Alias}'");
+
+        var hitPointsCounter = GetCharacterSystem(combatant.CharacterType)
+            .GetProperty<GameCounter>(character.Sheet, HitPoints);
+
         var hitPointsCell = await BuildPointsEncounterTableCellAsync(dataService, combatant, hitPointsCounter,
             cancellationToken);
 
@@ -269,7 +274,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
             return new GameCounterRollResult { Roll = roll, Working = working };
         }
 
-        var initiativeCounter = characterSystem.GetProperty<GameCounter>(Initiative);
+        var initiativeCounter = characterSystem.GetProperty<GameCounter>(combatant.Sheet, Initiative);
         int? targetValue = null;
         var initiative = initiativeCounter.Roll(combatant, null, random, rerolls, ref targetValue);
         return initiative;

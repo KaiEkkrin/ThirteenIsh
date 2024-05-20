@@ -103,7 +103,7 @@ internal sealed class CombatDamageSubCommand()
 
                 var gameSystem = GameSystem.Get(adventure.GameSystem);
                 var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
-                if (!TryGetCounter(characterSystem, option, out var counter, out var message))
+                if (!TryGetCounter(characterSystem, option, character.Sheet, out var counter, out var message))
                 {
                     await command.RespondAsync(message, ephemeral: true);
                     return;
@@ -124,16 +124,6 @@ internal sealed class CombatDamageSubCommand()
                 if (!CommandUtil.TryFindCombatants(targets, encounter, targetCombatants, out message))
                 {
                     await command.RespondAsync(message, ephemeral: true);
-                    return;
-                }
-
-                var vsCounterByType = CommandUtil.FindCounterByType(gameSystem, vsNamePart,
-                    c => c.Options.HasFlag(GameCounterOptions.HasVariable), targetCombatants);
-
-                if (vsCounterByType.Count == 0)
-                {
-                    await command.RespondAsync($"'{vsNamePart}' does not uniquely match a variable property.",
-                        ephemeral: true);
                     return;
                 }
 
@@ -161,6 +151,7 @@ internal sealed class CombatDamageSubCommand()
 
                 var discordService = serviceProvider.GetRequiredService<DiscordService>();
                 StringBuilder stringBuilder = new();
+                SortedSet<string> vsCounterNames = []; // hopefully only one :P
                 for (var i = 0; i < targetCombatants.Count; ++i)
                 {
                     if (i > 0) stringBuilder.AppendLine(); // space things out
@@ -169,9 +160,13 @@ internal sealed class CombatDamageSubCommand()
                     await RollDamageVsAsync(targetCombatants[i], targetCharacter);
                 }
 
+                var vsCounterNameSummary = vsCounterNames.Count == 0
+                    ? $"'{vsNamePart}'"
+                    : string.Join(", ", vsCounterNames);
+
                 var embedBuilder = new EmbedBuilder()
                     .WithAuthor(command.User)
-                    .WithTitle($"{combatant.Alias} : Rolled damage to {vsCounterByType.Values.First().Name}")
+                    .WithTitle($"{combatant.Alias} : Rolled damage to {vsCounterNameSummary}")
                     .WithDescription(stringBuilder.ToString());
 
                 await command.ModifyOriginalResponseAsync(properties => properties.Embed = embedBuilder.Build());
@@ -185,7 +180,17 @@ internal sealed class CombatDamageSubCommand()
                     stringBuilder.AppendLine(CultureInfo.CurrentCulture, $" : {result.Roll}");
                     stringBuilder.AppendLine(result.Working);
 
-                    var vsCounter = vsCounterByType[target.CharacterType];
+                    var vsCounter = characterSystem.FindCounter(targetCharacter.Sheet, vsNamePart,
+                        c => c.Options.HasFlag(GameCounterOptions.HasVariable));
+
+                    if (vsCounter is null)
+                    {
+                        stringBuilder.AppendLine(CultureInfo.CurrentCulture,
+                            $" : Target has no variable counter unambiguously matching '{vsNamePart}'");
+                        return;
+                    }
+
+                    vsCounterNames.Add(vsCounter.Name);
                     EncounterDamageMessage message = new()
                     {
                         Alias = target.Alias,
@@ -214,7 +219,7 @@ internal sealed class CombatDamageSubCommand()
     }
 
     private static bool TryGetCounter(CharacterSystem characterSystem, SocketSlashCommandDataOption option,
-        out GameCounter? counter, [MaybeNullWhen(true)] out string errorMessage)
+        CharacterSheet sheet, out GameCounter? counter, [MaybeNullWhen(true)] out string errorMessage)
     {
         if (!CommandUtil.TryGetOption<string>(option, "counter", out var namePart))
         {
@@ -224,7 +229,7 @@ internal sealed class CombatDamageSubCommand()
             return true;
         }
 
-        counter = characterSystem.FindCounter(namePart, c => c.Options.HasFlag(GameCounterOptions.CanRoll));
+        counter = characterSystem.FindCounter(sheet, namePart, c => c.Options.HasFlag(GameCounterOptions.CanRoll));
         if (counter is null)
         {
             errorMessage = $"'{namePart}' does not uniquely match a rollable property.";

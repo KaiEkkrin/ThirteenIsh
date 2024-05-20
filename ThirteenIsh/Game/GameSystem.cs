@@ -24,11 +24,6 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
     ];
 
     /// <summary>
-    /// The "Custom" category.
-    /// </summary>
-    public const string Custom = "Custom";
-
-    /// <summary>
     /// The Unset label shown to the user when character properties haven't been set yet.
     /// </summary>
     public const string Unset = "(unset)";

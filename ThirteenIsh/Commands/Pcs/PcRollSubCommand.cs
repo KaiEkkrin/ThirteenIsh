@@ -55,7 +55,9 @@ internal sealed class PcRollSubCommand() : SubCommandBase("roll", "Rolls against
 
         var gameSystem = GameSystem.Get(adventure.GameSystem);
         var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
-        var counter = characterSystem.FindCounter(namePart, c => c.Options.HasFlag(GameCounterOptions.CanRoll));
+        var counter = characterSystem.FindCounter(adventurer.Sheet, namePart,
+            c => c.Options.HasFlag(GameCounterOptions.CanRoll));
+
         if (counter is null)
         {
             await command.RespondAsync($"'{namePart}' does not uniquely match a rollable property.",

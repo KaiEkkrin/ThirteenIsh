@@ -92,7 +92,9 @@ internal sealed class CombatAttackSubCommand()
 
                 var gameSystem = GameSystem.Get(adventure.GameSystem);
                 var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
-                var counter = characterSystem.FindCounter(namePart, c => c.Options.HasFlag(GameCounterOptions.CanRoll));
+                var counter = characterSystem.FindCounter(character.Sheet, namePart,
+                    c => c.Options.HasFlag(GameCounterOptions.CanRoll));
+
                 if (counter is null)
                 {
                     await command.RespondAsync($"'{namePart}' does not uniquely match a rollable property.",
@@ -107,16 +109,9 @@ internal sealed class CombatAttackSubCommand()
                     return;
                 }
 
-                var vsCounterByType = CommandUtil.FindCounterByType(gameSystem, vsNamePart, _ => true, targetCombatants);
-                if (vsCounterByType.Count == 0)
-                {
-                    await command.RespondAsync($"'{vsNamePart}' does not uniquely match a variable property.",
-                        ephemeral: true);
-                    return;
-                }
-
                 var random = serviceProvider.GetRequiredService<IRandomWrapper>();
                 StringBuilder stringBuilder = new();
+                SortedSet<string> vsCounterNames = []; // hopefully only one :P
                 for (var i = 0; i < targetCombatants.Count; ++i)
                 {
                     if (i > 0) stringBuilder.AppendLine(); // space things out
@@ -130,11 +125,20 @@ internal sealed class CombatAttackSubCommand()
                         continue;
                     }
 
-                    var vsCounter = vsCounterByType[targetCharacter.Type];
+                    var vsCounter = characterSystem.FindCounter(targetCharacter.Sheet, vsNamePart, _ => true);
+                    if (vsCounter is null)
+                    {
+                        stringBuilder.AppendLine(CultureInfo.CurrentCulture,
+                            $" : Target has no counter unambiguously matching '{vsNamePart}'");
+                        continue;
+                    }
+
+                    vsCounterNames.Add(vsCounter.Name);
                     var dc = vsCounter.GetValue(targetCharacter.Sheet);
                     if (!dc.HasValue)
                     {
-                        stringBuilder.AppendLine(CultureInfo.CurrentCulture, $" : Target has no {vsCounter.Name}");
+                        stringBuilder.AppendLine(CultureInfo.CurrentCulture,
+                            $" : Target has no value for {vsCounter.Name}");
                         continue;
                     }
 
@@ -149,12 +153,16 @@ internal sealed class CombatAttackSubCommand()
                     stringBuilder.AppendLine(result.Working);
                 }
 
+                var vsCounterNameSummary = vsCounterNames.Count == 0
+                    ? $"'{vsNamePart}'"
+                    : string.Join(", ", vsCounterNames);
+
                 var embedBuilder = new EmbedBuilder()
                     .WithAuthor(command.User)
-                    .WithTitle($"{character.Name} : Rolled {counter.Name} vs {vsCounterByType.Values.First().Name}")
+                    .WithTitle($"{character.Name} : Rolled {counter.Name} vs {vsCounterNameSummary}")
                     .WithDescription(stringBuilder.ToString());
 
-                await command.RespondAsync(embed: embedBuilder.Build());
+                await command.RespondAsync(embed: embedBuilder.Build(), ephemeral: vsCounterNames.Count == 0);
             });
     }
 

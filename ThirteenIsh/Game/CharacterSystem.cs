@@ -13,12 +13,16 @@ internal class CharacterSystem
 {
     private readonly string _gameSystemName;
 
+    private readonly ImmutableList<GamePropertyGroup> _propertyGroups;
+    private readonly FrozenDictionary<string, GamePropertyBase> _properties;
+    private readonly ImmutableList<GamePropertyGroup<GameCounter>> _variableCounterGroups;
+
     public CharacterSystem(CharacterType characterType, string gameSystemName,
         ImmutableList<GamePropertyGroup> propertyGroups)
     {
         CharacterType = characterType;
         _gameSystemName = gameSystemName;
-        PropertyGroups = propertyGroups;
+        _propertyGroups = propertyGroups;
 
         Dictionary<string, GamePropertyBase> properties = [];
         var variableCounterGroupsBuilder = ImmutableList.CreateBuilder<GamePropertyGroup<GameCounter>>();
@@ -37,30 +41,19 @@ internal class CharacterSystem
                     propertyGroup.GroupName, variableCountersBuilder.ToImmutable()));
         }
 
-        Properties = properties.ToFrozenDictionary();
-        VariableCounterGroups = variableCounterGroupsBuilder.ToImmutable();
+        _properties = properties.ToFrozenDictionary();
+        _variableCounterGroups = variableCounterGroupsBuilder.ToImmutable();
     }
+
+    /// <summary>
+    /// The "Custom" property group name.
+    /// </summary>
+    public const string Custom = "Custom";
 
     /// <summary>
     /// The character type.
     /// </summary>
     public CharacterType CharacterType { get; }
-
-    /// <summary>
-    /// This character system's properties grouped in display order.
-    /// </summary>
-    public ImmutableList<GamePropertyGroup> PropertyGroups { get; }
-
-    /// <summary>
-    /// This character system's properties indexed by name.
-    /// </summary>
-    public FrozenDictionary<string, GamePropertyBase> Properties { get; }
-
-    /// <summary>
-    /// A filtered copy of PropertyGroups consisting only of those counters with
-    /// associated variables.
-    /// </summary>
-    public ImmutableList<GamePropertyGroup<GameCounter>> VariableCounterGroups { get; }
 
     /// <summary>
     /// Adds this character sheet's fields to the embed -- in their well-known
@@ -71,7 +64,7 @@ internal class CharacterSystem
     {
         // Discord only allows adding up to 25 fields to an embed, so we group together
         // our categories of counters here, formatting a table for each one.
-        foreach (var group in PropertyGroups)
+        foreach (var group in EnumeratePropertyGroups(sheet))
         {
             var fieldBuilder = group.BuildEmbedField(sheet, onlyTheseProperties);
             if (fieldBuilder is null) continue;
@@ -88,7 +81,7 @@ internal class CharacterSystem
     public EmbedBuilder AddTrackedCharacterFields(EmbedBuilder builder, ITrackedCharacter character,
         IReadOnlyCollection<string>? onlyTheseProperties)
     {
-        foreach (var group in PropertyGroups)
+        foreach (var group in EnumeratePropertyGroups(character.Sheet))
         {
             var fieldBuilder = group.BuildEmbedField(character, onlyTheseProperties);
             if (fieldBuilder is null) continue;
@@ -106,7 +99,7 @@ internal class CharacterSystem
     public EmbedBuilder AddTrackedCharacterVariableFields(EmbedBuilder builder, ITrackedCharacter character,
         IReadOnlyCollection<string>? onlyTheseProperties)
     {
-        foreach (var group in VariableCounterGroups)
+        foreach (var group in EnumerateVariableCounterGroups(character.Sheet))
         {
             var fieldBuilder = group.BuildEmbedField(character, onlyTheseProperties);
             if (fieldBuilder is null) continue;
@@ -116,42 +109,15 @@ internal class CharacterSystem
         return builder;
     }
 
-    public SelectMenuBuilder BuildPropertyChoiceComponent(string messageId,
-        Func<GamePropertyBase, bool> predicate, string? propertyGroupName = null)
-    {
-        var menuBuilder = new SelectMenuBuilder()
-            .WithCustomId(messageId);
-
-        foreach (var propertyGroup in PropertyGroups)
-        {
-            if (!string.IsNullOrEmpty(propertyGroupName) && propertyGroup.GroupName != propertyGroupName) continue;
-            propertyGroup.AddPropertyChoiceOptions(menuBuilder, predicate);
-        }
-
-        return menuBuilder;
-    }
-
-    public SelectMenuBuilder BuildPropertyGroupChoiceComponent(string messageId,
-        Func<GamePropertyBase, bool> predicate)
-    {
-        var menuBuilder = new SelectMenuBuilder()
-            .WithCustomId(messageId);
-
-        foreach (var propertyGroup in PropertyGroups)
-        {
-            propertyGroup.AddPropertyGroupChoiceOptions(menuBuilder, predicate);
-        }
-
-        return menuBuilder;
-    }
-
     /// <summary>
     /// Finds a counter by unambiguous prefix match and a predicate.
+    /// This requires the character sheet as well, to support custom counters.
     /// </summary>
-    public GameCounter? FindCounter(string namePart, Func<GameCounter, bool> predicate)
+    public GameCounter? FindCounter(CharacterSheet sheet, string namePart, Func<GameCounter, bool> predicate)
     {
         // Admit exact match of alias first
-        var aliasMatchCounter = Properties.Values
+        var aliasMatchCounter = EnumeratePropertyGroups(sheet)
+            .SelectMany(group => group.Properties)
             .OfType<GameCounter>()
             .Where(counter => predicate(counter) &&
                 counter.Alias?.Equals(namePart, StringComparison.OrdinalIgnoreCase) == true)
@@ -159,7 +125,8 @@ internal class CharacterSystem
 
         if (aliasMatchCounter.Count == 1) return aliasMatchCounter[0];
 
-        var matchingCounters = Properties.Values
+        var matchingCounters = EnumeratePropertyGroups(sheet)
+            .SelectMany(group => group.Properties)
             .OfType<GameCounter>()
             .Where(counter => predicate(counter) &&
                 counter.Name.StartsWith(namePart, StringComparison.OrdinalIgnoreCase))
@@ -171,40 +138,43 @@ internal class CharacterSystem
     /// <summary>
     /// Finds a property by unambiguous prefix match.
     /// </summary>
-    public GamePropertyBase? FindStorableProperty(string namePart)
+    public GamePropertyBase? FindStorableProperty(CharacterSheet sheet, string namePart)
     {
         // Admit exact match of alias first
-        var aliasMatchCounter = Properties.Values
+        var aliasMatchCounter = EnumeratePropertyGroups(sheet)
+            .SelectMany(group => group.Properties)
             .Where(property => property is { CanStore: true, IsHidden: false } &&
                 property.Alias?.Equals(namePart, StringComparison.OrdinalIgnoreCase) == true)
             .ToList();
 
         if (aliasMatchCounter.Count == 1) return aliasMatchCounter[0];
 
-        var matchingProperties = Properties
-            .Where(pair => pair.Value is { CanStore: true, IsHidden: false } &&
-                pair.Key.StartsWith(namePart, StringComparison.OrdinalIgnoreCase))
+        var matchingProperties = EnumeratePropertyGroups(sheet)
+            .SelectMany(group => group.Properties)
+            .Where(property => property is { CanStore: true, IsHidden: false } &&
+                property.Name.StartsWith(namePart, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
-        return matchingProperties.Count == 1 ? matchingProperties[0].Value : null;
+        return matchingProperties.Count == 1 ? matchingProperties[0] : null;
     }
 
     /// <summary>
-    /// Gets a property by exact name match.
+    /// Gets a property by exact name match (non-custom only.)
     /// </summary>
     public GamePropertyBase? GetProperty(string name)
     {
-        if (!Properties.TryGetValue(name, out var property)) return null;
-        return property;
+        return _properties.TryGetValue(name, out var property) ? property : null;
     }
 
     /// <summary>
     /// Gets a property of a known type by exact name match, or throws if not found.
     /// For game logic use :)
     /// </summary>
-    public TProperty GetProperty<TProperty>(string name) where TProperty : GamePropertyBase
+    public TProperty GetProperty<TProperty>(CharacterSheet sheet, string name) where TProperty : GamePropertyBase
     {
-        return (TProperty)Properties[name];
+        return TryGetProperty<TProperty>(sheet, name, out var property)
+            ? property
+            : throw new ArgumentOutOfRangeException(nameof(name));
     }
 
     /// <summary>
@@ -212,7 +182,7 @@ internal class CharacterSystem
     /// </summary>
     public IEnumerable<GamePropertyBase> GetShowOnAddProperties()
     {
-        return PropertyGroups
+        return _propertyGroups
             .SelectMany(group => group.Properties)
             .Where(property => property.ShowOnAdd);
     }
@@ -225,7 +195,7 @@ internal class CharacterSystem
         // TODO support custom counters (I'll need to declare information about those somewhere)
         var variables = character.GetVariables();
         variables.Counters.Clear();
-        foreach (var group in VariableCounterGroups)
+        foreach (var group in EnumerateVariableCounterGroups(character.Sheet))
         {
             foreach (var counter in group.Properties)
             {
@@ -240,7 +210,7 @@ internal class CharacterSystem
     public bool TryBuildPropertyValueChoiceComponent(string messageId, string propertyName, CharacterSheet sheet,
         [MaybeNullWhen(false)] out SelectMenuBuilder? menuBuilder, [MaybeNullWhen(true)] out string? errorMessage)
     {
-        if (!Properties.TryGetValue(propertyName, out var property))
+        if (!TryGetProperty(sheet, propertyName, out var property))
         {
             menuBuilder = null;
             errorMessage =
@@ -258,5 +228,85 @@ internal class CharacterSystem
         property.AddPropertyValueChoiceOptions(menuBuilder, sheet);
         errorMessage = null;
         return true;
+    }
+
+    private static GameCounter BuildCustomCounter(CustomCounter cc)
+    {
+        return new GameCounter(cc.Name, defaultValue: cc.DefaultValue, options: cc.Options);
+    }
+
+    /// <summary>
+    /// Enumerates all property groups for this character sheet, including custom.
+    /// </summary>
+    private IEnumerable<GamePropertyGroup> EnumeratePropertyGroups(CharacterSheet sheet)
+    {
+        var groups = _propertyGroups;
+        if (sheet.CustomCounters is not { Count: > 0 } ccs) return groups;
+
+        GamePropertyGroupBuilder customBuilder = new(Custom);
+        foreach (var cc in ccs)
+        {
+            customBuilder.AddProperty(BuildCustomCounter(cc));
+        }
+
+        customBuilder.OrderByName();
+        return groups.Append(customBuilder.Build());
+    }
+
+    /// <summary>
+    /// Enumerates all variable counter groups for this character sheet, including custom.
+    /// </summary>
+    private IEnumerable<GamePropertyGroup<GameCounter>> EnumerateVariableCounterGroups(CharacterSheet sheet)
+    {
+        var groups = _variableCounterGroups;
+        if (sheet.CustomCounters is not { Count: > 0 } ccs) return groups;
+
+        var builder = ImmutableList.CreateBuilder<GameCounter>();
+        foreach (var cc in ccs)
+        {
+            if (!cc.Options.HasFlag(GameCounterOptions.HasVariable)) continue;
+            builder.Add(BuildCustomCounter(cc));
+        }
+
+        builder.Sort((a, b) => string.CompareOrdinal(a.Name, b.Name));
+        return groups.Append(new GamePropertyGroup<GameCounter>(Custom, builder.ToImmutable()));
+    }
+
+    /// <summary>
+    /// Gets a property, including custom counters.
+    /// </summary>
+    private bool TryGetProperty(CharacterSheet sheet, string name, [MaybeNullWhen(false)] out GamePropertyBase property)
+    {
+        // Search for predefined properties first
+        if (_properties.TryGetValue(name, out property)) return true;
+
+        // Then custom counters
+        var customCounter = sheet.CustomCounters.FirstOrDefault(cc => cc.Name == name);
+        if (customCounter != null)
+        {
+            property = BuildCustomCounter(customCounter);
+            return true;
+        }
+
+        property = null;
+        return false;
+    }
+
+    /// <summary>
+    /// Gets a property of a particular type, including custom counters.
+    /// </summary>
+    private bool TryGetProperty<TProperty>(CharacterSheet sheet, string name,
+        [MaybeNullWhen(false)] out TProperty property)
+        where TProperty : GamePropertyBase
+    {
+        if (TryGetProperty(sheet, name, out var baseProperty) &&
+            baseProperty is TProperty typedProperty)
+        {
+            property = typedProperty;
+            return true;
+        }
+
+        property = null;
+        return false;
     }
 }

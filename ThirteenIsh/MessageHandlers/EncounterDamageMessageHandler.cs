@@ -123,7 +123,7 @@ internal sealed class EncounterDamageMessageHandler(SqlDataService dataService, 
 
             var gameSystem = GameSystem.Get(adventure.GameSystem);
             var characterSystem = gameSystem.GetCharacterSystem(combatant.CharacterType);
-            var counter = characterSystem.FindCounter(message.VariableName,
+            var counter = characterSystem.FindCounter(character.Sheet, message.VariableName,
                 c => c.Options.HasFlag(GameCounterOptions.HasVariable));
 
             if (counter == null)
