@@ -8,6 +8,7 @@ namespace ThirteenIsh.Commands.Character;
 /// </summary>
 internal sealed class MonsterCommand() : CommandBase("monster", "Manage monsters.",
     new CharacterAddSubCommand(CharacterType.Monster),
+    new CharacterCcSubCommandGroup(CharacterType.Monster),
     new CharacterGetSubCommand(CharacterType.Monster),
     new CharacterListSubCommand(CharacterType.Monster),
     new CharacterRemoveSubCommand(CharacterType.Monster),

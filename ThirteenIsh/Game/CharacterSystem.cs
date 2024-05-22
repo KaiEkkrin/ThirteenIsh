@@ -9,7 +9,7 @@ namespace ThirteenIsh.Game;
 /// <summary>
 /// Describes a game system's idea of a particular type of characters.
 /// </summary>
-internal class CharacterSystem
+internal abstract class CharacterSystem
 {
     private readonly string _gameSystemName;
 
@@ -17,7 +17,7 @@ internal class CharacterSystem
     private readonly FrozenDictionary<string, GamePropertyBase> _properties;
     private readonly ImmutableList<GamePropertyGroup<GameCounter>> _variableCounterGroups;
 
-    public CharacterSystem(CharacterType characterType, string gameSystemName,
+    protected CharacterSystem(CharacterType characterType, string gameSystemName,
         ImmutableList<GamePropertyGroup> propertyGroups)
     {
         CharacterType = characterType;
@@ -230,10 +230,7 @@ internal class CharacterSystem
         return true;
     }
 
-    private static GameCounter BuildCustomCounter(CustomCounter cc)
-    {
-        return new GameCounter(cc.Name, defaultValue: cc.DefaultValue, options: cc.Options);
-    }
+    protected abstract GameCounter BuildCustomCounter(CustomCounter cc);
 
     /// <summary>
     /// Enumerates all property groups for this character sheet, including custom.
@@ -281,7 +278,7 @@ internal class CharacterSystem
         if (_properties.TryGetValue(name, out property)) return true;
 
         // Then custom counters
-        var customCounter = sheet.CustomCounters.FirstOrDefault(cc => cc.Name == name);
+        var customCounter = sheet.CustomCounters?.FirstOrDefault(cc => cc.Name == name);
         if (customCounter != null)
         {
             property = BuildCustomCounter(customCounter);

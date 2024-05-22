@@ -24,7 +24,7 @@ public class CharacterSheet : ICounterSheet
 {
     public virtual IList<PropertyValue<int>> Counters { get; set; } = [];
     public virtual IList<PropertyValue<string>> Properties { get; set; } = [];
-    public virtual IList<CustomCounter> CustomCounters { get; set; } = [];
+    public virtual IList<CustomCounter>? CustomCounters { get; set; }
 }
 
 public record PropertyValue<TValue>(string Name, TValue Value);

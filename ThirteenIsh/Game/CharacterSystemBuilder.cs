@@ -1,8 +1,6 @@
-﻿using ThirteenIsh.Database.Entities;
+﻿namespace ThirteenIsh.Game;
 
-namespace ThirteenIsh.Game;
-
-internal sealed class CharacterSystemBuilder(CharacterType characterType, string name)
+internal abstract class CharacterSystemBuilder
 {
     private readonly ImmutableList<GamePropertyGroup>.Builder _builder =
         ImmutableList.CreateBuilder<GamePropertyGroup>();
@@ -13,7 +11,9 @@ internal sealed class CharacterSystemBuilder(CharacterType characterType, string
         return this;
     }
 
-    public CharacterSystem Build()
+    public abstract CharacterSystem Build();
+
+    protected ImmutableList<GamePropertyGroup> ValidatePropertyGroups(string name)
     {
         var propertyGroups = _builder.ToImmutable();
 
@@ -33,6 +33,6 @@ internal sealed class CharacterSystemBuilder(CharacterType characterType, string
             }
         }
 
-        return new CharacterSystem(characterType, name, propertyGroups);
+        return propertyGroups;
     }
 }

@@ -98,7 +98,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
             .AddProperty(new RecoveriesCounter())
             .AddProperty(new RecoveryDieCounter(classProperty));
 
-        var playerCharacterSystem = new CharacterSystemBuilder(CharacterType.PlayerCharacter, SystemName)
+        var playerCharacterSystem = new ThirteenthAgeCharacterSystemBuilder(CharacterType.PlayerCharacter, SystemName)
             .AddPropertyGroup(basicsBuilder)
             .AddPropertyGroup(abilityScoresBuilder)
             .AddPropertyGroup(generalBuilder)
@@ -113,7 +113,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
             .AddProperty(new GameCounter(PhysicalDefense, PhysicalDefenseAlias))
             .AddProperty(new GameCounter(MentalDefense, MentalDefenseAlias));
 
-        var monsterSystem = new CharacterSystemBuilder(CharacterType.Monster, SystemName)
+        var monsterSystem = new ThirteenthAgeCharacterSystemBuilder(CharacterType.Monster, SystemName)
             .AddPropertyGroup(monsterStatsBuilder)
             .Build();
 

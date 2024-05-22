@@ -144,7 +144,7 @@ internal sealed class DragonbaneSystem : GameSystem
             .AddProperty(new GameCounter("Armor", options: GameCounterOptions.HasVariable))
             .AddProperty(new GameCounter("Helmet", options: GameCounterOptions.HasVariable));
 
-        var playerCharacterSystem = new CharacterSystemBuilder(CharacterType.PlayerCharacter, SystemName)
+        var playerCharacterSystem = new DragonbaneCharacterSystemBuilder(CharacterType.PlayerCharacter, SystemName)
             .AddPropertyGroup(basicsBuilder)
             .AddPropertyGroup(attributesBuilder)
             .AddPropertyGroup(derivedRatingsBuilder)
