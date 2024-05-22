@@ -26,6 +26,7 @@ public class DataContext : DbContext
     public DbSet<AddCharacterMessage> AddCharacterMessages { get; set; }
     public DbSet<DeleteAdventureMessage> DeleteAdventureMessages { get; set; }
     public DbSet<DeleteCharacterMessage> DeleteCharacterMessages { get; set; }
+    public DbSet<DeleteCustomCounterMessage> DeleteCustomCounterMessages { get; set; }
     public DbSet<EncounterDamageMessage> EncounterDamageMessages { get; set; }
     public DbSet<EndEncounterMessage> EndEncounterMessages { get; set; }
     public DbSet<LeaveAdventureMessage> LeaveAdventureMessages { get; set; }

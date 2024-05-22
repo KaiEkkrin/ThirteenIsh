@@ -3,6 +3,7 @@
 namespace ThirteenIsh.Commands.Character;
 
 internal class CharacterCcSubCommandGroup(CharacterType characterType) : SubCommandGroupBase("cc", "Manage custom counters.",
-    new CharacterCcAddSubCommand(characterType))
+    new CharacterCcAddSubCommand(characterType),
+    new CharacterCcRemoveSubCommand(characterType))
 {
 }
