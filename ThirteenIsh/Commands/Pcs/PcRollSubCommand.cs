@@ -32,7 +32,7 @@ internal sealed class PcRollSubCommand() : SubCommandBase("roll", "Rolls against
             return;
         }
 
-        var bonus = GetBonus(option);
+        var bonus = CommandUtil.GetBonus(option);
         if (!string.IsNullOrEmpty(bonus?.Error))
         {
             await command.RespondAsync(bonus.Error, ephemeral: true);
@@ -87,11 +87,5 @@ internal sealed class PcRollSubCommand() : SubCommandBase("roll", "Rolls against
             .WithDescription(result.Working);
 
         await command.RespondAsync(embed: embedBuilder.Build());
-    }
-
-    private static ParseTreeBase? GetBonus(SocketSlashCommandDataOption option)
-    {
-        if (!CommandUtil.TryGetOption<string>(option, "bonus", out var bonusString)) return null;
-        return Parser.Parse(bonusString);
     }
 }

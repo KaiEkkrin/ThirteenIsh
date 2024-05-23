@@ -8,6 +8,7 @@ internal sealed class CombatCommand() : CommandBase("combat", "Play in encounter
     new CombatAttackSubCommand(),
     new CombatDamageSubCommand(),
     new CombatJoinSubCommand(),
-    new CombatNextSubCommand())
+    new CombatNextSubCommand(),
+    new CombatRollSubCommand())
 {
 }

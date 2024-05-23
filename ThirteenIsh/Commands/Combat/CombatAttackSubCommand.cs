@@ -5,20 +5,12 @@ using System.Text;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Database.Entities.Combatants;
 using ThirteenIsh.Game;
-using ThirteenIsh.Parsing;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Combat;
 
-// This is like `pc-roll`, but instead of rolling against a specified DC, here we roll against
+// This is like `pc-roll` or `combat-roll`, but instead of rolling against a specified DC, here we roll against
 // the attribute of another player (or monster) in the current encounter
-// TODO Make an equivalent for attacking with a monster? (with an optional property name, since
-// monsters often have ad hoc attacks?)
-// (or move this stuff to just `13-combat` and have it work off of the current combatant,
-// or a named one, without necessarily being bound to the PC?)
-// TODO maybe change this to `13-combat attack`, have it use the current combatant (if it's
-// added with your user ID) or the named combatant if an optional name is supplied (again if it's
-// added with your user ID.)
 internal sealed class CombatAttackSubCommand()
     : SubCommandBase("attack", "Rolls against a player or monster in the encounter.")
 {
@@ -27,6 +19,7 @@ internal sealed class CombatAttackSubCommand()
         return base.CreateBuilder()
             .AddOption("counter", ApplicationCommandOptionType.String, "The counter name to roll.",
                 isRequired: true)
+            .AddOption("alias", ApplicationCommandOptionType.String, "The combatant alias to roll for.")
             .AddOption("bonus", ApplicationCommandOptionType.String, "A bonus dice expression to add.")
             .AddRerollsOption("rerolls")
             .AddOption("target", ApplicationCommandOptionType.String,
@@ -45,7 +38,7 @@ internal sealed class CombatAttackSubCommand()
             return;
         }
 
-        var bonus = GetBonus(option);
+        var bonus = CommandUtil.GetBonus(option);
         if (!string.IsNullOrEmpty(bonus?.Error))
         {
             await command.RespondAsync(bonus.Error, ephemeral: true);
@@ -79,19 +72,25 @@ internal sealed class CombatAttackSubCommand()
             async output =>
             {
                 var (adventure, encounter) = output;
-                var combatant = encounter.Combatants.FirstOrDefault(c =>
-                    c.CharacterType == CharacterType.PlayerCharacter &&
-                    c.UserId == command.User.Id);
-
-                if (combatant == null ||
-                    await dataService.GetCharacterAsync(combatant, cancellationToken) is not { } character)
+                if (!CommandUtil.TryGetCombatantByOptionalAlias(option, "alias", command.User.Id, encounter,
+                    out var combatant, out var error))
                 {
-                    await command.RespondAsync("You have not joined this encounter.", ephemeral: true);
+                    await command.RespondAsync(error, ephemeral: true);
                     return;
                 }
 
                 var gameSystem = GameSystem.Get(adventure.GameSystem);
-                var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
+                var characterSystem = gameSystem.GetCharacterSystem(combatant.CharacterType);
+                var character = await dataService.GetCharacterAsync(combatant, cancellationToken);
+                if (character is null)
+                {
+                    // shouldn't happen, but anyway
+                    await command.RespondAsync(
+                        $"Cannot find a character sheet for the combatant with alias '{combatant.Alias}'.",
+                        ephemeral: true);
+                    return;
+                }
+
                 var counter = characterSystem.FindCounter(character.Sheet, namePart,
                     c => c.Options.HasFlag(GameCounterOptions.CanRoll));
 
@@ -125,7 +124,8 @@ internal sealed class CombatAttackSubCommand()
                         continue;
                     }
 
-                    var vsCounter = characterSystem.FindCounter(targetCharacter.Sheet, vsNamePart, _ => true);
+                    var vsCharacterSystem = gameSystem.GetCharacterSystem(targetCharacter.Type);
+                    var vsCounter = vsCharacterSystem.FindCounter(targetCharacter.Sheet, vsNamePart, _ => true);
                     if (vsCounter is null)
                     {
                         stringBuilder.AppendLine(CultureInfo.CurrentCulture,
@@ -164,11 +164,5 @@ internal sealed class CombatAttackSubCommand()
 
                 await command.RespondAsync(embed: embedBuilder.Build(), ephemeral: vsCounterNames.Count == 0);
             });
-    }
-
-    private static ParseTreeBase? GetBonus(SocketSlashCommandDataOption option)
-    {
-        if (!CommandUtil.TryGetOption<string>(option, "bonus", out var bonusString)) return null;
-        return Parser.Parse(bonusString);
     }
 }

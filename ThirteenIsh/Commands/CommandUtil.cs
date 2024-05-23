@@ -5,6 +5,7 @@ using System.Globalization;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Database.Entities.Combatants;
 using ThirteenIsh.Game;
+using ThirteenIsh.Parsing;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands;
@@ -95,6 +96,12 @@ internal static class CommandUtil
         }
 
         return embedBuilder.Build();
+    }
+
+    public static ParseTreeBase? GetBonus(SocketSlashCommandDataOption option)
+    {
+        if (!TryGetOption<string>(option, "bonus", out var bonusString)) return null;
+        return Parser.Parse(bonusString);
     }
 
     public static async Task RespondWithAdventureSummaryAsync(
@@ -257,6 +264,47 @@ internal static class CommandUtil
 
         canonicalizedValue = default;
         return false;
+    }
+
+    // Matches a combatant by an optional alias, otherwise, returns this player's own adventurer if there
+    // is one. Doesn't return other players' combatants.
+    public static bool TryGetCombatantByOptionalAlias(SocketSlashCommandDataOption option, string name, ulong userId,
+        Encounter encounter, [MaybeNullWhen(false)] out CombatantBase combatant, [MaybeNullWhen(true)] out string error)
+    {
+        if (TryGetOption<string>(option, name, out var alias))
+        {
+            if (encounter.Combatants.FirstOrDefault(x => x.Alias == alias) is not { } matchingCombatant)
+            {
+                combatant = null;
+                error = $"The alias '{alias}' does not match any combatant in the current encounter.";
+                return false;
+            }
+            else if (matchingCombatant.UserId != userId)
+            {
+                combatant = null;
+                error = $"The combatant with alias '{alias}' belongs to someone else.";
+                return false;
+            }
+            else
+            {
+                combatant = matchingCombatant;
+                error = null;
+                return true;
+            }
+        }
+        else if (encounter.Combatants.FirstOrDefault(x => x.CharacterType == CharacterType.PlayerCharacter &&
+                                                          x.UserId == userId) is { } usersCombatant)
+        {
+            combatant = usersCombatant;
+            error = null;
+            return true;
+        }
+        else
+        {
+            combatant = null;
+            error = "Specify an alias for the combatant to select.";
+            return false;
+        }
     }
 
     public static bool TryGetOption<T>(
