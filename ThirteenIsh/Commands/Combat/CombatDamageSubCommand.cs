@@ -12,12 +12,8 @@ using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Combat;
 
-// TODO Make an equivalent for dealing damage with a monster?
-// (or move this stuff to just `13-combat` and have it work off of the current combatant,
-// or a named one, without necessarily being bound to the PC?)
-// TODO maybe change this to `13-combat damage`, have it use the current combatant (if it's
-// added with your user ID) or the named combatant if an optional name is supplied (again if it's
-// added with your user ID.)
+// TODO make this one accept an alias, like `combat-attack` does, as the attacker, and work off of that.
+// Perhaps make the dice optional, because in 13th Age monster attacks are usually a fixed value?
 internal sealed class CombatDamageSubCommand()
     : SubCommandBase("damage", "Deals damage to a player or monster in the encounter.")
 {
