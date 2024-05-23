@@ -22,6 +22,7 @@ internal sealed class CombatDamageSubCommand()
         return base.CreateBuilder()
             .AddOption("counter", ApplicationCommandOptionType.String, "An optional counter to add.")
             .AddOption("dice", ApplicationCommandOptionType.String, "The dice to roll.", isRequired: true)
+            .AddOption("alias", ApplicationCommandOptionType.String, "The combatant alias to roll for.")
             .AddOption(new SlashCommandOptionBuilder()
                 .WithName("multiplier")
                 .WithDescription("A multiplier to the counter")
@@ -86,19 +87,25 @@ internal sealed class CombatDamageSubCommand()
             async output =>
             {
                 var (adventure, encounter) = output;
-                var combatant = encounter.Combatants.FirstOrDefault(c =>
-                    c.CharacterType == CharacterType.PlayerCharacter &&
-                    c.UserId == command.User.Id);
-
-                if (combatant == null ||
-                    await dataService.GetCharacterAsync(combatant, cancellationToken) is not { } character)
+                if (!CommandUtil.TryGetCombatantByOptionalAlias(option, "alias", command.User.Id, encounter,
+                    out var combatant, out var error))
                 {
-                    await command.RespondAsync("You have not joined this encounter.", ephemeral: true);
+                    await command.RespondAsync(error, ephemeral: true);
                     return;
                 }
 
                 var gameSystem = GameSystem.Get(adventure.GameSystem);
-                var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
+                var characterSystem = gameSystem.GetCharacterSystem(combatant.CharacterType);
+                var character = await dataService.GetCharacterAsync(combatant, cancellationToken);
+                if (character is null)
+                {
+                    // shouldn't happen, but anyway
+                    await command.RespondAsync(
+                        $"Cannot find a character sheet for the combatant with alias '{combatant.Alias}'.",
+                        ephemeral: true);
+                    return;
+                }
+
                 if (!TryGetCounter(characterSystem, option, character.Sheet, out var counter, out var message))
                 {
                     await command.RespondAsync(message, ephemeral: true);
@@ -176,7 +183,8 @@ internal sealed class CombatDamageSubCommand()
                     stringBuilder.AppendLine(CultureInfo.CurrentCulture, $" : {result.Roll}");
                     stringBuilder.AppendLine(result.Working);
 
-                    var vsCounter = characterSystem.FindCounter(targetCharacter.Sheet, vsNamePart,
+                    var vsCharacterSystem = gameSystem.GetCharacterSystem(targetCharacter.Type);
+                    var vsCounter = vsCharacterSystem.FindCounter(targetCharacter.Sheet, vsNamePart,
                         c => c.Options.HasFlag(GameCounterOptions.HasVariable));
 
                     if (vsCounter is null)
