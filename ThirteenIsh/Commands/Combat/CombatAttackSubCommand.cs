@@ -63,34 +63,23 @@ internal sealed class CombatAttackSubCommand()
             return;
         }
 
+        var alias = CommandUtil.TryGetOption<string>(option, "alias", out var aliasString)
+            ? aliasString
+            : null;
+
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var guild = await dataService.GetGuildAsync(guildId, cancellationToken);
-        var encounterResult = await dataService.GetEncounterResultAsync(guild, channelId, cancellationToken);
+        var combatantResult = await dataService.GetCombatantResultAsync(guild, channelId, command.User.Id, alias,
+            cancellationToken);
 
-        await encounterResult.Handle(
+        await combatantResult.Handle(
             errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
             async output =>
             {
-                var (adventure, encounter) = output;
-                if (!CommandUtil.TryGetCombatantByOptionalAlias(option, "alias", command.User.Id, encounter,
-                    out var combatant, out var error))
-                {
-                    await command.RespondAsync(error, ephemeral: true);
-                    return;
-                }
+                var (adventure, encounter, combatant, character) = output;
 
                 var gameSystem = GameSystem.Get(adventure.GameSystem);
                 var characterSystem = gameSystem.GetCharacterSystem(combatant.CharacterType);
-                var character = await dataService.GetCharacterAsync(combatant, cancellationToken);
-                if (character is null)
-                {
-                    // shouldn't happen, but anyway
-                    await command.RespondAsync(
-                        $"Cannot find a character sheet for the combatant with alias '{combatant.Alias}'.",
-                        ephemeral: true);
-                    return;
-                }
-
                 var counter = characterSystem.FindCounter(character.Sheet, namePart,
                     c => c.Options.HasFlag(GameCounterOptions.CanRoll));
 

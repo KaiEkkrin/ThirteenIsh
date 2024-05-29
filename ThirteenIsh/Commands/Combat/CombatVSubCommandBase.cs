@@ -61,6 +61,8 @@ internal abstract class CombatVSubCommandBase(string name, string description, s
             errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
             async output =>
             {
+                // TODO Update the pinned encounter message.
+
                 // If this wasn't a simple integer, show the working
                 var embed = CommandUtil.BuildTrackedCharacterSummaryEmbed(null, output.CombatantResult.Character,
                     output.GameSystem,

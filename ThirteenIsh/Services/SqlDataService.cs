@@ -250,7 +250,6 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
         return await EditAsync(operation, character, cancellationToken);
     }
 
-    // TODO Refactor various combat commands to edit using this
     public async Task<EditResult<T>> EditCombatantAsync<T>(
         ulong guildId, ulong channelId, ulong userId, EditOperation<T, CombatantResult> operation,
         string? alias = null, CancellationToken cancellationToken = default)
@@ -357,7 +356,6 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
         return combatant.GetCharacterAsync(_context, cancellationToken);
     }
 
-    // TODO Refactor various combat commands to load using this
     public async Task<EditResult<CombatantResult>> GetCombatantResultAsync(Guild guild, ulong channelId, ulong userId,
         string? alias = null, CancellationToken cancellationToken = default)
     {
