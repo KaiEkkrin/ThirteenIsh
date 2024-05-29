@@ -61,11 +61,14 @@ internal abstract class CombatVSubCommandBase(string name, string description, s
             errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
             async output =>
             {
-                // TODO Update the pinned encounter message.
+                var (adventure, encounter, combatant, character) = output.CombatantResult;
+
+                // Update the encounter table
+                var encounterTable = await CommandUtil.UpdateEncounterMessageAsync(serviceProvider, guildId,
+                    command.Channel, adventure, encounter, output.GameSystem, cancellationToken);
 
                 // If this wasn't a simple integer, show the working
-                var embed = CommandUtil.BuildTrackedCharacterSummaryEmbed(null, output.CombatantResult.Character,
-                    output.GameSystem,
+                var embed = CommandUtil.BuildTrackedCharacterSummaryEmbed(null, character, output.GameSystem,
                     new CommandUtil.AdventurerSummaryOptions
                     {
                         ExtraFields =
@@ -74,7 +77,7 @@ internal abstract class CombatVSubCommandBase(string name, string description, s
                         ],
                         OnlyTheseProperties = [output.GameCounter.Name],
                         OnlyVariables = true,
-                        Title = $"Set {output.GameCounter.Name} on {output.CombatantResult.Combatant.Alias}"
+                        Title = $"Set {output.GameCounter.Name} on {combatant.Alias}"
                     });
 
                 await command.RespondAsync(embed: embed);

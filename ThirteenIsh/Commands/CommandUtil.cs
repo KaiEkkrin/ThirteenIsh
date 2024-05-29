@@ -294,6 +294,22 @@ internal static class CommandUtil
         return TryConvertTo(value, out typedValue);
     }
 
+    public static async Task<string?> UpdateEncounterMessageAsync(IServiceProvider serviceProvider, ulong guildId,
+        IMessageChannel channel, Adventure adventure, Encounter encounter, GameSystem gameSystem,
+        CancellationToken cancellationToken = default)
+    {
+        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
+        var pinnedMessageService = serviceProvider.GetRequiredService<PinnedMessageService>();
+
+        var encounterTable = await gameSystem.BuildEncounterTableAsync(dataService, adventure,
+            encounter, cancellationToken);
+
+        await pinnedMessageService.SetEncounterMessageAsync(channel, encounter.AdventureName, guildId, encounterTable,
+            cancellationToken);
+
+        return encounterTable;
+    }
+
     public readonly struct AdventurerSummaryOptions
     {
         /// <summary>

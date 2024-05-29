@@ -53,12 +53,8 @@ internal sealed class CombatAddSubCommand() : SubCommandBase("add", "Adds a mons
             async output =>
             {
                 // Update the encounter table
-                var encounterTable = await output.GameSystem.BuildEncounterTableAsync(dataService, output.Adventure,
-                    output.Encounter, cancellationToken);
-
-                var pinnedMessageService = serviceProvider.GetRequiredService<PinnedMessageService>();
-                await pinnedMessageService.SetEncounterMessageAsync(command.Channel, output.Encounter.AdventureName,
-                    guildId, encounterTable, cancellationToken);
+                var encounterTable = await CommandUtil.UpdateEncounterMessageAsync(serviceProvider, guildId,
+                    command.Channel, output.Adventure, output.Encounter, output.GameSystem, cancellationToken);
 
                 // Send an appropriate response
                 var embedBuilder = new EmbedBuilder()
