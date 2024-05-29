@@ -2,6 +2,7 @@
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Database.Entities.Combatants;
@@ -249,6 +250,19 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
         return await EditAsync(operation, character, cancellationToken);
     }
 
+    // TODO Refactor various combat commands to edit using this
+    public async Task<EditResult<T>> EditCombatantAsync<T>(
+        ulong guildId, ulong channelId, ulong userId, EditOperation<T, CombatantResult> operation,
+        string? alias = null, CancellationToken cancellationToken = default)
+        where T : class
+    {
+        var guild = await GetGuildAsync(guildId, cancellationToken);
+        var result = await GetCombatantResultAsync(guild, channelId, userId, alias, cancellationToken);
+        return await result.HandleAsync(
+            errorMessage => Task.FromResult(operation.CreateError(errorMessage)),
+            value => EditAsync(operation, value, cancellationToken));
+    }
+
     public async Task<EditResult<T>> EditEncounterAsync<T>(
         ulong guildId, ulong channelId, EditOperation<T, EncounterResult> operation,
         CancellationToken cancellationToken = default)
@@ -343,6 +357,28 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
         return combatant.GetCharacterAsync(_context, cancellationToken);
     }
 
+    // TODO Refactor various combat commands to load using this
+    public async Task<EditResult<CombatantResult>> GetCombatantResultAsync(Guild guild, ulong channelId, ulong userId,
+        string? alias = null, CancellationToken cancellationToken = default)
+    {
+        var encounterResult = await GetEncounterResultAsync(guild, channelId, cancellationToken);
+        return await encounterResult.HandleAsync(
+            errorMessage => Task.FromResult(new EditResult<CombatantResult>(null, errorMessage)),
+            async value =>
+            {
+                var (adventure, encounter) = value;
+                if (!TryGetCombatant(encounter, alias, userId, out var combatant, out var errorMessage))
+                    return new EditResult<CombatantResult>(null, errorMessage);
+
+                var character = await GetCharacterAsync(combatant, cancellationToken);
+                if (character == null)
+                    return new EditResult<CombatantResult>(null,
+                        $"Cannot find a character sheet for the combatant with alias '{combatant.Alias}'.");
+
+                return new EditResult<CombatantResult>(new CombatantResult(adventure, encounter, combatant, character));
+            });
+    }
+
     public Task<Encounter?> GetEncounterAsync(Guild guild, ulong channelId,
         CancellationToken cancellationToken = default)
     {
@@ -407,6 +443,45 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
         // We really shouldn't encounter a concurrent modification of this one
         guild.CommandVersion = commandVersion;
         await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    private static bool TryGetCombatant(Encounter encounter, string? alias, ulong userId,
+        [MaybeNullWhen(false)] out CombatantBase combatant, [MaybeNullWhen(true)] out string errorMessage)
+    {
+        if (alias != null)
+        {
+            if (encounter.Combatants.FirstOrDefault(x => x.Alias == alias) is not { } matchingCombatant)
+            {
+                combatant = null;
+                errorMessage = $"The alias '{alias}' does not match any combatant in the current encounter.";
+                return false;
+            }
+            else if (matchingCombatant.UserId != userId)
+            {
+                combatant = null;
+                errorMessage = $"The combatant with alias '{alias}' belongs to someone else.";
+                return false;
+            }
+            else
+            {
+                combatant = matchingCombatant;
+                errorMessage = null;
+                return true;
+            }
+        }
+        else if (encounter.Combatants.FirstOrDefault(x => x.CharacterType == CharacterType.PlayerCharacter &&
+                                                          x.UserId == userId) is { } usersCombatant)
+        {
+            combatant = usersCombatant;
+            errorMessage = null;
+            return true;
+        }
+        else
+        {
+            combatant = null;
+            errorMessage = "Specify an alias for the combatant to select.";
+            return false;
+        }
     }
 
     private static async Task OnRetryAsync(Exception exception, CancellationToken cancellationToken = default)

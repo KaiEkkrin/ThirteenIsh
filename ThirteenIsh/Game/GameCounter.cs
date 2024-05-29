@@ -199,16 +199,17 @@ internal class GameCounter(string name, string? alias = null,
         return true;
     }
 
-    public bool TrySetVariable(int newValue, Adventurer adventurer, [MaybeNullWhen(true)] out string errorMessage)
+    public bool TrySetVariable(int newValue, ITrackedCharacter character, [MaybeNullWhen(true)] out string errorMessage)
     {
-        var maxValue = GetMaxVariableValue(adventurer.Sheet);
+        var maxValue = GetMaxVariableValue(character.Sheet);
         if (newValue < minValue || newValue > maxValue)
         {
             errorMessage = $"{Name} must be between {minValue} and {maxValue}.";
             return false;
         }
 
-        adventurer.Variables.Counters.SetValue(Name, newValue);
+        var variables = character.GetVariables();
+        variables.Counters.SetValue(Name, newValue);
         errorMessage = null;
         return true;
     }

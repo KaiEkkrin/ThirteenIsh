@@ -268,6 +268,7 @@ internal static class CommandUtil
 
     // Matches a combatant by an optional alias, otherwise, returns this player's own adventurer if there
     // is one. Doesn't return other players' combatants.
+    // TODO try to delete this, after using GetCombatantResultAsync everywhere possible
     public static bool TryGetCombatantByOptionalAlias(SocketSlashCommandDataOption option, string name, ulong userId,
         Encounter encounter, [MaybeNullWhen(false)] out CombatantBase combatant, [MaybeNullWhen(true)] out string error)
     {

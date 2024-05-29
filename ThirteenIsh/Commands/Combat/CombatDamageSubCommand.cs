@@ -75,11 +75,6 @@ internal sealed class CombatDamageSubCommand()
 
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var guild = await dataService.GetGuildAsync(guildId, cancellationToken);
-
-        // TODO This code should be able to change to handle the current monster, too (?)
-        // Should I be able to share this with PcCombatAttackCommand (generalise to making attacks with
-        // monsters, too)?
-        // For now, this only deals damage as the current player's character
         var encounterResult = await dataService.GetEncounterResultAsync(guild, channelId, cancellationToken);
 
         await encounterResult.Handle(

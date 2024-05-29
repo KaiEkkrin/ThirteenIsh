@@ -4,30 +4,29 @@ using ThirteenIsh.EditOperations;
 using ThirteenIsh.Parsing;
 using ThirteenIsh.Services;
 
-namespace ThirteenIsh.Commands.Pcs;
+namespace ThirteenIsh.Commands.Combat;
 
 /// <summary>
-/// Extend this to make the vset and vmod commands since they're extremely similar
-/// These, of course, don't apply to monsters, which don't have an equivalent to "player character" sheets
-/// copied into the adventure
-/// TODO also make vmod and vset commands for tracked characters in combat -- maybe named `combat-vset` and
-/// `combat-vmod`? (would look very similar)
+/// Like PcVSubCommandBase, but applies to any alias during combat.
 /// </summary>
-internal abstract class PcVSubCommandBase(string name, string description,
-    string nameOptionDescription, string valueOptionDescription)
+internal abstract class CombatVSubCommandBase(string name, string description, string nameOptionDescription,
+    string valueOptionDescription)
     : SubCommandBase(name, description)
 {
     public override SlashCommandOptionBuilder CreateBuilder()
     {
         return base.CreateBuilder()
-            .AddOption("variable-name", ApplicationCommandOptionType.String, nameOptionDescription)
-            .AddOption("value", ApplicationCommandOptionType.String, valueOptionDescription);
+            .AddOption("variable-name", ApplicationCommandOptionType.String, nameOptionDescription,
+                isRequired: true)
+            .AddOption("value", ApplicationCommandOptionType.String, valueOptionDescription,
+                isRequired: true)
+            .AddOption("alias", ApplicationCommandOptionType.String, "The combatant alias to edit.");
     }
 
     public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
         IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
-        if (command.GuildId is not { } guildId) return;
+        if (command is not { ChannelId: { } channelId, GuildId: { } guildId }) return;
         if (!CommandUtil.TryGetOption<string>(option, "variable-name", out var namePart))
         {
             await command.RespondAsync("No variable name part supplied.", ephemeral: true);
@@ -47,37 +46,39 @@ internal abstract class PcVSubCommandBase(string name, string description,
             return;
         }
 
+        var alias = CommandUtil.TryGetOption<string>(option, "alias", out var aliasString)
+            ? aliasString
+            : null;
+
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var random = serviceProvider.GetRequiredService<IRandomWrapper>();
         var editOperation = CreateEditOperation(namePart, parseTree, random);
 
-        var result = await dataService.EditAdventurerAsync(
-            guildId, command.User.Id, editOperation, cancellationToken);
+        var result = await dataService.EditCombatantAsync(
+            guildId, channelId, command.User.Id, editOperation, alias, cancellationToken);
 
         await result.Handle(
             errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
-            output =>
+            async output =>
             {
                 // If this wasn't a simple integer, show the working
-                List<EmbedFieldBuilder> extraFields = [];
-                if (parseTree is not IntegerParseTree)
-                {
-                    extraFields.Add(new EmbedFieldBuilder()
-                        .WithName("Roll")
-                        .WithValue(output.Working));
-                }
-
-                return CommandUtil.RespondWithTrackedCharacterSummaryAsync(command, output.Adventurer, output.GameSystem,
+                var embed = CommandUtil.BuildTrackedCharacterSummaryEmbed(null, output.CombatantResult.Character,
+                    output.GameSystem,
                     new CommandUtil.AdventurerSummaryOptions
                     {
-                        ExtraFields = extraFields,
+                        ExtraFields =
+                        [
+                            new EmbedFieldBuilder().WithName("Roll").WithValue(output.Working)
+                        ],
                         OnlyTheseProperties = [output.GameCounter.Name],
                         OnlyVariables = true,
-                        Title = $"Set {output.GameCounter.Name} on {output.Adventurer.Name}"
+                        Title = $"Set {output.GameCounter.Name} on {output.CombatantResult.Combatant.Alias}"
                     });
+
+                await command.RespondAsync(embed: embed);
             });
     }
 
-    protected abstract PcEditVariableOperation CreateEditOperation(
+    protected abstract CombatEditVariableOperation CreateEditOperation(
         string counterNamePart, ParseTreeBase parseTree, IRandomWrapper random);
 }
