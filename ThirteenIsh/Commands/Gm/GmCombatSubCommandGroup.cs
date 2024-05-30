@@ -1,4 +1,6 @@
-﻿namespace ThirteenIsh.Commands.Gm;
+﻿using ThirteenIsh.Commands.Combat;
+
+namespace ThirteenIsh.Commands.Gm;
 
 /// <summary>
 /// GM-only combat commands go here. I'm going to try to make this list as short as I can,
@@ -8,6 +10,8 @@
 internal class GmCombatSubCommandGroup() : SubCommandGroupBase("combat", "Manage encounters.",
     new GmCombatBeginSubCommand(),
     new GmCombatEndSubCommand(),
-    new GmCombatRemoveSubCommand())
+    new GmCombatRemoveSubCommand(),
+    new CombatVModSubCommand(true),
+    new CombatVSetSubCommand(true))
 {
 }

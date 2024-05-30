@@ -9,18 +9,19 @@ namespace ThirteenIsh.Commands.Combat;
 /// <summary>
 /// Like PcVSubCommandBase, but applies to any alias during combat.
 /// </summary>
-internal abstract class CombatVSubCommandBase(string name, string description, string nameOptionDescription,
+internal abstract class CombatVSubCommandBase(bool asGm, string name, string description, string nameOptionDescription,
     string valueOptionDescription)
     : SubCommandBase(name, description)
 {
     public override SlashCommandOptionBuilder CreateBuilder()
     {
         return base.CreateBuilder()
+            .AddOption("alias", ApplicationCommandOptionType.String, "The combatant alias to edit.",
+                isRequired: asGm)
             .AddOption("variable-name", ApplicationCommandOptionType.String, nameOptionDescription,
                 isRequired: true)
             .AddOption("value", ApplicationCommandOptionType.String, valueOptionDescription,
-                isRequired: true)
-            .AddOption("alias", ApplicationCommandOptionType.String, "The combatant alias to edit.");
+                isRequired: true);
     }
 
     public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
@@ -55,7 +56,7 @@ internal abstract class CombatVSubCommandBase(string name, string description, s
         var editOperation = CreateEditOperation(namePart, parseTree, random);
 
         var result = await dataService.EditCombatantAsync(
-            guildId, channelId, command.User.Id, editOperation, alias, cancellationToken);
+            guildId, channelId, asGm ? null : command.User.Id, editOperation, alias, cancellationToken);
 
         await result.Handle(
             errorMessage => command.RespondAsync(errorMessage, ephemeral: true),

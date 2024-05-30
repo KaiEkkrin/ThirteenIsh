@@ -3,7 +3,7 @@ using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Commands.Pcs;
 
-internal class PcVModSubCommand() : PcVSubCommandBase("vmod", "Adds to or subtracts from a variable value,",
+internal class PcVModSubCommand(bool asGm) : PcVSubCommandBase(asGm, "vmod", "Adds to or subtracts from a variable value,",
     "The variable name to change.", "A number or dice expression to change it by.")
 {
     protected override PcEditVariableOperation CreateEditOperation(

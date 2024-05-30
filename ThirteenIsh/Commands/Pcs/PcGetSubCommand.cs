@@ -26,7 +26,7 @@ internal sealed class PcGetSubCommand(bool asGm)
         if (asGm && !CommandUtil.TryGetCanonicalizedMultiPartOption(option, "name", out name))
         {
             await command.RespondAsync(
-                $"{CharacterType.PlayerCharacter.FriendlyName(FriendlyNameOptions.CapitalizeFirstCharacter)} names must contain only letters and spaces",
+                $"A valid {CharacterType.PlayerCharacter.FriendlyName(FriendlyNameOptions.CapitalizeFirstCharacter)} name must be supplied.",
                 ephemeral: true);
             return;
         }

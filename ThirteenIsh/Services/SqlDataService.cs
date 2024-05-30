@@ -232,6 +232,27 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
         return result;
     }
 
+    public async Task<EditResult<T>> EditAdventurerAsync<T>(
+        ulong guildId, string name, EditOperation<T, Adventurer> operation,
+        CancellationToken cancellationToken = default)
+        where T : class
+    {
+        // This one fetches the adventurer with the matching name, ignoring permissions.
+        var guild = await GetGuildAsync(guildId, cancellationToken);
+        if (string.IsNullOrEmpty(guild.CurrentAdventureName))
+            return operation.CreateError("There is no current adventure in this guild.");
+
+        var adventure = await GetAdventureAsync(guild, null, cancellationToken);
+        if (adventure == null) return operation.CreateError($"Adventure '{guild.CurrentAdventureName}' not found.");
+
+        var adventurer = await GetAdventurerAsync(adventure, name, cancellationToken);
+        if (adventurer == null)
+            return operation.CreateError($"There is no character named '{name}' in the current adventure.");
+
+        var result = await EditAsync(operation, adventurer, cancellationToken);
+        return result;
+    }
+
     public async Task<EditResult<T>> EditCharacterAsync<T>(
         string name, EditOperation<T, Character> operation, ulong userId, CharacterType characterType,
         CancellationToken cancellationToken = default)
@@ -244,7 +265,7 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
     }
 
     public async Task<EditResult<T>> EditCombatantAsync<T>(
-        ulong guildId, ulong channelId, ulong userId, EditOperation<T, CombatantResult> operation,
+        ulong guildId, ulong channelId, ulong? userId, EditOperation<T, CombatantResult> operation,
         string? alias = null, CancellationToken cancellationToken = default)
         where T : class
     {
@@ -370,7 +391,7 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
         return combatant.GetCharacterAsync(_context, cancellationToken);
     }
 
-    public async Task<EditResult<CombatantResult>> GetCombatantResultAsync(Guild guild, ulong channelId, ulong userId,
+    public async Task<EditResult<CombatantResult>> GetCombatantResultAsync(Guild guild, ulong channelId, ulong? userId,
         string? alias = null, CancellationToken cancellationToken = default)
     {
         var encounterResult = await GetEncounterResultAsync(guild, channelId, cancellationToken);
@@ -457,7 +478,7 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
         await _context.SaveChangesAsync(cancellationToken);
     }
 
-    private static bool TryGetCombatant(Encounter encounter, string? alias, ulong userId,
+    private static bool TryGetCombatant(Encounter encounter, string? alias, ulong? userId,
         [MaybeNullWhen(false)] out CombatantBase combatant, [MaybeNullWhen(true)] out string errorMessage)
     {
         if (alias != null)
@@ -468,7 +489,7 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
                 errorMessage = $"The alias '{alias}' does not match any combatant in the current encounter.";
                 return false;
             }
-            else if (matchingCombatant.UserId != userId)
+            else if (!CanGetCombatant(matchingCombatant, userId))
             {
                 combatant = null;
                 errorMessage = $"The combatant with alias '{alias}' belongs to someone else.";
@@ -482,7 +503,7 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
             }
         }
         else if (encounter.Combatants.FirstOrDefault(x => x.CharacterType == CharacterType.PlayerCharacter &&
-                                                          x.UserId == userId) is { } usersCombatant)
+                                                          CanGetCombatant(x, userId)) is { } usersCombatant)
         {
             combatant = usersCombatant;
             errorMessage = null;
@@ -494,6 +515,11 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
             errorMessage = "Specify an alias for the combatant to select.";
             return false;
         }
+    }
+
+    private static bool CanGetCombatant(CombatantBase combatant, ulong? userId)
+    {
+        return !userId.HasValue || combatant.UserId == userId.Value;
     }
 
     private static async Task OnRetryAsync(Exception exception, CancellationToken cancellationToken = default)
