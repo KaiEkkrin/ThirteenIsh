@@ -45,7 +45,7 @@ internal sealed class EncounterDamageMessageHandler(SqlDataService dataService, 
         var result = await dataService.EditAsync(
             new EditOperation(random), new EditParam(adventure, combatant, message, controlId), cancellationToken);
 
-        return await result.HandleAsync(
+        return await result.Handle(
             async errorMessage =>
             {
                 await component.RespondAsync(errorMessage, ephemeral: true);

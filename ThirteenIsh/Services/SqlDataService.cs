@@ -251,7 +251,7 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
         var guild = await GetGuildAsync(guildId, cancellationToken);
         var result = await GetCombatantResultAsync(guild, channelId, userId, alias, cancellationToken);
         return await result.HandleAsync(
-            errorMessage => Task.FromResult(operation.CreateError(errorMessage)),
+            errorMessage => operation.CreateError(errorMessage),
             value => EditAsync(operation, value, cancellationToken));
     }
 
@@ -263,7 +263,7 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
         var guild = await GetGuildAsync(guildId, cancellationToken);
         var result = await GetEncounterResultAsync(guild, channelId, cancellationToken);
         return await result.HandleAsync(
-            errorMessage => Task.FromResult(operation.CreateError(errorMessage)),
+            errorMessage => operation.CreateError(errorMessage),
             value => EditAsync(operation, value, cancellationToken));
     }
 
@@ -354,7 +354,7 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
     {
         var encounterResult = await GetEncounterResultAsync(guild, channelId, cancellationToken);
         return await encounterResult.HandleAsync(
-            errorMessage => Task.FromResult(new EditResult<CombatantResult>(null, errorMessage)),
+            errorMessage => new EditResult<CombatantResult>(null, errorMessage),
             async value =>
             {
                 var (adventure, encounter) = value;
