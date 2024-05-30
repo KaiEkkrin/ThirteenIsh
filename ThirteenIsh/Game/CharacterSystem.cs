@@ -1,5 +1,4 @@
 ﻿using Discord;
-using MongoDB.Driver.Core.Operations;
 using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
 using ThirteenIsh.Database;
@@ -80,7 +79,7 @@ internal abstract class CharacterSystem
     /// Like AddCharacterSheetFields.
     /// </summary>
     public EmbedBuilder AddTrackedCharacterFields(EmbedBuilder builder, ITrackedCharacter character,
-        IReadOnlyCollection<string>? onlyTheseProperties)
+        IReadOnlyCollection<string>? onlyTheseProperties, bool withTags)
     {
         foreach (var group in EnumeratePropertyGroups(character.Sheet))
         {
@@ -89,6 +88,7 @@ internal abstract class CharacterSystem
             builder.AddField(fieldBuilder);
         }
 
+        if (withTags) AddTagsFields(builder, character);
         return builder;
     }
 
@@ -98,7 +98,7 @@ internal abstract class CharacterSystem
     /// Like AddCharacterSheetFields.
     /// </summary>
     public EmbedBuilder AddTrackedCharacterVariableFields(EmbedBuilder builder, ITrackedCharacter character,
-        IReadOnlyCollection<string>? onlyTheseProperties)
+        IReadOnlyCollection<string>? onlyTheseProperties, bool withTags)
     {
         foreach (var group in EnumerateVariableCounterGroups(character.Sheet))
         {
@@ -107,6 +107,7 @@ internal abstract class CharacterSystem
             builder.AddField(fieldBuilder);
         }
 
+        if (withTags) AddTagsFields(builder, character);
         return builder;
     }
 
@@ -241,6 +242,16 @@ internal abstract class CharacterSystem
     }
 
     protected abstract GameCounter BuildCustomCounter(CustomCounter cc);
+
+    private static void AddTagsFields(EmbedBuilder builder, ITrackedCharacter character)
+    {
+        if (character.GetVariables().Tags is not { Count: > 0 } tags) return;
+
+        var rows = tags.Select(tag => new TableRow(new TableCell(tag))).ToList();
+        var table = TableHelper.BuildTable(rows);
+
+        builder.AddField("Tags", table);
+    }
 
     /// <summary>
     /// Enumerates all property groups for this character sheet, including custom.

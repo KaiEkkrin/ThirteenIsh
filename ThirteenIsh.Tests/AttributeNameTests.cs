@@ -41,4 +41,29 @@ public class AttributeNameTests
         AttributeName.TryCanonicalizeMultiPart(name, out var canonicalizedName).ShouldBeTrue(name);
         canonicalizedName.ShouldBe(expectedName);
     }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("\t\r\n")]
+    [InlineData("12345")]
+    [InlineData("A@! B")]
+    public void InvalidTagIsRejected(string value)
+    {
+        AttributeName.TryCanonicalizeTag(value, out _).ShouldBeFalse(value);
+    }
+
+    [Theory]
+    [InlineData("a", "a")]
+    [InlineData("fish", "fish")]
+    [InlineData("   fish\r\n ", "fish")]
+    [InlineData("fish fish fish", "fish fish fish")]
+    [InlineData("fish    fish\nfish ", "fish fish fish")]
+    [InlineData("A12345", "A12345")]
+    [InlineData("Persist  42", "Persist 42")]
+    public void ValidTagIsCanonicalized(string value, string expectedTagValue)
+    {
+        AttributeName.TryCanonicalizeTag(value, out var actualTagValue).ShouldBeTrue(value);
+        actualTagValue.ShouldBe(expectedTagValue);
+    }
 }

@@ -24,7 +24,7 @@ internal sealed class ResetAdventureMessageHandler(SqlDataService dataService) :
                 return CommandUtil.RespondWithTrackedCharacterSummaryAsync(component, output.Adventurer, output.GameSystem,
                     new CommandUtil.AdventurerSummaryOptions
                     {
-                        OnlyVariables = true,
+                        Flags = CommandUtil.AdventurerSummaryFlags.OnlyVariables,
                         Title = $"Reset adventurer {output.Adventurer.Name}"
                     });
             });

@@ -6,6 +6,8 @@ internal sealed class PcCommand() : CommandBase("pc", "Manage player characters 
     new PcLeaveSubCommand(),
     new PcResetSubCommand(),
     new PcRollSubCommand(),
+    new PcTagSubCommand(false),
+    new PcUntagSubCommand(false),
     new PcUpdateSubCommand(),
     new PcVModSubCommand(false),
     new PcVSetSubCommand(false))

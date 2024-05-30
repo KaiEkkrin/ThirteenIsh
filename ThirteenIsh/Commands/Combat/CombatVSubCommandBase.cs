@@ -77,7 +77,7 @@ internal abstract class CombatVSubCommandBase(bool asGm, string name, string des
                             new EmbedFieldBuilder().WithName("Roll").WithValue(output.Working)
                         ],
                         OnlyTheseProperties = [output.GameCounter.Name],
-                        OnlyVariables = true,
+                        Flags = CommandUtil.AdventurerSummaryFlags.OnlyVariables,
                         Title = $"Set {output.GameCounter.Name} on {combatant.Alias}"
                     });
 

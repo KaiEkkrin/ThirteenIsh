@@ -25,7 +25,7 @@ internal sealed class PcUpdateSubCommand() : SubCommandBase("update", "Syncs the
                 return CommandUtil.RespondWithTrackedCharacterSummaryAsync(command, adventurer, gameSystem,
                     new CommandUtil.AdventurerSummaryOptions
                     {
-                        OnlyVariables = false,
+                        Flags = CommandUtil.AdventurerSummaryFlags.WithTags,
                         Title = $"Updated {adventurer.Name}"
                     });
             });

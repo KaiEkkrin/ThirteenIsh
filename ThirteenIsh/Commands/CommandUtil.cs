@@ -10,7 +10,7 @@ using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands;
 
-internal static class CommandUtil
+internal static partial class CommandUtil
 {
     public static SlashCommandOptionBuilder AddOptionIf(this SlashCommandOptionBuilder builder,
         bool add, Func<SlashCommandOptionBuilder, SlashCommandOptionBuilder> addAction)
@@ -88,11 +88,15 @@ internal static class CommandUtil
         embedBuilder.WithTitle(options.Title);
 
         var characterSystem = gameSystem.GetCharacterSystem(character.Type);
-        embedBuilder = options.OnlyVariables
-            ? characterSystem.AddTrackedCharacterVariableFields(embedBuilder, character, options.OnlyTheseProperties)
-            : characterSystem.AddTrackedCharacterFields(embedBuilder, character, options.OnlyTheseProperties);
+        var withTags = options.Flags.HasFlag(AdventurerSummaryFlags.WithTags);
+        embedBuilder = options.Flags.HasFlag(AdventurerSummaryFlags.OnlyVariables)
+            ? characterSystem.AddTrackedCharacterVariableFields(embedBuilder, character, options.OnlyTheseProperties,
+                withTags)
+            : characterSystem.AddTrackedCharacterFields(embedBuilder, character, options.OnlyTheseProperties, withTags);
 
-        if (!options.OnlyVariables) embedBuilder.AddField("Last Updated", $"{character.LastUpdated:F}");
+        if (!options.Flags.HasFlag(AdventurerSummaryFlags.OnlyVariables))
+            embedBuilder.AddField("Last Updated", $"{character.LastUpdated:F}");
+
         if (options.ExtraFields is not null)
         {
             foreach (var extraFieldBuilder in options.ExtraFields)
@@ -300,6 +304,16 @@ internal static class CommandUtil
         return TryConvertTo(value, out typedValue);
     }
 
+    public static bool TryGetTagOption(
+        SocketSlashCommandDataOption option, string name, [MaybeNullWhen(false)] out string tagValue)
+    {
+        if (TryGetOption<string>(option, name, out var rawValue) &&
+            AttributeName.TryCanonicalizeTag(rawValue, out tagValue)) return true;
+
+        tagValue = null;
+        return false;
+    }
+
     public static async Task<string> UpdateEncounterMessageAsync(IServiceProvider serviceProvider, ulong guildId,
         IMessageChannel channel, Encounter encounter, GameSystem gameSystem,
         CancellationToken cancellationToken = default)
@@ -326,14 +340,19 @@ internal static class CommandUtil
         /// </summary>
         public IReadOnlyCollection<string>? OnlyTheseProperties { get; init; }
 
-        /// <summary>
-        /// If set, only variables will be returned. Otherwise, everything will be returned.
-        /// </summary>
-        public bool OnlyVariables { get; init; }
+        public AdventurerSummaryFlags Flags { get; init; }
 
         /// <summary>
         /// The title to use.
         /// </summary>
         public string Title { get; init; }
+    }
+
+    [Flags]
+    public enum AdventurerSummaryFlags
+    {
+        None = 0,
+        OnlyVariables = 1,
+        WithTags = 2
     }
 }

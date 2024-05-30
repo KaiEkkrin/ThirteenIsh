@@ -24,7 +24,7 @@ public class MonsterCombatant : CombatantBase, ITrackedCharacter
     /// </summary>
     public VariablesSheet Variables { get; set; } = new();
 
-    public ICounterSheet GetVariables() => Variables;
+    public VariablesSheet GetVariables() => Variables;
 
     public override Task<ITrackedCharacter?> GetCharacterAsync(
         DataContext dataContext,

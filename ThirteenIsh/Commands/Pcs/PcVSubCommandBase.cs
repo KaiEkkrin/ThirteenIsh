@@ -84,7 +84,7 @@ internal abstract class PcVSubCommandBase(bool asGm, string name, string descrip
                     {
                         ExtraFields = extraFields,
                         OnlyTheseProperties = [output.GameCounter.Name],
-                        OnlyVariables = true,
+                        Flags = CommandUtil.AdventurerSummaryFlags.OnlyVariables,
                         Title = $"Set {output.GameCounter.Name} on {output.Adventurer.Name}"
                     });
             });

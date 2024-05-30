@@ -54,7 +54,9 @@ internal sealed class PcGetSubCommand(bool asGm)
         await CommandUtil.RespondWithTrackedCharacterSummaryAsync(command, adventurer, gameSystem,
             new CommandUtil.AdventurerSummaryOptions
             {
-                OnlyVariables = onlyVariables,
+                Flags = onlyVariables
+                    ? CommandUtil.AdventurerSummaryFlags.OnlyVariables
+                    : CommandUtil.AdventurerSummaryFlags.WithTags,
                 Title = adventurer.Name
             });
     }

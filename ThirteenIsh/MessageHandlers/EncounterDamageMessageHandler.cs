@@ -63,7 +63,7 @@ internal sealed class EncounterDamageMessageHandler(SqlDataService dataService, 
                             new EmbedFieldBuilder().WithName("Damage").WithValue(output.Working)
                         ],
                         OnlyTheseProperties = [output.Counter.Name],
-                        OnlyVariables = true,
+                        Flags = CommandUtil.AdventurerSummaryFlags.OnlyVariables,
                         Title = $"{combatant.Alias} took damage to {output.Counter.Name}"
                     });
 

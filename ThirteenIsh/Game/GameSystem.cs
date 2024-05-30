@@ -1,5 +1,4 @@
 ﻿using Discord;
-using MongoDB.Driver;
 using System.Collections.Frozen;
 using System.Text;
 using ThirteenIsh.Database;
@@ -161,6 +160,11 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
             foreach (var counter in characterSystem.GetEncounterTableCounters(character.Sheet))
             {
                 cells.Add(new TableCell($"{counter.Alias} {counter.GetDisplayValue(character)}"));
+            }
+
+            if (character.GetVariables().Tags is { Count: > 0 } tags)
+            {
+                foreach (var tag in tags) cells.Add(new TableCell(tag));
             }
 
             rowPrototypes.Add(cells);

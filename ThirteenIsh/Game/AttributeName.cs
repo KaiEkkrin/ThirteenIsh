@@ -13,6 +13,11 @@ internal static partial class AttributeName
     [GeneratedRegex(@"[^\p{L}\s]", RegexOptions.Compiled)]
     private static partial Regex NotNameRegex();
 
+    // A tag begins with a letter and contains any combination of letters, digits and white space,
+    // without any white space at the end.
+    [GeneratedRegex(@"^\s*(\p{L}(?:[\p{L}\p{N}\s]*[\p{L}\p{N}])?)\s*$", RegexOptions.CultureInvariant)]
+    private static partial Regex TagRegex();
+
     [GeneratedRegex(@"\s+", RegexOptions.Compiled)]
     private static partial Regex WhiteSpaceRegex();
 
@@ -53,6 +58,22 @@ internal static partial class AttributeName
                     : " ";
             },
             out canonicalizedName);
+    }
+
+    /// <summary>
+    /// Canonicalizes a tag, if possible. (Not directly related to the other methods here)
+    /// </summary>
+    public static bool TryCanonicalizeTag(string value, [MaybeNullWhen(false)] out string tagValue)
+    {
+        var match = TagRegex().Match(value);
+        if (match.Success)
+        {
+            tagValue = WhiteSpaceRegex().Replace(match.Groups[1].Value, " ");
+            return true;
+        }
+
+        tagValue = null;
+        return false;
     }
 
     private static bool TryCanonicalizeInternal(string name, MatchEvaluator whiteSpaceEvaluator,
