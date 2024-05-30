@@ -5,7 +5,8 @@ namespace ThirteenIsh.Commands.Gm;
 // short for "Game Master" -- game master only commands.
 internal sealed class GmCommand() : CommandBase("gm", "Game Master commands.",
     new GmAdventureSubCommandGroup(),
-    new GmCombatSubCommandGroup())
+    new GmCombatSubCommandGroup(),
+    new GmPcSubCommandGroup())
 {
     public override SlashCommandBuilder CreateBuilder()
     {

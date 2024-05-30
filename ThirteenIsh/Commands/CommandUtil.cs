@@ -12,6 +12,12 @@ namespace ThirteenIsh.Commands;
 
 internal static class CommandUtil
 {
+    public static SlashCommandOptionBuilder AddOptionIf(this SlashCommandOptionBuilder builder,
+        bool add, Func<SlashCommandOptionBuilder, SlashCommandOptionBuilder> addAction)
+    {
+        return add ? addAction(builder) : builder;
+    }
+
     public static SlashCommandOptionBuilder AddRerollsOption(this SlashCommandOptionBuilder builder, string name)
     {
         return builder.AddOption(new SlashCommandOptionBuilder()

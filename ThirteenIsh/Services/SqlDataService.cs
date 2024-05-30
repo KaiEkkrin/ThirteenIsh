@@ -313,6 +313,27 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
             .SingleOrDefaultAsync(cancellationToken);
     }
 
+    public async Task<Adventurer?> GetAdventurerAsync(Adventure adventure, string name,
+        CancellationToken cancellationToken = default)
+    {
+        // Look for an exact match first
+        var adventurer = await _context.Adventurers
+            .Include(a => a.Adventure)
+            .SingleOrDefaultAsync(a => a.AdventureId == adventure.Id && a.Name == name,
+                cancellationToken);
+
+        if (adventurer != null) return adventurer;
+
+        // Only accept an unambiguous match
+        var matchingAdventurers = await _context.Adventurers
+            .Include(a => a.Adventure)
+            .Where(a => a.AdventureId == adventure.Id && 
+                        a.NameUpper.StartsWith(name.ToUpperInvariant()))
+            .ToListAsync(cancellationToken);
+
+        return matchingAdventurers.Count == 1 ? matchingAdventurers[0] : null;
+    }
+
     public IAsyncEnumerable<Adventure> GetAdventuresAsync(Guild guild)
     {
         return _context.Adventures.Where(a => a.GuildId == guild.Id).AsAsyncEnumerable();
