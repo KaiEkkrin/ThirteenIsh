@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using ThirteenIsh.Game;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Gm;
@@ -16,10 +17,15 @@ internal sealed class GmAdventureGetSubCommand() : SubCommandBase("get", "Gets t
         IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
         if (command.GuildId is not { } guildId) return;
-        if (!CommandUtil.TryGetCanonicalizedMultiPartOption(option, "name", out var adventureName))
+
+        string? adventureName = null;
+        if (CommandUtil.TryGetOption<string>(option, "name", out var adventureNameValue))
         {
-            await command.RespondAsync("Adventure names must contain only letters and spaces.", ephemeral: true);
-            return;
+            if (!AttributeName.TryCanonicalizeMultiPart(adventureNameValue, out adventureName))
+            {
+                await command.RespondAsync("Adventure names must contain only letters and spaces.", ephemeral: true);
+                return;
+            }
         }
 
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
@@ -27,7 +33,7 @@ internal sealed class GmAdventureGetSubCommand() : SubCommandBase("get", "Gets t
         var adventure = await dataService.GetAdventureAsync(guild, adventureName, cancellationToken);
         if (adventure == null)
         {
-            await command.RespondAsync("No such adventure was found in this guild.");
+            await command.RespondAsync("No such adventure was found in this guild.", ephemeral: true);
             return;
         }
 
