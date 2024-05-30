@@ -8,15 +8,14 @@ namespace ThirteenIsh.Services;
 /// <summary>
 /// Helps handle pinned messages.
 /// </summary>
-internal sealed class PinnedMessageService(
+internal sealed partial class PinnedMessageService(
     SqlDataService dataService,
     ILogger<PinnedMessageService> logger)
 {
-    private static readonly Action<ILogger, string, string, Exception> ErrorWritingMessage =
-        LoggerMessage.Define<string, string>(
-            LogLevel.Warning,
-            new EventId(1, nameof(PinnedMessageService)),
-            "Pinned message {Action} : {Message}");
+    [LoggerMessage(Level = LogLevel.Warning, EventId = 1, Message = "Pinned message {Action} : {Message}")]
+    private partial void ErrorWritingMessage(string action, string message, Exception exception);
+
+    private readonly ILogger<PinnedMessageService> _logger = logger;
 
     public static async Task DeleteEncounterMessageAsync(IMessageChannel channel, ulong messageId)
     {
@@ -53,7 +52,7 @@ internal sealed class PinnedMessageService(
         catch (Exception ex)
         {
             // I'm not quite sure what this would throw, so I'll just catch anything for now
-            ErrorWritingMessage(logger, nameof(UpdateAsync), ex.Message, ex);
+            ErrorWritingMessage(nameof(UpdateAsync), ex.Message, ex);
             return false;
         }
     }

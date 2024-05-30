@@ -7,57 +7,35 @@ using ThirteenIsh.Database.Entities.Messages;
 
 namespace ThirteenIsh.Services;
 
-internal sealed class DiscordService : IAsyncDisposable, IDisposable
+internal sealed partial class DiscordService : IAsyncDisposable, IDisposable
 {
     private static readonly TimeSpan SlashCommandTimeout = TimeSpan.FromMilliseconds(1500);
 
-    private static readonly Action<ILogger, string, Exception> RegisterCommandsErrorMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Error,
-            new EventId(1, nameof(DiscordService)),
-            "Error registering commands: {Details}");
+    [LoggerMessage(Level = LogLevel.Error, EventId = 1, Message = "Error registering commands: {Details}")]
+    private partial void RegisterCommandsErrorMessage(string details, Exception exception);
 
-    private static readonly Action<ILogger, string, string, Exception> RegisterGuildCommandsErrorMessage =
-        LoggerMessage.Define<string, string>(
-            LogLevel.Error,
-            new EventId(1, nameof(DiscordService)),
-            "{Guild}: Error registering guild commands: {Details}");
+    [LoggerMessage(Level = LogLevel.Error, EventId = 2, Message = "{Guild}: Error registering guild commands: {Details}")]
+    private partial void RegisterGuildCommandsErrorMessage(string guild, string details, Exception exception);
 
-    private static readonly Action<ILogger, string, string, string, Type, Exception?> RegisteredCommandMessage =
-        LoggerMessage.Define<string, string, string, Type>(
-            LogLevel.Information,
-            new EventId(2, nameof(DiscordService)),
-            "{Guild}: Registered command {Name} ({Description}) with handler {HandlerType}");
+    [LoggerMessage(Level = LogLevel.Information, EventId = 3, Message =
+        "{Guild}: Registered command {Name} ({Description}) with handler {HandlerType}")]
+    private partial void RegisteredCommandMessage(string guild, string name, string description, Type handlerType);
 
-    private static readonly Action<ILogger, string, TimeSpan, string, Exception> SlashCommandTimeoutMessage =
-        LoggerMessage.Define<string, TimeSpan, string>(
-            LogLevel.Warning,
-            new EventId(3, nameof(DiscordService)),
-            "Slash command {Name} timed out after {Timeout}: {Details}");
+    [LoggerMessage(Level = LogLevel.Warning, EventId = 4, Message =
+        "Slash command {Name} timed out after {Timeout}: {Details}")]
+    private partial void SlashCommandTimeoutMessage(string name, TimeSpan timeout, string details, Exception exception);
 
-    private static readonly Action<ILogger, string, Exception?> DiscordErrorMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Error,
-            new EventId(4, nameof(DiscordService)),
-            "[Discord]: {Message}");
+    [LoggerMessage(Level = LogLevel.Error, EventId = 5, Message = "[Discord]: {Message}")]
+    private partial void DiscordErrorMessage(string message, Exception? exception);
 
-    private static readonly Action<ILogger, string, Exception?> DiscordWarningMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Warning,
-            new EventId(5, nameof(DiscordService)),
-            "[Discord]: {Message}");
+    [LoggerMessage(Level = LogLevel.Warning, EventId = 6, Message = "[Discord]: {Message}")]
+    private partial void DiscordWarningMessage(string message, Exception? exception);
 
-    private static readonly Action<ILogger, string, Exception?> DiscordInformationMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Information,
-            new EventId(6, nameof(DiscordService)),
-            "[Discord]: {Message}");
+    [LoggerMessage(Level = LogLevel.Information, EventId = 7, Message = "[Discord]: {Message}")]
+    private partial void DiscordInformationMessage(string message, Exception? exception);
 
-    private static readonly Action<ILogger, string, Exception?> DiscordDebugMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Debug,
-            new EventId(7, nameof(DiscordService)),
-            "[Discord]: {Message}");
+    [LoggerMessage(Level = LogLevel.Debug, EventId = 8, Message = "[Discord]: {Message}")]
+    private partial void DiscordDebugMessage(string message, Exception? exception);
 
     private readonly DiscordSocketClient _client = new();
     private readonly ConcurrentDictionary<string, CommandBase> _commandsMap = new();
@@ -144,19 +122,19 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
         {
             case LogSeverity.Critical:
             case LogSeverity.Error:
-                DiscordErrorMessage(_logger, message.Message, message.Exception);
+                DiscordErrorMessage(message.Message, message.Exception);
                 break;
 
             case LogSeverity.Warning:
-                DiscordWarningMessage(_logger, message.Message, message.Exception);
+                DiscordWarningMessage(message.Message, message.Exception);
                 break;
 
             case LogSeverity.Info:
-                DiscordInformationMessage(_logger, message.Message, message.Exception);
+                DiscordInformationMessage(message.Message, message.Exception);
                 break;
 
             default:
-                DiscordDebugMessage(_logger, message.Message, message.Exception);
+                DiscordDebugMessage(message.Message, message.Exception);
                 break;
         }
 
@@ -181,7 +159,7 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
         }
         catch (OperationCanceledException ex)
         {
-            SlashCommandTimeoutMessage(_logger, arg.Data.CustomId, SlashCommandTimeout, ex.Message, ex);
+            SlashCommandTimeoutMessage(arg.Data.CustomId, SlashCommandTimeout, ex.Message, ex);
             await arg.RespondAsync($"Message timed out after {SlashCommandTimeout}: {arg.Data.CustomId}");
         }
     }
@@ -211,7 +189,7 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
             }
             catch (OperationCanceledException ex)
             {
-                SlashCommandTimeoutMessage(_logger, command.Data.Name, SlashCommandTimeout, ex.Message, ex);
+                SlashCommandTimeoutMessage(command.Data.Name, SlashCommandTimeout, ex.Message, ex);
                 await command.RespondAsync($"Command timed out after {SlashCommandTimeout}: {command.Data.Name}");
             }
         }
@@ -245,7 +223,7 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
         }
         catch (Exception ex)
         {
-            RegisterCommandsErrorMessage(_logger, ex.Message, ex);
+            RegisterCommandsErrorMessage(ex.Message, ex);
         }
     }
 
@@ -269,14 +247,14 @@ internal sealed class DiscordService : IAsyncDisposable, IDisposable
             {
                 var build = command.CreateBuilder().Build();
                 await guild.CreateApplicationCommandAsync(build);
-                RegisteredCommandMessage(_logger, guild.Name, build.Name.Value, build.Description.Value, command.GetType(), null);
+                RegisteredCommandMessage(guild.Name, build.Name.Value, build.Description.Value, command.GetType());
             }
 
             await dataService.UpdateGuildCommandVersionAsync(guildEntity, CommandBase.Version);
         }
         catch (Exception ex)
         {
-            RegisterGuildCommandsErrorMessage(_logger, guild.Name, ex.Message, ex);
+            RegisterGuildCommandsErrorMessage(guild.Name, ex.Message, ex);
         }
     }
 }

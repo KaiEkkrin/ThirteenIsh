@@ -11,26 +11,19 @@ using ThirteenIsh.Results;
 
 namespace ThirteenIsh.Services;
 
-// This warning is about specifying a StringComparison enum on string.StartsWith -- we need to pass the
-// one-argument overload to EF Linq in order for it to successfully translate to SQL statements
-#pragma warning disable CA1862
-
 /// <summary>
 /// SQL database adapter
 /// </summary>
-public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> logger)
+[SuppressMessage("Performance",
+    "CA1862:Use the 'StringComparison' method overloads to perform case-insensitive string comparisons",
+    Justification = "Required by EF Core Linq translator")]
+public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataService> logger)
 {
-    private static readonly Action<ILogger, long, TimeSpan, Exception?> DeletedOldMessages =
-        LoggerMessage.Define<long, TimeSpan>(
-            LogLevel.Information,
-            new EventId(1, nameof(SqlDataService)),
-            "Deleted {Count} old messages in {Elapsed}");
+    [LoggerMessage(Level = LogLevel.Information, EventId = 1, Message = "Deleted {Count} old messages in {Elapsed}")]
+    private partial void DeletedOldMessages(int count, TimeSpan elapsed);
 
-    private static readonly Action<ILogger, string, Exception> ErrorDeletingOldMessages =
-        LoggerMessage.Define<string>(
-            LogLevel.Warning,
-            new EventId(2, nameof(SqlDataService)),
-            "Error deleting old messages: {Message}");
+    [LoggerMessage(Level = LogLevel.Warning, EventId = 2, Message = "Error deleting old messages: {Message}")]
+    private partial void ErrorDeletingOldMessages(string message, Exception exception);
 
     private readonly DataContext _context = context;
     private readonly ILogger<SqlDataService> _logger = logger;
@@ -174,11 +167,11 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
             var count = await _context.Messages.Where(m => m.Timestamp < expiredTime).ExecuteDeleteAsync(cancellationToken);
 
             stopwatch.Stop();
-            DeletedOldMessages(_logger, count, stopwatch.Elapsed, null);
+            DeletedOldMessages(count, stopwatch.Elapsed);
         }
         catch (Exception ex)
         {
-            ErrorDeletingOldMessages(_logger, ex.Message, ex);
+            ErrorDeletingOldMessages(ex.Message, ex);
         }
     }
 
@@ -495,5 +488,3 @@ public sealed class SqlDataService(DataContext context, ILogger<SqlDataService> 
         }
     }
 }
-
-#pragma warning restore CA1862

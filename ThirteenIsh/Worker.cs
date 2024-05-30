@@ -4,7 +4,7 @@ using ThirteenIsh.Services;
 
 namespace ThirteenIsh;
 
-internal sealed class Worker(
+internal sealed partial class Worker(
     DiscordService discordService,
     ILogger<Worker> logger,
     IServiceProvider serviceProvider)
@@ -12,39 +12,25 @@ internal sealed class Worker(
 {
     private static readonly TimeSpan TimerInterval = TimeSpan.FromMinutes(5);
 
-    private static readonly Action<ILogger, DateTimeOffset, Exception?> WorkerRunningMessage =
-        LoggerMessage.Define<DateTimeOffset>(
-            LogLevel.Information,
-            new EventId(1, nameof(Worker)),
-            "Worker running at: {Time}");
+    [LoggerMessage(Level = LogLevel.Information, EventId = 1, Message = "Worker running at: {Time}")]
+    private partial void WorkerRunningMessage(DateTimeOffset time);
 
-    private static readonly Action<ILogger, string, Exception> ErrorRunningWorkerMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Error,
-            new EventId(2, nameof(Worker)),
-            "Error running worker: {Message}");
+    [LoggerMessage(Level = LogLevel.Error, EventId = 2, Message = "Error running worker: {Message}")]
+    private partial void ErrorRunningWorkerMessage(string message, Exception exception);
 
-    private static readonly Action<ILogger, string, Exception> ErrorStoppingWorkerMessage =
-        LoggerMessage.Define<string>(
-            LogLevel.Error,
-            new EventId(3, nameof(Worker)),
-            "Error stopping worker: {Message}");
+    [LoggerMessage(Level = LogLevel.Error, EventId = 3, Message = "Error stopping worker: {Message}")]
+    private partial void ErrorStoppingWorkerMessage(string message, Exception exception);
 
-    private static readonly Action<ILogger, Exception?> StoppingWorkerMessage =
-        LoggerMessage.Define(
-            LogLevel.Information,
-            new EventId(4, nameof(Worker)),
-            "Stopping worker");
+    [LoggerMessage(Level = LogLevel.Information, EventId = 4, Message = "Stopping worker")]
+    private partial void StoppingWorkerMessage();
 
-    private static readonly Action<ILogger, Exception?> MigratingDatabase = LoggerMessage.Define(
-        LogLevel.Information,
-        new EventId(5, nameof(Worker)),
-        "Migrating database...");
+    [LoggerMessage(Level = LogLevel.Information, EventId = 5, Message = "Migrating database...")]
+    private partial void MigratingDatabaseMessage();
 
-    private static readonly Action<ILogger, Exception?> MigrateDatabaseSucceeded = LoggerMessage.Define(
-        LogLevel.Information,
-        new EventId(6, nameof(Worker)),
-        "Migrating database succeeded");
+    [LoggerMessage(Level = LogLevel.Information, EventId = 6, Message = "Migrate database succeeded")]
+    private partial void MigrateDatabaseSucceededMessage();
+
+    private readonly ILogger<Worker> _logger = logger;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -55,7 +41,7 @@ internal sealed class Worker(
             while (!stoppingToken.IsCancellationRequested)
             {
                 // Wake up every now and again to run timer tasks
-                WorkerRunningMessage(logger, DateTimeOffset.UtcNow, null);
+                WorkerRunningMessage(DateTimeOffset.UtcNow);
                 await Task.Delay(TimerInterval, stoppingToken);
 
                 await using var scope = serviceProvider.CreateAsyncScope();
@@ -65,11 +51,11 @@ internal sealed class Worker(
         }
         catch (OperationCanceledException)
         {
-            StoppingWorkerMessage(logger, null);
+            StoppingWorkerMessage();
         }
         catch (Exception ex)
         {
-            ErrorRunningWorkerMessage(logger, ex.Message, ex);
+            ErrorRunningWorkerMessage(ex.Message, ex);
         }
         finally
         {
@@ -79,19 +65,19 @@ internal sealed class Worker(
             }
             catch (Exception ex2)
             {
-                ErrorStoppingWorkerMessage(logger, ex2.Message, ex2);
+                ErrorStoppingWorkerMessage(ex2.Message, ex2);
             }
         }
     }
 
     private async Task MigrateDatabaseAsync(CancellationToken cancellationToken = default)
     {
-        MigratingDatabase(logger, null);
+        MigratingDatabaseMessage();
 
         await using var scope = serviceProvider.CreateAsyncScope();
         var dataContext = scope.ServiceProvider.GetRequiredService<DataContext>();
 
         await dataContext.Database.MigrateAsync(cancellationToken);
-        MigrateDatabaseSucceeded(logger, null);
+        MigrateDatabaseSucceededMessage();
     }
 }
