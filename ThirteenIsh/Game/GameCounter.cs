@@ -35,39 +35,6 @@ internal class GameCounter(string name, string? alias = null,
     /// </summary>
     public GameCounterOptions Options => options;
 
-    /// <summary>
-    /// Adds a component that would edit this counter's value to the component builder.
-    /// </summary>
-    public ComponentBuilder AddCharacterEditorComponent(ComponentBuilder componentBuilder,
-        string customId, CounterSheet? sheet)
-    {
-        if (!CanStore) return componentBuilder; // no editing for this one
-        var currentValue = sheet != null ? GetValue(sheet) : null;
-        if (maxValue.HasValue && (maxValue - minValue) <= 25)
-        {
-            // Represent this as a menu. It helps, since Discord doesn't have number
-            // input validation
-            var menuBuilder = new SelectMenuBuilder()
-                .WithCustomId($"{customId}:{Name}")
-                .WithMinValues(1)
-                .WithMaxValues(1)
-                .WithPlaceholder($"Select a {Name} value");
-
-            for (var i = minValue; i <= maxValue.Value; ++i)
-            {
-                menuBuilder.AddOption($"{i}", $"{i}", isDefault: i == currentValue);
-            }
-
-            return componentBuilder.WithSelectMenu(menuBuilder);
-        }
-        else
-        {
-            // Sadly this requires a modal instead and would be a massive pain in the butt. :(
-            // (Also, discord.net doesn't let me add select menus to modals!)
-            throw new NotSupportedException(Name);
-        }
-    }
-
     public override void AddPropertyValueChoiceOptions(SelectMenuBuilder builder, CharacterSheet sheet)
     {
         if (!maxValue.HasValue || maxValue.Value - minValue > 25)

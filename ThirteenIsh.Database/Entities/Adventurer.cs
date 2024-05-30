@@ -37,7 +37,7 @@ public class Adventurer : SearchableNamedEntityBase, ITrackedCharacter
     /// This adventurer's variables. These are the current values of counters that
     /// can have them.
     /// </summary>
-    public CounterSheet Variables { get; set; } = new();
+    public VariablesSheet Variables { get; set; } = new();
 
     public ICounterSheet GetVariables() => Variables;
 }

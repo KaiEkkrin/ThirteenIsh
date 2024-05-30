@@ -16,28 +16,6 @@ internal class GameProperty(string name, string[] possibleValues, bool showOnAdd
 
     public override bool ShowOnAdd => showOnAdd;
 
-    /// <summary>
-    /// Adds a component that would edit this property to the component builder.
-    /// </summary>
-    public ComponentBuilder AddCharacterEditorComponent(ComponentBuilder componentBuilder,
-        string customId, CharacterSheet? sheet)
-    {
-        var currentValue = sheet != null ? GetValue(sheet) : null;
-        var menuBuilder = new SelectMenuBuilder()
-            .WithCustomId($"{customId}:{Name}")
-            .WithMinValues(1)
-            .WithMaxValues(1)
-            .WithPlaceholder($"Select a {Name}");
-
-        foreach (var possibleValue in possibleValues)
-        {
-            menuBuilder.AddOption(possibleValue, possibleValue,
-                isDefault: possibleValue == currentValue);
-        }
-
-        return componentBuilder.WithSelectMenu(menuBuilder);
-    }
-
     public override void AddPropertyValueChoiceOptions(SelectMenuBuilder builder, CharacterSheet sheet)
     {
         var currentValue = GetValue(sheet);

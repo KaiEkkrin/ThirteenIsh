@@ -10,11 +10,12 @@ public interface ICounterSheet
 }
 
 /// <summary>
-/// A concrete sheet of counters.
+/// A concrete sheet of counters, used as variables.
 /// </summary>
-public class CounterSheet : ICounterSheet
+public class VariablesSheet : ICounterSheet
 {
     public virtual IList<PropertyValue<int>> Counters { get; set; } = [];
+    public virtual IList<string>? Tags { get; set; }
 }
 
 /// <summary>

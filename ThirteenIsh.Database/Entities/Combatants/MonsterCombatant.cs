@@ -22,7 +22,7 @@ public class MonsterCombatant : CombatantBase, ITrackedCharacter
     /// This monster's variables. These are the current values of counters that
     /// can have them.
     /// </summary>
-    public CounterSheet Variables { get; set; } = new();
+    public VariablesSheet Variables { get; set; } = new();
 
     public ICounterSheet GetVariables() => Variables;
 
