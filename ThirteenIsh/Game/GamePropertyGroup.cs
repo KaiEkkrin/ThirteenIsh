@@ -24,7 +24,7 @@ internal class GamePropertyGroup<TProperty>(string groupName, ImmutableList<TPro
             .ToList();
 
         if (rows.Count == 0) return null;
-        var table = TableHelper.BuildTable(2, rows);
+        var table = TableHelper.BuildTable(rows);
 
         return new EmbedFieldBuilder()
             .WithName(groupName)
@@ -42,7 +42,7 @@ internal class GamePropertyGroup<TProperty>(string groupName, ImmutableList<TPro
             .ToList();
 
         if (rows.Count == 0) return null;
-        var table = TableHelper.BuildTable(2, rows);
+        var table = TableHelper.BuildTable(rows);
 
         return new EmbedFieldBuilder()
             .WithName(groupName)

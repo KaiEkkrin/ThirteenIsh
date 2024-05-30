@@ -7,6 +7,7 @@
 /// </summary>
 internal class GmCombatSubCommandGroup() : SubCommandGroupBase("combat", "Manage encounters.",
     new GmCombatBeginSubCommand(),
-    new GmCombatEndSubCommand())
+    new GmCombatEndSubCommand(),
+    new GmCombatRemoveSubCommand())
 {
 }

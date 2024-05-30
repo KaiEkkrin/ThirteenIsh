@@ -1,4 +1,5 @@
 ﻿using Discord;
+using MongoDB.Driver.Core.Operations;
 using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
 using ThirteenIsh.Database;
@@ -156,6 +157,15 @@ internal abstract class CharacterSystem
             .ToList();
 
         return matchingProperties.Count == 1 ? matchingProperties[0] : null;
+    }
+
+    /// <summary>
+    /// Gets the counters to show in the encounter table for this character.
+    /// </summary>
+    public IEnumerable<GameCounter> GetEncounterTableCounters(CharacterSheet sheet)
+    {
+        return EnumerateVariableCounterGroups(sheet)
+            .SelectMany(group => group.GetProperties(c => !string.IsNullOrEmpty(c.Alias)));
     }
 
     /// <summary>

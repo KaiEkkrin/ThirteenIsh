@@ -72,7 +72,7 @@ internal sealed class EncounterDamageMessageHandler(SqlDataService dataService, 
                     await channel.SendMessageAsync(embed: embed);
 
                     // Update the encounter table
-                    var encounterTable = await output.GameSystem.BuildEncounterTableAsync(dataService, adventure,
+                    var encounterTable = await output.GameSystem.BuildEncounterTableAsync(dataService,
                         encounter, cancellationToken);
 
                     await pinnedMessageService.SetEncounterMessageAsync(channel, encounter.AdventureName, message.GuildId,

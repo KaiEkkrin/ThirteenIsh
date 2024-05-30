@@ -19,7 +19,7 @@ internal sealed class GmCombatBeginSubCommand() : SubCommandBase("begin", "Begin
             async output =>
             {
                 var gameSystem = GameSystem.Get(output.Adventure.GameSystem);
-                var encounterTable = await gameSystem.BuildEncounterTableAsync(dataService, output.Adventure,
+                var encounterTable = await gameSystem.BuildEncounterTableAsync(dataService,
                     output.Encounter, cancellationToken);
 
                 var pinnedMessageService = serviceProvider.GetRequiredService<PinnedMessageService>();

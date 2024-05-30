@@ -36,12 +36,12 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
     /// <summary>
     /// Writes an encounter summary table suitable for being part of a pinned message.
     /// </summary>
-    public async Task<string> BuildEncounterTableAsync(SqlDataService dataService, Adventure adventure,
+    public async Task<string> BuildEncounterTableAsync(SqlDataService dataService,
         Encounter encounter, CancellationToken cancellationToken = default)
     {
         StringBuilder builder = new();
         BuildEncounterHeadingTable(builder, encounter);
-        await BuildEncounterInitiativeTableAsync(dataService, adventure, builder, encounter, cancellationToken);
+        await BuildEncounterInitiativeTableAsync(dataService, builder, encounter, cancellationToken);
         return builder.ToString();
     }
 
@@ -122,57 +122,65 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
     /// </summary>
     public CharacterSystem GetCharacterSystem(CharacterType characterType) => _characterSystems[characterType];
 
-    protected virtual void AddEncounterHeadingRow(List<TableRowBase> data, Encounter encounter)
+    protected virtual void AddEncounterHeadingRow(List<TableRow> data, Encounter encounter)
     {
         data.Add(new TableRow(new TableCell("Round"), TableCell.Integer(encounter.Round)));
     }
 
     private void BuildEncounterHeadingTable(StringBuilder builder, Encounter encounter)
     {
-        List<TableRowBase> data = [];
+        List<TableRow> data = [];
         AddEncounterHeadingRow(data, encounter);
-        TableHelper.BuildTableEx(builder, 2, data, false, maxTableWidth: TableHelper.MaxPinnedTableWidth);
+        TableHelper.BuildTableEx(builder, data, false, maxTableWidth: TableHelper.MaxPinnedTableWidth);
     }
 
     public async Task BuildEncounterInitiativeTableAsync(
         SqlDataService dataService,
-        Adventure adventure,
         StringBuilder stringBuilder,
         Encounter encounter,
         CancellationToken cancellationToken = default)
     {
-        EncounterInitiativeTableBuilder tableBuilder = new();
+        if (encounter.Combatants.Count == 0) return;
 
-        // trust the encounter to have the up-to-date combatants list
-        var leaveBlankRow = false;
+        // The encounter may contain mixed character types, and I need to ensure every table row has the
+        // same number of cells, so I need to work out the cells for each character in advance and pad them
+        // all to the longest one:
+        List<List<TableCell>> rowPrototypes = new(encounter.Combatants.Count);
+        var maxCellCount = int.MinValue;
         foreach (var combatant in encounter.CombatantsInTurnOrder)
         {
-            // Leave a blank row between each combatant so that the table is readable?
-            if (leaveBlankRow) tableBuilder.AddRow(TableCell.Empty, TableCell.Empty);
+            var characterSystem = GetCharacterSystem(combatant.CharacterType);
+            var character = await dataService.GetCharacterAsync(combatant, cancellationToken)
+                ?? throw new InvalidOperationException($"Character not found for {combatant.Alias}");
 
-            tableBuilder.AddingActiveRows = combatant.Alias == encounter.TurnAlias;
-            tableBuilder.AddRow(
-                TableCell.Integer(combatant.Initiative),
-                new TableCell(combatant.Alias));
+            List<TableCell> cells = [
+                new TableCell(combatant.Alias == encounter.TurnAlias ? "+" + combatant.Alias : combatant.Alias),
+                TableCell.Integer(combatant.Initiative)
+                ];
 
-            tableBuilder.AddSpanningRow(combatant.Name);
+            foreach (var counter in characterSystem.GetEncounterTableCounters(character.Sheet))
+            {
+                cells.Add(new TableCell($"{counter.Alias} {counter.GetDisplayValue(character)}"));
+            }
 
-            await BuildEncounterInitiativeTableRowsAsync(dataService, adventure, combatant, tableBuilder,
-                cancellationToken);
-
-            leaveBlankRow = true;
+            rowPrototypes.Add(cells);
+            maxCellCount = Math.Max(maxCellCount, cells.Count);
         }
 
-        TableHelper.BuildTableEx(stringBuilder, 2, tableBuilder.Data, false, '\u00a0',
-            maxTableWidth: TableHelper.MaxPinnedTableWidth, language: "diff");
-    }
+        // Now I can build the final table
+        List<TableRow> rows = new(rowPrototypes.Count);
+        foreach (var rowPrototype in rowPrototypes)
+        {
+            var array = new TableCell[maxCellCount];
+            rowPrototype.CopyTo(array, 0);
+            for (var i = rowPrototype.Count; i < maxCellCount; ++i) array[i] = TableCell.Empty;
 
-    protected abstract Task BuildEncounterInitiativeTableRowsAsync(
-        SqlDataService dataService,
-        Adventure adventure,
-        CombatantBase combatant,
-        EncounterInitiativeTableBuilder builder,
-        CancellationToken cancellationToken = default);
+            rows.Add(new TableRow(array));
+        }
+
+        TableHelper.BuildTableEx(stringBuilder, rows, false, maxTableWidth: TableHelper.MaxPinnedTableWidth,
+            language: "diff");
+    }
 
     protected static async Task<string> BuildPointsEncounterTableCellAsync(
         SqlDataService dataService,
@@ -197,29 +205,6 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
     {
         public GameCounter Counter { get; init; }
         public int Multiplier { get; init; }
-    }
-
-    protected sealed class EncounterInitiativeTableBuilder
-    {
-        private readonly List<TableRowBase> _data = [];
-
-        public bool AddingActiveRows { get; set; }
-
-        private char ActiveCharacter => AddingActiveRows ? '+' : ' ';
-
-        public IReadOnlyList<TableRowBase> Data => _data;
-
-        public void AddRow(TableCell label, TableCell value)
-        {
-            _data.Add(new TableRow(
-                label with { Text = $"{ActiveCharacter}{label.Text}" },
-                value));
-        }
-
-        public void AddSpanningRow(string text)
-        {
-            _data.Add(new SpanningTableRow($"{ActiveCharacter}{text}"));
-        }
     }
 }
 

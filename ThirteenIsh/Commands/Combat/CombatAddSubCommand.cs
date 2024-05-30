@@ -54,7 +54,7 @@ internal sealed class CombatAddSubCommand() : SubCommandBase("add", "Adds a mons
             {
                 // Update the encounter table
                 var encounterTable = await CommandUtil.UpdateEncounterMessageAsync(serviceProvider, guildId,
-                    command.Channel, output.Adventure, output.Encounter, output.GameSystem, cancellationToken);
+                    command.Channel, output.Encounter, output.GameSystem, cancellationToken);
 
                 // Send an appropriate response
                 var embedBuilder = new EmbedBuilder()

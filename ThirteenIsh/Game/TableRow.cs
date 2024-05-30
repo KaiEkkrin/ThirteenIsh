@@ -10,15 +10,46 @@ internal readonly record struct TableCell(string Text, bool RightJustify = false
 }
 
 /// <summary>
-/// Base class for the possible table rows for the TableHelper.
+/// A standard table row with multiple columns.
 /// </summary>
-internal abstract class TableRowBase
+internal sealed class TableRow(params TableCell[] cells)
 {
-    public abstract int Append(StringBuilder builder, int[] maxCellSizes, char paddingCharacter);
+    public int CellCount => cells.Length;
 
-    public abstract void ContributeMaxCellSizes(int[] maxCellSizes);
+    public int Append(StringBuilder builder, int[] maxCellSizes, char paddingCharacter)
+    {
+        var charactersWritten = 0;
+        for (var i = 0; i < maxCellSizes.Length; ++i)
+        {
+            // Between-cell padding
+            if (i > 0)
+            {
+                for (var j = 0; j < TableHelper.CellPaddingLength; ++j) builder.Append(paddingCharacter);
+                charactersWritten += TableHelper.CellPaddingLength;
+            }
 
-    protected static int AppendJustified(StringBuilder builder, int maxCellWidth, string text, bool rightJustify,
+            // Cell text
+            charactersWritten += AppendJustified(
+                builder, maxCellSizes[i], i < cells.Length ? cells[i].Text : string.Empty,
+                i < cells.Length && cells[i].RightJustify, paddingCharacter);
+        }
+
+        return charactersWritten;
+    }
+
+    public void ContributeMaxCellSizes(int[] maxCellSizes)
+    {
+        if (cells.Length != maxCellSizes.Length)
+            throw new InvalidOperationException(
+                $"A row with {cells.Length} cells does not fit into a table of width {maxCellSizes.Length}");
+
+        for (var i = 0; i < cells.Length; ++i)
+        {
+            maxCellSizes[i] = Math.Max(maxCellSizes[i], cells[i].Text.Length);
+        }
+    }
+
+    private static int AppendJustified(StringBuilder builder, int maxCellWidth, string text, bool rightJustify,
         char paddingCharacter)
     {
         // Ensure text fits within cell and replace spaces with non-breaking space to stop
@@ -41,68 +72,3 @@ internal abstract class TableRowBase
     }
 }
 
-/// <summary>
-/// A standard table row with multiple columns.
-/// </summary>
-internal sealed class TableRow(params TableCell[] cells) : TableRowBase
-{
-    public override int Append(StringBuilder builder, int[] maxCellSizes, char paddingCharacter)
-    {
-        var charactersWritten = 0;
-        for (var i = 0; i < cells.Length; ++i)
-        {
-            var cell = cells[i];
-
-            // Between-cell padding
-            if (i > 0)
-            {
-                for (var j = 0; j < TableHelper.CellPaddingLength; ++j) builder.Append(paddingCharacter);
-                charactersWritten += TableHelper.CellPaddingLength;
-            }
-
-            // Cell text
-            charactersWritten += AppendJustified(
-                builder, maxCellSizes[i], cell.Text, cell.RightJustify, paddingCharacter);
-        }
-
-        return charactersWritten;
-    }
-
-    public override void ContributeMaxCellSizes(int[] maxCellSizes)
-    {
-        if (cells.Length != maxCellSizes.Length)
-            throw new InvalidOperationException(
-                $"A row with {cells.Length} cells does not fit into a table of width {maxCellSizes.Length}");
-
-        for (var i = 0; i < cells.Length; ++i)
-        {
-            maxCellSizes[i] = Math.Max(maxCellSizes[i], cells[i].Text.Length);
-        }
-    }
-}
-
-/// <summary>
-/// A table row that spans the whole table with a single text.
-/// Does not contribute to the calculation for the table width but rather, truncates
-/// the text to fit as required.
-/// </summary>
-internal sealed class SpanningTableRow(string text, bool rightJustify = false) : TableRowBase
-{
-    public override int Append(StringBuilder builder, int[] maxCellSizes, char paddingCharacter)
-    {
-        var maxWidth = maxCellSizes.Sum() + TableHelper.CellPaddingLength * (maxCellSizes.Length - 1);
-        if (text.Length >= maxWidth)
-        {
-            // Fill the whole row with truncated text
-            builder.Append(text[..maxWidth]);
-            return maxWidth;
-        }
-
-        // Otherwise, justify the text within the row
-        return AppendJustified(builder, maxWidth, text, rightJustify, paddingCharacter);
-    }
-
-    public override void ContributeMaxCellSizes(int[] maxCellSizes)
-    {
-    }
-}

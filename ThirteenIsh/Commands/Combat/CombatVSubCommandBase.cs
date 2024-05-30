@@ -65,7 +65,7 @@ internal abstract class CombatVSubCommandBase(string name, string description, s
 
                 // Update the encounter table
                 var encounterTable = await CommandUtil.UpdateEncounterMessageAsync(serviceProvider, guildId,
-                    command.Channel, adventure, encounter, output.GameSystem, cancellationToken);
+                    command.Channel, encounter, output.GameSystem, cancellationToken);
 
                 // If this wasn't a simple integer, show the working
                 var embed = CommandUtil.BuildTrackedCharacterSummaryEmbed(null, character, output.GameSystem,

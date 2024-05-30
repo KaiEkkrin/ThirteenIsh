@@ -1,7 +1,6 @@
 ﻿using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Database.Entities.Combatants;
-using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Game.ThirteenthAge;
 
@@ -223,32 +222,11 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         }
     }
 
-    protected override void AddEncounterHeadingRow(List<TableRowBase> data, Encounter encounter)
+    protected override void AddEncounterHeadingRow(List<TableRow> data, Encounter encounter)
     {
         base.AddEncounterHeadingRow(data, encounter);
         data.Add(new TableRow(new TableCell("Escalation Die"), TableCell.Integer(
             encounter.Variables.Counters.TryGetValue(EscalationDie, out var escalationDieValue) ? escalationDieValue : 0)));
-    }
-
-    protected override async Task BuildEncounterInitiativeTableRowsAsync(
-        SqlDataService dataService,
-        Adventure adventure,
-        CombatantBase combatant,
-        EncounterInitiativeTableBuilder builder,
-        CancellationToken cancellationToken = default)
-    {
-        var character = await dataService.GetCharacterAsync(combatant, cancellationToken)
-            ?? throw new InvalidOperationException($"Failed to get character sheet for '{combatant.Alias}'");
-
-        var hitPointsCounter = GetCharacterSystem(combatant.CharacterType)
-            .GetProperty<GameCounter>(character.Sheet, HitPoints);
-
-        var hitPointsCell = await BuildPointsEncounterTableCellAsync(dataService, combatant, hitPointsCounter,
-            cancellationToken);
-
-        builder.AddRow(
-            new TableCell(hitPointsCounter.Alias ?? hitPointsCounter.Name),
-            new TableCell(hitPointsCell));
     }
 
     protected override CombatantBase? EncounterNextRound(Encounter encounter, IRandomWrapper random)

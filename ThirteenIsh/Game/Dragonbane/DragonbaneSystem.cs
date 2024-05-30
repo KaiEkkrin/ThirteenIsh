@@ -1,7 +1,6 @@
 ﻿using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Database.Entities.Combatants;
-using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Game.Dragonbane;
 
@@ -220,34 +219,6 @@ internal sealed class DragonbaneSystem : GameSystem
         var kin = characterSystem.GetProperty<GameProperty>(sheet, Kin).GetValue(sheet);
         var profession = characterSystem.GetProperty<GameProperty>(sheet, Profession).GetValue(sheet);
         return $"{kin} {profession}";
-    }
-
-    protected override async Task BuildEncounterInitiativeTableRowsAsync(
-        SqlDataService dataService,
-        Adventure adventure,
-        CombatantBase combatant,
-        EncounterInitiativeTableBuilder builder,
-        CancellationToken cancellationToken = default)
-    {
-        var characterSystem = GetCharacterSystem(combatant.CharacterType);
-        var character = await dataService.GetCharacterAsync(combatant, cancellationToken)
-            ?? throw new InvalidOperationException($"Failed to get character sheet for '{combatant.Alias}'");
-
-        var hitPointsCounter = characterSystem.GetProperty<GameCounter>(character.Sheet, HitPoints);
-        var hitPointsCell = await BuildPointsEncounterTableCellAsync(dataService, combatant, hitPointsCounter,
-            cancellationToken);
-
-        builder.AddRow(
-            new TableCell(hitPointsCounter.Alias ?? hitPointsCounter.Name),
-            new TableCell(hitPointsCell));
-
-        var willpowerPointsCounter = characterSystem.GetProperty<GameCounter>(character.Sheet, WillpowerPoints);
-        var willpowerPointsCell = await BuildPointsEncounterTableCellAsync(dataService, combatant, willpowerPointsCounter,
-            cancellationToken);
-
-        builder.AddRow(
-            new TableCell(willpowerPointsCounter.Alias ?? willpowerPointsCounter.Name),
-            new TableCell(willpowerPointsCell));
     }
 
     protected override CombatantBase? EncounterNextRound(Encounter encounter, IRandomWrapper random)

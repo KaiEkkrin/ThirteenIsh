@@ -10,15 +10,15 @@ internal static class TableHelper
 
     public const int MaxPinnedTableWidth = 36;
 
-    public static string BuildTable(int columnCount, IReadOnlyList<TableRowBase> data)
+    public static string BuildTable(IReadOnlyList<TableRow> data)
     {
         StringBuilder builder = new();
-        BuildTableEx(builder, columnCount, data);
+        BuildTableEx(builder, data);
         return builder.ToString();
     }
 
     public static void BuildTableEx(
-        StringBuilder builder, int columnCount, IReadOnlyList<TableRowBase> data,
+        StringBuilder builder, IReadOnlyList<TableRow> data,
         bool drawAsTwoColumnsIfPossible = true,
         char cellPaddingCharacter = '\u00b7', // middle dot
         char tablePaddingCharacter = '\u00a0', // non-breaking space
@@ -28,6 +28,7 @@ internal static class TableHelper
         if (data.Count == 0) return;
 
         // Work out how wide each cell will be, and thence the whole table
+        var columnCount = data.Max(row => row.CellCount);
         var maxCellSizes = new int[columnCount];
         foreach (var row in data)
         {
