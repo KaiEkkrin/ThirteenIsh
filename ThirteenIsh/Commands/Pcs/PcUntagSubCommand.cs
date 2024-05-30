@@ -7,7 +7,7 @@ using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Pcs;
 
-internal sealed class PcUntagSubCommand(bool asGm) : SubCommandBase("untag", "Removes a tag from a character.")
+internal sealed class PcUntagSubCommand(bool asGm) : SubCommandBase("untag", "Removes a tag from an adventurer.")
 {
     public override SlashCommandOptionBuilder CreateBuilder()
     {

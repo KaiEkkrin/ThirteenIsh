@@ -41,6 +41,23 @@ public static class Extensions
     }
 
     /// <summary>
+    /// Finds the index of the value that matches the predicate so long as exactly one value does.
+    /// Otherwise, returns -1.
+    /// </summary>
+    public static int FindUniqueIndex<T>(this IList<T> list, Func<T, bool> predicate)
+    {
+        var index = -1;
+        for (var i = 0; i < list.Count; ++i)
+        {
+            if (!predicate(list[i])) continue;
+            if (index >= 0) return -1;
+            index = i;
+        }
+
+        return index;
+    }
+
+    /// <summary>
     /// Removes a tag from this character.
     /// </summary>
     public static bool RemoveTag(this ITrackedCharacter character, string tagValue)
@@ -50,7 +67,7 @@ public static class Extensions
         var variables = character.GetVariables();
         if (variables.Tags is not { } tags) return false;
 
-        var index = tags.FindIndex(tag => tag.Equals(tagValue, StringComparison.OrdinalIgnoreCase));
+        var index = tags.FindUniqueIndex(tag => tag.Contains(tagValue, StringComparison.OrdinalIgnoreCase));
         if (index < 0) return false;
 
         tags.RemoveAt(index);

@@ -11,6 +11,8 @@ internal class GmCombatSubCommandGroup() : SubCommandGroupBase("combat", "Manage
     new GmCombatBeginSubCommand(),
     new GmCombatEndSubCommand(),
     new GmCombatRemoveSubCommand(),
+    new CombatTagSubCommand(true),
+    new CombatUntagSubCommand(true),
     new CombatVModSubCommand(true),
     new CombatVSetSubCommand(true))
 {

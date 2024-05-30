@@ -7,7 +7,7 @@ using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Pcs;
 
-internal sealed class PcTagSubCommand(bool asGm) : SubCommandBase("tag", "Adds a tag to a character.")
+internal sealed class PcTagSubCommand(bool asGm) : SubCommandBase("tag", "Adds a tag to an adventurer.")
 {
     public override SlashCommandOptionBuilder CreateBuilder()
     {
