@@ -11,6 +11,7 @@ internal sealed class CharacterCommand() : CommandBase("character", "Manage char
     new CharacterGetSubCommand(CharacterType.PlayerCharacter),
     new CharacterListSubCommand(CharacterType.PlayerCharacter),
     new CharacterRemoveSubCommand(CharacterType.PlayerCharacter),
+    new CharacterRollSubCommand(CharacterType.PlayerCharacter),
     new CharacterSetSubCommand(CharacterType.PlayerCharacter))
 {
 }

@@ -131,7 +131,7 @@ internal sealed class CombatAttackSubCommand()
                         continue;
                     }
 
-                    var result = counter.Roll(character, bonus, random, rerolls, ref dc);
+                    var result = counter.Roll(character.Sheet, bonus, random, rerolls, ref dc);
                     stringBuilder.Append(CultureInfo.CurrentCulture, $" ({dc}) : {result.Roll}");
                     if (result.Success.HasValue)
                     {

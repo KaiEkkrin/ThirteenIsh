@@ -12,6 +12,7 @@ internal sealed class MonsterCommand() : CommandBase("monster", "Manage monsters
     new CharacterGetSubCommand(CharacterType.Monster),
     new CharacterListSubCommand(CharacterType.Monster),
     new CharacterRemoveSubCommand(CharacterType.Monster),
+    new CharacterRollSubCommand(CharacterType.Monster),
     new CharacterSetSubCommand(CharacterType.Monster))
 {
 }

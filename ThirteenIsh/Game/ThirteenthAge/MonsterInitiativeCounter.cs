@@ -9,13 +9,13 @@ namespace ThirteenIsh.Game.ThirteenthAge;
 internal class MonsterInitiativeCounter() : GameCounter(ThirteenthAgeSystem.Initiative, options: GameCounterOptions.CanRoll)
 {
     public override GameCounterRollResult Roll(
-        ITrackedCharacter character,
+        CharacterSheet sheet,
         ParseTreeBase? bonus,
         IRandomWrapper random,
         int rerolls,
         ref int? targetValue)
     {
-        var value = GetValue(character.Sheet);
+        var value = GetValue(sheet);
         if (!value.HasValue) throw new GamePropertyException(Name);
 
         ParseTreeBase parseTree =

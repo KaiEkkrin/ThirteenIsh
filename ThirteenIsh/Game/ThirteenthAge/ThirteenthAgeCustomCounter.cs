@@ -19,7 +19,7 @@ internal class ThirteenthAgeCustomCounter(CustomCounter customCounter)
     }
 
     public override GameCounterRollResult Roll(
-        ITrackedCharacter character,
+        CharacterSheet sheet,
         ParseTreeBase? bonus,
         IRandomWrapper random,
         int rerolls,
@@ -30,7 +30,7 @@ internal class ThirteenthAgeCustomCounter(CustomCounter customCounter)
 
         // TODO throwing GamePropertyException here currently fails the whole command, instead fix it
         // so that a suitable error message is returned
-        var value = GetValue(character.Sheet);
+        var value = GetValue(sheet);
         if (!value.HasValue) throw new GamePropertyException(Name);
 
         ParseTreeBase parseTree =

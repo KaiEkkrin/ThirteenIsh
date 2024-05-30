@@ -6,14 +6,16 @@ using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Game;
 using ThirteenIsh.Services;
 
-namespace ThirteenIsh.Commands.Pcs;
+namespace ThirteenIsh.Commands.Character;
 
-internal sealed class PcRollSubCommand() : SubCommandBase("roll", "Rolls against a player character property.")
+internal sealed class CharacterRollSubCommand(CharacterType characterType)
+    : SubCommandBase("roll", $"Rolls against a {characterType.FriendlyName()} property.")
 {
     public override SlashCommandOptionBuilder CreateBuilder()
     {
         return base.CreateBuilder()
-            .AddOption("name", ApplicationCommandOptionType.String, "The property name to roll.",
+            .AddOption("name", ApplicationCommandOptionType.String, "The monster name.", isRequired: true)
+            .AddOption("counter", ApplicationCommandOptionType.String, "The property name to roll.",
                 isRequired: true)
             .AddOption("bonus", ApplicationCommandOptionType.String, "A bonus dice expression to add.")
             .AddOption("dc", ApplicationCommandOptionType.Integer, "The amount that counts as a success.")
@@ -23,10 +25,17 @@ internal sealed class PcRollSubCommand() : SubCommandBase("roll", "Rolls against
     public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
         IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
-        if (command.GuildId is not { } guildId) return;
-        if (!CommandUtil.TryGetOption<string>(option, "name", out var namePart))
+        if (!CommandUtil.TryGetCanonicalizedMultiPartOption(option, "name", out var name))
         {
-            await command.RespondAsync("No name part supplied.", ephemeral: true);
+            await command.RespondAsync(
+                $"{characterType.FriendlyName(FriendlyNameOptions.CapitalizeFirstCharacter)} names must contain only letters and spaces",
+                ephemeral: true);
+            return;
+        }
+
+        if (!CommandUtil.TryGetOption<string>(option, "counter", out var counterNamePart))
+        {
+            await command.RespondAsync("No counter name part supplied.", ephemeral: true);
             return;
         }
 
@@ -41,33 +50,33 @@ internal sealed class PcRollSubCommand() : SubCommandBase("roll", "Rolls against
         if (!CommandUtil.TryGetOption<int>(option, "rerolls", out var rerolls)) rerolls = 0;
 
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var guild = await dataService.GetGuildAsync(guildId, cancellationToken);
-        if (string.IsNullOrEmpty(guild.CurrentAdventureName) ||
-            await dataService.GetAdventureAsync(guild, guild.CurrentAdventureName, cancellationToken) is not { } adventure ||
-            await dataService.GetAdventurerAsync(adventure, command.User.Id, cancellationToken) is not { } adventurer)
+        var character = await dataService.GetCharacterAsync(name, command.User.Id, characterType,
+            false, cancellationToken);
+        if (character is null)
         {
-            await command.RespondAsync("Either there is no current adventure or you have not joined it.",
+            await command.RespondAsync(
+                $"Error getting {characterType.FriendlyName()} '{name}'. Perhaps they do not exist, or there is more than one character or monster matching that name?",
                 ephemeral: true);
             return;
         }
 
-        var gameSystem = GameSystem.Get(adventure.GameSystem);
-        var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
-        var counter = characterSystem.FindCounter(adventurer.Sheet, namePart,
+        var gameSystem = GameSystem.Get(character.GameSystem);
+        var characterSystem = gameSystem.GetCharacterSystem(characterType);
+        var counter = characterSystem.FindCounter(character.Sheet, counterNamePart,
             c => c.Options.HasFlag(GameCounterOptions.CanRoll));
 
         if (counter is null)
         {
-            await command.RespondAsync($"'{namePart}' does not uniquely match a rollable property.",
+            await command.RespondAsync($"'{counterNamePart}' does not uniquely match a rollable property.",
                 ephemeral: true);
             return;
         }
 
         var random = serviceProvider.GetRequiredService<IRandomWrapper>();
-        var result = counter.Roll(adventurer.Sheet, bonus, random, rerolls, ref dc);
+        var result = counter.Roll(character.Sheet, bonus, random, rerolls, ref dc);
 
         var titleBuilder = new StringBuilder()
-            .Append(CultureInfo.CurrentCulture, $"{adventurer.Name} : Rolled {counter.Name}");
+            .Append(CultureInfo.CurrentCulture, $"{character.Name} : Rolled {counter.Name}");
 
         if (dc.HasValue)
             titleBuilder.Append(CultureInfo.CurrentCulture, $" vs {dc.Value}");
