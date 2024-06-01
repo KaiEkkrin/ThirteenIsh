@@ -24,7 +24,7 @@ internal class ArmorClassCounter(
             ThirteenthAgeSystem.Commander => 12,
             ThirteenthAgeSystem.Druid => 10,
             ThirteenthAgeSystem.Fighter => 15,
-            ThirteenthAgeSystem.Monk => 10,
+            ThirteenthAgeSystem.Monk => 11,
             ThirteenthAgeSystem.Necromancer => 10,
             ThirteenthAgeSystem.Occultist => 11,
             ThirteenthAgeSystem.Paladin => 16,
