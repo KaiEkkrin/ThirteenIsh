@@ -21,6 +21,10 @@ internal sealed partial class DiscordService : IAsyncDisposable, IDisposable
         "{Guild}: Registered command {Name} ({Description}) with handler {HandlerType}")]
     private partial void RegisteredCommandMessage(string guild, string name, string description, Type handlerType);
 
+    [LoggerMessage(Level = LogLevel.Information, EventId = 9, Message =
+        "Registered global command {Name} ({Description}) with handler {HandlerType}")]
+    private partial void RegisteredGlobalCommandMessage(string name, string description, Type handlerType);
+
     [LoggerMessage(Level = LogLevel.Warning, EventId = 4, Message =
         "Slash command {Name} timed out after {Timeout}: {Details}")]
     private partial void SlashCommandTimeoutMessage(string name, TimeSpan timeout, string details, Exception exception);
@@ -36,6 +40,10 @@ internal sealed partial class DiscordService : IAsyncDisposable, IDisposable
 
     [LoggerMessage(Level = LogLevel.Debug, EventId = 8, Message = "[Discord]: {Message}")]
     private partial void DiscordDebugMessage(string message, Exception? exception);
+
+    [LoggerMessage(Level = LogLevel.Information, EventId = 9, Message =
+        "Deleted global command {Name}")]
+    private partial void DeletedGlobalCommandMessage(string name);
 
     private readonly DiscordSocketClient _client = new();
     private readonly ConcurrentDictionary<string, CommandBase> _commandsMap = new();
@@ -215,6 +223,29 @@ internal sealed partial class DiscordService : IAsyncDisposable, IDisposable
     {
         try
         {
+            // Register global commands
+            // TODO deal with being able to update these -- right now I'll register them only once
+            // and ignore them if they're already present.
+            // Re-registering global commands might be slow!
+            var globalCommands = await _client.GetGlobalApplicationCommandsAsync();
+            foreach (var (name, command) in _commandsMap)
+            {
+                if (!command.IsGlobal || globalCommands.Any(c => c.Name == name)) continue;
+                var build = command.CreateBuilder().Build();
+                await _client.CreateGlobalApplicationCommandAsync(build);
+                RegisteredGlobalCommandMessage(build.Name.Value, build.Description.Value, command.GetType());
+            }
+
+            // Delete any old global commands
+            foreach (var globalCommand in globalCommands)
+            {
+                if (_commandsMap.TryGetValue(globalCommand.Name, out var command) &&
+                    command.IsGlobal) continue;
+
+                await globalCommand.DeleteAsync();
+                DeletedGlobalCommandMessage(globalCommand.Name);
+            }
+
             // Register with all our guilds
             foreach (var guild in _client.Guilds)
             {
@@ -245,6 +276,7 @@ internal sealed partial class DiscordService : IAsyncDisposable, IDisposable
             await guild.DeleteApplicationCommandsAsync();
             foreach (var (name, command) in _commandsMap)
             {
+                if (command.IsGlobal) continue;
                 var build = command.CreateBuilder().Build();
                 await guild.CreateApplicationCommandAsync(build);
                 RegisteredCommandMessage(guild.Name, build.Name.Value, build.Description.Value, command.GetType());

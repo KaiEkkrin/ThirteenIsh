@@ -18,6 +18,8 @@ internal abstract class CommandBase(string name, string description, params Comm
     /// </summary>
     public const int Version = 52;
 
+    public virtual bool IsGlobal => false;
+
     public string Name => $"13-{name}";
 
     public virtual SlashCommandBuilder CreateBuilder()
