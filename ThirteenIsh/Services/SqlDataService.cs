@@ -357,12 +357,15 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
 
     public IAsyncEnumerable<Adventure> GetAdventuresAsync(Guild guild)
     {
-        return _context.Adventures.Where(a => a.GuildId == guild.Id).AsAsyncEnumerable();
+        return _context.Adventures.Where(a => a.GuildId == guild.Id)
+            .OrderBy(a => a.Name)
+            .AsAsyncEnumerable();
     }
 
     public IAsyncEnumerable<Adventurer> GetAdventurersAsync(Adventure adventure)
     {
         return _context.Adventurers.Where(a => a.AdventureId == adventure.Id)
+            .OrderBy(a => a.Name)
             .AsAsyncEnumerable();
     }
 
@@ -456,6 +459,7 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
         return _context.Characters
             .AsTracking(asTracking ? QueryTrackingBehavior.TrackAll : QueryTrackingBehavior.NoTracking)
             .Where(c => c.UserId == userId && c.CharacterType == characterType)
+            .OrderBy(c => c.Name)
             .AsAsyncEnumerable();
     }
 
