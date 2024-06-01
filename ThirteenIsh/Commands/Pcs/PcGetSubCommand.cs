@@ -58,6 +58,7 @@ internal sealed class PcGetSubCommand(bool asGm)
                     ? CommandUtil.AdventurerSummaryFlags.OnlyVariables
                     : CommandUtil.AdventurerSummaryFlags.WithTags,
                 Title = adventurer.Name
-            });
+            },
+            asGm);
     }
 }

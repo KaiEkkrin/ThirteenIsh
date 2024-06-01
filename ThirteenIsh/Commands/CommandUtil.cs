@@ -139,10 +139,11 @@ internal static partial class CommandUtil
         IDiscordInteraction command,
         ITrackedCharacter character,
         GameSystem gameSystem,
-        AdventurerSummaryOptions options)
+        AdventurerSummaryOptions options,
+        bool ephmemeral = false)
     {
         var embed = BuildTrackedCharacterSummaryEmbed(command, character, gameSystem, options);
-        return command.RespondAsync(embed: embed);
+        return command.RespondAsync(embed: embed, ephemeral: ephmemeral);
     }
 
     public static bool TryConvertTo<T>(object? value, [MaybeNullWhen(false)] out T result)
