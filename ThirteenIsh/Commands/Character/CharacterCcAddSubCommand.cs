@@ -77,7 +77,7 @@ internal sealed class CharacterCcAddSubCommand(CharacterType characterType)
             updatedCharacter =>
             {
                 return CommandUtil.RespondWithCharacterSheetAsync(command, updatedCharacter,
-                    $"Edited {characterType.FriendlyName()} '{updatedCharacter.Name}'", ccName);
+                    $"Edited {characterType.FriendlyName()} '{updatedCharacter.Name}'", [ccName]);
             });
     }
 

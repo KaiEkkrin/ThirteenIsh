@@ -18,6 +18,8 @@ internal sealed class GmCombatBeginSubCommand() : SubCommandBase("begin", "Begin
             errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
             async output =>
             {
+                await command.DeferAsync(ephemeral: true);
+
                 var gameSystem = GameSystem.Get(output.Adventure.GameSystem);
                 var encounterTable = await gameSystem.BuildEncounterTableAsync(dataService,
                     output.Encounter, cancellationToken);
@@ -26,7 +28,7 @@ internal sealed class GmCombatBeginSubCommand() : SubCommandBase("begin", "Begin
                 await pinnedMessageService.SetEncounterMessageAsync(command.Channel, output.Encounter.AdventureName,
                     guildId, encounterTable, cancellationToken);
 
-                await command.RespondAsync("Encounter begun.", ephemeral: true);
+                await command.ModifyOriginalResponseAsync(properties => properties.Content = "Encounter begun.");
             });
     }
 }

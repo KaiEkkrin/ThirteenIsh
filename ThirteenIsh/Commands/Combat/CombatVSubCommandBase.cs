@@ -62,6 +62,7 @@ internal abstract class CombatVSubCommandBase(bool asGm, string name, string des
             errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
             async output =>
             {
+                await command.DeferAsync();
                 var (adventure, encounter, combatant, character) = output.CombatantResult;
 
                 // Update the encounter table
@@ -81,7 +82,7 @@ internal abstract class CombatVSubCommandBase(bool asGm, string name, string des
                         Title = $"Set {output.GameCounter.Name} on {combatant.Alias}"
                     });
 
-                await command.RespondAsync(embed: embed);
+                await command.ModifyOriginalResponseAsync(properties => properties.Embed = embed);
             });
     }
 

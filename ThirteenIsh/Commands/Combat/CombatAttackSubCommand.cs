@@ -97,6 +97,7 @@ internal sealed class CombatAttackSubCommand()
                     return;
                 }
 
+                await command.DeferAsync();
                 var random = serviceProvider.GetRequiredService<IRandomWrapper>();
                 StringBuilder stringBuilder = new();
                 SortedSet<string> vsCounterNames = []; // hopefully only one :P
@@ -151,7 +152,7 @@ internal sealed class CombatAttackSubCommand()
                     .WithTitle($"{character.Name} : Rolled {counter.Name} vs {vsCounterNameSummary}")
                     .WithDescription(stringBuilder.ToString());
 
-                await command.RespondAsync(embed: embedBuilder.Build(), ephemeral: vsCounterNames.Count == 0);
+                await command.ModifyOriginalResponseAsync(properties => properties.Embed = embedBuilder.Build());
             });
     }
 }

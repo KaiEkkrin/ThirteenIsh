@@ -33,6 +33,8 @@ internal sealed class CombatJoinSubCommand() : SubCommandBase("join", "Joins the
             errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
             async output =>
             {
+                await command.DeferAsync();
+
                 // Update the encounter table
                 var encounterTable = await CommandUtil.UpdateEncounterMessageAsync(serviceProvider, guildId,
                     command.Channel, output.Encounter, output.GameSystem, cancellationToken);
@@ -43,7 +45,7 @@ internal sealed class CombatJoinSubCommand() : SubCommandBase("join", "Joins the
                     .WithTitle($"{output.Adventurer.Name} joined the encounter : {output.Result.Roll}")
                     .WithDescription($"{output.Result.Working}\n{encounterTable}");
 
-                await command.RespondAsync(embed: embedBuilder.Build());
+                await command.ModifyOriginalResponseAsync(properties => properties.Embed = embedBuilder.Build());
             });
     }
 

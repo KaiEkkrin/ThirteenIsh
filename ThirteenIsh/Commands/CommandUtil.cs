@@ -63,7 +63,7 @@ internal static partial class CommandUtil
         IDiscordInteraction command,
         Database.Entities.Character character,
         string title,
-        params string[] onlyTheseProperties)
+        IReadOnlyCollection<string>? onlyTheseProperties)
     {
         EmbedBuilder embedBuilder = new();
         embedBuilder.WithAuthor(command.User);
@@ -129,7 +129,7 @@ internal static partial class CommandUtil
         IDiscordInteraction command,
         Database.Entities.Character character,
         string title,
-        params string[] onlyTheseProperties)
+        IReadOnlyCollection<string>? onlyTheseProperties)
     {
         var embed = BuildCharacterSheetEmbed(command, character, title, onlyTheseProperties);
         return command.RespondAsync(embed: embed);

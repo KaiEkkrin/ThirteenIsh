@@ -43,7 +43,7 @@ internal sealed class AddCharacterMessageHandler(SqlDataService dataService) : M
         {
             // Edit completed
             await CommandUtil.RespondWithCharacterSheetAsync(component, character,
-                $"Added {message.CharacterType.FriendlyName()} '{message.Name}'");
+                $"Added {message.CharacterType.FriendlyName()} '{message.Name}'", null);
             return true;
         }
 

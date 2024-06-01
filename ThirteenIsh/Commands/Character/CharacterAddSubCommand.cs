@@ -54,7 +54,7 @@ internal sealed class CharacterAddSubCommand(CharacterType characterType)
         if (showOnAddProperties.Count == 0)
         {
             await CommandUtil.RespondWithCharacterSheetAsync(command, character,
-                $"Added {characterType.FriendlyName()} '{character.Name}'");
+                $"Added {characterType.FriendlyName()} '{character.Name}'", null);
 
             return;
         }

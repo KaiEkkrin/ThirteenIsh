@@ -36,6 +36,8 @@ internal sealed class CombatNextSubCommand() : SubCommandBase("next", "Moves on 
             errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
             async output =>
             {
+                await command.DeferAsync();
+
                 // Update the encounter table
                 var encounterTable = await CommandUtil.UpdateEncounterMessageAsync(serviceProvider, guildId,
                     command.Channel, output.Encounter, output.GameSystem, cancellationToken);
@@ -55,7 +57,7 @@ internal sealed class CombatNextSubCommand() : SubCommandBase("next", "Moves on 
                     .WithTitle(titleBuilder.ToString())
                     .WithDescription(encounterTable);
 
-                await command.RespondAsync(embed: embedBuilder.Build());
+                await command.ModifyOriginalResponseAsync(properties => properties.Embed = embedBuilder.Build());
             });
     }
 

@@ -42,6 +42,7 @@ internal sealed class CombatTagSubCommand(bool asGm) : SubCommandBase("tag", "Ad
             errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
             async output =>
             {
+                await command.DeferAsync();
                 var (adventure, encounter, combatant, character) = output.CombatantResult;
 
                 // Update the encounter table
@@ -49,7 +50,7 @@ internal sealed class CombatTagSubCommand(bool asGm) : SubCommandBase("tag", "Ad
                     command.Channel, encounter, output.GameSystem, cancellationToken);
 
                 // If this wasn't a simple integer, show the working
-                await CommandUtil.RespondWithTrackedCharacterSummaryAsync(command, output.CombatantResult.Character,
+                var embed = CommandUtil.BuildTrackedCharacterSummaryEmbed(command, output.CombatantResult.Character,
                     output.GameSystem,
                     new CommandUtil.AdventurerSummaryOptions
                     {
@@ -57,6 +58,8 @@ internal sealed class CombatTagSubCommand(bool asGm) : SubCommandBase("tag", "Ad
                         Flags = CommandUtil.AdventurerSummaryFlags.OnlyVariables | CommandUtil.AdventurerSummaryFlags.WithTags,
                         Title = $"Added tag '{tagValue}' to {output.CombatantResult.Combatant.Alias}"
                     });
+
+                await command.ModifyOriginalResponseAsync(properties => properties.Embed = embed);
             });
     }
 

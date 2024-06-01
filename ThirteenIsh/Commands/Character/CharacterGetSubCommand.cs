@@ -36,6 +36,6 @@ internal sealed class CharacterGetSubCommand(CharacterType characterType)
             return;
         }
 
-        await CommandUtil.RespondWithCharacterSheetAsync(command, character, character.Name);
+        await CommandUtil.RespondWithCharacterSheetAsync(command, character, character.Name, null);
     }
 }

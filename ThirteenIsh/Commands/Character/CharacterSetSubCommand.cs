@@ -73,7 +73,7 @@ internal sealed class CharacterSetSubCommand(CharacterType characterType)
             updatedCharacter =>
             {
                 return CommandUtil.RespondWithCharacterSheetAsync(command, updatedCharacter,
-                    $"Edited {characterType.FriendlyName()} '{updatedCharacter.Name}'", property.Name);
+                    $"Edited {characterType.FriendlyName()} '{updatedCharacter.Name}'", [property.Name]);
             });
     }
 }
