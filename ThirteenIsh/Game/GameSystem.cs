@@ -139,17 +139,17 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
         Encounter encounter,
         CancellationToken cancellationToken = default)
     {
-        if (encounter.Combatants.Count == 0) return;
+        if (!encounter.Combatants.Any()) return;
 
         // The encounter may contain mixed character types, and I need to ensure every table row has the
         // same number of cells, so I need to work out the cells for each character in advance and pad them
         // all to the longest one:
-        List<List<TableCell>> rowPrototypes = new(encounter.Combatants.Count);
+        List<List<TableCell>> rowPrototypes = [];
         var maxCellCount = int.MinValue;
         foreach (var combatant in encounter.CombatantsInTurnOrder)
         {
             var characterSystem = GetCharacterSystem(combatant.CharacterType);
-            var character = await dataService.GetCharacterAsync(combatant, cancellationToken)
+            var character = await dataService.GetCharacterAsync(combatant, encounter, cancellationToken)
                 ?? throw new InvalidOperationException($"Character not found for {combatant.Alias}");
 
             List<TableCell> cells = [
@@ -188,11 +188,12 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
 
     protected static async Task<string> BuildPointsEncounterTableCellAsync(
         SqlDataService dataService,
+        Encounter encounter,
         CombatantBase combatant,
         GameCounter counter,
         CancellationToken cancellationToken = default)
     {
-        var character = await dataService.GetCharacterAsync(combatant, cancellationToken);
+        var character = await dataService.GetCharacterAsync(combatant, encounter, cancellationToken);
         if (character is null) return "???";
 
         var currentPoints = counter.GetVariableValue(character);

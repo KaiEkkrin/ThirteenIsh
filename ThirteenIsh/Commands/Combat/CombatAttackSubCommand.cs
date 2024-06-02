@@ -107,7 +107,7 @@ internal sealed class CombatAttackSubCommand()
 
                     var target = targetCombatants[i];
                     stringBuilder.Append(CultureInfo.CurrentCulture, $"vs {target.Alias}");
-                    var targetCharacter = await dataService.GetCharacterAsync(target, cancellationToken);
+                    var targetCharacter = await dataService.GetCharacterAsync(target, encounter, cancellationToken);
                     if (targetCharacter is null)
                     {
                         stringBuilder.AppendLine(CultureInfo.CurrentCulture, $" : Target unresolved");

@@ -143,7 +143,7 @@ internal sealed class CombatDamageSubCommand()
                 for (var i = 0; i < targetCombatants.Count; ++i)
                 {
                     if (i > 0) stringBuilder.AppendLine(); // space things out
-                    var targetCharacter = await dataService.GetCharacterAsync(targetCombatants[i], cancellationToken);
+                    var targetCharacter = await dataService.GetCharacterAsync(targetCombatants[i], encounter, cancellationToken);
                     if (targetCharacter is null) continue;
                     await RollDamageVsAsync(targetCombatants[i], targetCharacter);
                 }

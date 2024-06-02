@@ -145,7 +145,6 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         MonsterCombatant combatant = new()
         {
             Alias = nameAliasCollection.Add(character.Name, 5, true),
-            Encounter = encounter,
             LastUpdated = DateTimeOffset.UtcNow,
             Name = character.Name,
             Sheet = character.Sheet,
@@ -161,8 +160,6 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         // Add it to the encounter
         combatant.Initiative = initiative.Roll;
         combatant.InitiativeRollWorking = initiative.Working;
-
-        dataContext.Combatants.Add(combatant);
         encounter.InsertCombatantIntoTurnOrder(combatant);
         alias = combatant.Alias;
         return initiative;
@@ -170,7 +167,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
 
     public override void EncounterBegin(Encounter encounter)
     {
-        encounter.Variables.Counters.SetValue(EscalationDie, 0);
+        encounter.State.Counters.SetValue(EscalationDie, 0);
     }
 
     public override GameCounterRollResult? EncounterJoin(
@@ -191,14 +188,12 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         AdventurerCombatant combatant = new()
         {
             Alias = nameAliasCollection.Add(adventurer.Name, 10, false),
-            Encounter = encounter,
             Initiative = initiative.Roll,
             InitiativeRollWorking = initiative.Working,
             Name = adventurer.Name,
             UserId = userId
         };
 
-        dataContext.Combatants.Add(combatant);
         encounter.InsertCombatantIntoTurnOrder(combatant);
         return initiative;
     }
@@ -226,15 +221,15 @@ internal sealed class ThirteenthAgeSystem : GameSystem
     {
         base.AddEncounterHeadingRow(data, encounter);
         data.Add(new TableRow(new TableCell("Escalation Die"), TableCell.Integer(
-            encounter.Variables.Counters.TryGetValue(EscalationDie, out var escalationDieValue) ? escalationDieValue : 0)));
+            encounter.State.Counters.TryGetValue(EscalationDie, out var escalationDieValue) ? escalationDieValue : 0)));
     }
 
     protected override CombatantBase? EncounterNextRound(Encounter encounter, IRandomWrapper random)
     {
         // When we roll over to the next round, increase the escalation die, to a maximum of 6.
         // TODO Add commands to explicitly set and modify an encounter variable?
-        encounter.Variables.Counters.SetValue(EscalationDie,
-            Math.Min(6, (encounter.Variables.Counters.TryGetValue(EscalationDie, out var escalationDieValue)
+        encounter.State.Counters.SetValue(EscalationDie,
+            Math.Min(6, (encounter.State.Counters.TryGetValue(EscalationDie, out var escalationDieValue)
                 ? escalationDieValue : 0) + 1));
 
         return encounter.GetCurrentCombatant();

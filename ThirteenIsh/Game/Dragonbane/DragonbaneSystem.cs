@@ -201,14 +201,12 @@ internal sealed class DragonbaneSystem : GameSystem
         AdventurerCombatant newCombatant = new()
         {
             Alias = nameAliasCollection.Add(adventurer.Name, 10, false),
-            Encounter = encounter,
             Initiative = card.Value,
             InitiativeRollWorking = working,
             Name = adventurer.Name,
             UserId = userId
         };
 
-        dataContext.Combatants.Add(newCombatant);
         encounter.InsertCombatantIntoTurnOrder(newCombatant);
         return new GameCounterRollResult { Roll = card.Value, Working = working };
     }
@@ -231,19 +229,17 @@ internal sealed class DragonbaneSystem : GameSystem
             if (!card.HasValue) break; // TODO ???
 
             combatant.Initiative = card.Value;
+            combatant.InitiativeAdjustment = 0;
         }
 
-        encounter.RebuildTurnOrder();
-        encounter.TurnAlias = encounter.Variables.TurnOrder.Count > 0
-            ? encounter.Variables.TurnOrder[0]
-            : null;
-
-        return encounter.GetCurrentCombatant();
+        var currentCombatant = encounter.Combatants.Min(CombatantTurnOrderComparer.Instance);
+        encounter.TurnAlias = currentCombatant?.Alias;
+        return currentCombatant;
     }
 
     private static int? DrawInitiativeDeck(Encounter encounter, IRandomWrapper random, out string working)
     {
-        var deck = encounter.Variables.Counters.TryGetValue(InitiativeDeck, out var deckValue) ? deckValue : 0;
+        var deck = encounter.State.Counters.TryGetValue(InitiativeDeck, out var deckValue) ? deckValue : 0;
         List<int> cards = [];
         for (var i = 0; i < 10; ++i)
         {
@@ -260,12 +256,12 @@ internal sealed class DragonbaneSystem : GameSystem
         var card = cards[cardIndex];
         working = "🎲 " + string.Join(", ", cards.Select((c, i) => i == cardIndex ? $"{c}" : $"~~{c}~~"));
 
-        encounter.Variables.Counters.SetValue(InitiativeDeck, deck & ~(1 << cardIndex));
+        encounter.State.Counters.SetValue(InitiativeDeck, deck & ~(1 << cardIndex));
         return card;
     }
 
     private static void ResetInitiativeDeck(Encounter encounter)
     {
-        encounter.Variables.Counters.SetValue(InitiativeDeck, (1 << 10) - 1);
+        encounter.State.Counters.SetValue(InitiativeDeck, (1 << 10) - 1);
     }
 }

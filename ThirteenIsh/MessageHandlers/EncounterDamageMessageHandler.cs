@@ -43,7 +43,7 @@ internal sealed class EncounterDamageMessageHandler(SqlDataService dataService, 
         }
 
         var result = await dataService.EditAsync(
-            new EditOperation(random), new EditParam(adventure, combatant, message, controlId), cancellationToken);
+            new EditOperation(random), new EditParam(adventure, encounter, combatant, message, controlId), cancellationToken);
 
         return await result.Handle(
             async errorMessage =>
@@ -116,9 +116,9 @@ internal sealed class EncounterDamageMessageHandler(SqlDataService dataService, 
         public override async Task<EditResult<DamageResult>> DoEditAsync(DataContext context, EditParam param,
             CancellationToken cancellationToken)
         {
-            var (adventure, combatant, message, controlId) = param;
+            var (adventure, encounter, combatant, message, controlId) = param;
 
-            var character = await param.Combatant.GetCharacterAsync(context, cancellationToken);
+            var character = await param.Combatant.GetCharacterAsync(context, encounter, cancellationToken);
             if (character is null) return CreateError($"No character sheet found for combatant '{combatant.Alias}.");
 
             var gameSystem = GameSystem.Get(adventure.GameSystem);
@@ -145,7 +145,8 @@ internal sealed class EncounterDamageMessageHandler(SqlDataService dataService, 
         }
     }
 
-    private record EditParam(Adventure Adventure, CombatantBase Combatant, EncounterDamageMessage Message, string ControlId);
+    private record EditParam(Adventure Adventure, Encounter Encounter, CombatantBase Combatant,
+        EncounterDamageMessage Message, string ControlId);
 
     private record DamageResult(ITrackedCharacter Character, GameCounter Counter, GameSystem GameSystem, string Working);
 }

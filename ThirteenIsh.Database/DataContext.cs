@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using ThirteenIsh.Database.Entities;
-using ThirteenIsh.Database.Entities.Combatants;
 using ThirteenIsh.Database.Entities.Messages;
 
 namespace ThirteenIsh.Database;
@@ -13,11 +12,6 @@ public class DataContext : DbContext
     public DbSet<Character> Characters { get; set; }
     public DbSet<Encounter> Encounters { get; set; }
     public DbSet<Guild> Guilds { get; set; }
-
-    // Combatant types as TPH mapping: https://learn.microsoft.com/en-us/ef/core/modeling/inheritance
-    public DbSet<CombatantBase> Combatants { get; set; }
-    public DbSet<AdventurerCombatant> AdventurerCombatants { get; set; }
-    public DbSet<MonsterCombatant> MonsterCombatants { get; set; }
 
     // Message types as TPH mapping: https://learn.microsoft.com/en-us/ef/core/modeling/inheritance
     public DbSet<MessageBase> Messages { get; set; }
@@ -64,31 +58,25 @@ public class DataContext : DbContext
                 s.OwnsMany(s => s.CustomCounters);
             });
 
-        modelBuilder.Entity<CombatantBase>()
-            .HasOne(c => c.Encounter)
-            .WithMany(e => e.Combatants)
-            .IsRequired()
-            .OnDelete(DeleteBehavior.Cascade);
-
         modelBuilder.Entity<Encounter>()
-            .OwnsOne(c => c.Variables, v =>
-            {
-                v.ToJson();
-                v.OwnsMany(v => v.Counters);
-            });
-
-        modelBuilder.Entity<MonsterCombatant>()
-            .OwnsOne(c => c.Sheet, s =>
+            .OwnsOne(c => c.State, s =>
             {
                 s.ToJson();
+                s.OwnsMany(s => s.Adventurers);
+                s.OwnsMany(s => s.Monsters, m =>
+                {
+                    m.OwnsOne(m => m.Sheet, h =>
+                    {
+                        h.OwnsMany(h => h.Counters);
+                        h.OwnsMany(h => h.Properties);
+                        h.OwnsMany(h => h.CustomCounters);
+                    });
+                    m.OwnsOne(m => m.Variables, v =>
+                    {
+                        v.OwnsMany(v => v.Counters);
+                    });
+                });
                 s.OwnsMany(s => s.Counters);
-                s.OwnsMany(s => s.Properties);
-                s.OwnsMany(s => s.CustomCounters);
-            })
-            .OwnsOne(c => c.Variables, v =>
-            {
-                v.ToJson();
-                v.OwnsMany(v => v.Counters);
             });
 
         base.OnModelCreating(modelBuilder);

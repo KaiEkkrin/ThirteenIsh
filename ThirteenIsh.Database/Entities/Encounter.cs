@@ -7,6 +7,8 @@ namespace ThirteenIsh.Database.Entities;
 /// <summary>
 /// This entity describes an encounter, which happens within a channel in a guild,
 /// and is associated with an adventure.
+/// This is the JSON entity used so that all combatants can be packed into the one Encounter entity in the database.
+/// TODO #30 Add as much unit testing as I can for the helper logic I'm including here
 /// </summary>
 [Index(nameof(GuildId), nameof(ChannelId), IsUnique = true)]
 public class Encounter : EntityBase
@@ -24,7 +26,19 @@ public class Encounter : EntityBase
     /// </summary>
     public required ulong ChannelId { get; set; }
 
-    public virtual IList<CombatantBase> Combatants { get; set; } = [];
+    /// <summary>
+    /// All the combatants, in any order (quick access.)
+    /// </summary>
+    [NotMapped]
+    public IEnumerable<CombatantBase> Combatants => State.Adventurers.OfType<CombatantBase>()
+        .Concat(State.Monsters.OfType<CombatantBase>());
+
+    /// <summary>
+    /// All the combatants in turn order.
+    /// </summary>
+    [NotMapped]
+    public IEnumerable<CombatantBase> CombatantsInTurnOrder => Combatants
+        .Order(CombatantTurnOrderComparer.Instance);
 
     /// <summary>
     /// The Discord ID of the pinned message relating to this encounter, if any.
@@ -37,22 +51,15 @@ public class Encounter : EntityBase
     public required int Round { get; set; }
 
     /// <summary>
+    /// The encounter state.
+    /// </summary>
+    public EncounterState State { get; set; } = new();
+
+    /// <summary>
     /// The alias of the combatant whose turn it is currently;
     /// null if the encounter has not yet been begun.
     /// </summary>
     public string? TurnAlias { get; set; }
-
-    /// <summary>
-    /// This encounter's variables (game system dependent.)
-    /// </summary>
-    public EncounterVariables Variables { get; set; } = new();
-
-    /// <summary>
-    /// The combatants, in the current initiative order.
-    /// </summary>
-    [NotMapped]
-    public IEnumerable<CombatantBase> CombatantsInTurnOrder => Variables.TurnOrder
-        .Join(Combatants, o => o, c => c.Alias, (_, c) => c);
 
     /// <summary>
     /// Gets the current combatant, if any.
@@ -64,24 +71,33 @@ public class Encounter : EntityBase
 
     /// <summary>
     /// Inserts a combatant into the right place in the turn order.
+    /// Sets InitiativeAdjustment accordingly.
     /// </summary>
     public void InsertCombatantIntoTurnOrder(CombatantBase combatant)
     {
-        if (combatant.Encounter != this)
-            throw new ArgumentException("Received a combatant in a different encounter", nameof(combatant));
+        if (Combatants.Any(c => c.Alias == combatant.Alias))
+            throw new ArgumentException("Already have a combatant with this alias", nameof(combatant));
 
-        if (Variables.TurnOrder.Contains(combatant.Alias)) return;
+        foreach (var existingCombatant in CombatantsInTurnOrder)
+        {
+            if (existingCombatant.Initiative < combatant.Initiative)
+            {
+                combatant.InitiativeAdjustment = 0;
+                AddCombatant(combatant);
+                return;
+            }
 
-        var insertBefore = Combatants.FirstOrDefault(c => c.Initiative < combatant.Initiative);
-        if (insertBefore != null &&
-            Variables.TurnOrder.IndexOf(insertBefore.Alias) is >= 0 and var insertIndex)
-        {
-            Variables.TurnOrder.Insert(insertIndex, combatant.Alias);
+            if (existingCombatant.Initiative == combatant.Initiative)
+            {
+                // Slot this one in first
+                combatant.InitiativeAdjustment = existingCombatant.InitiativeAdjustment + 1;
+                AddCombatant(combatant);
+                return;
+            }
         }
-        else
-        {
-            Variables.TurnOrder.Add(combatant.Alias);
-        }
+
+        combatant.InitiativeAdjustment = 0;
+        AddCombatant(combatant);
     }
 
     /// <summary>
@@ -89,52 +105,92 @@ public class Encounter : EntityBase
     /// </summary>
     public CombatantBase? NextTurn(out bool newRound)
     {
-        var currentIndex = !string.IsNullOrEmpty(TurnAlias)
-            ? Variables.TurnOrder.IndexOf(TurnAlias)
-            : -1;
-
-        var nextIndex = currentIndex + 1;
-        if (nextIndex >= Variables.TurnOrder.Count)
+        var allCombatants = CombatantsInTurnOrder.ToList();
+        if (allCombatants.Count == 0)
         {
-            nextIndex = 0;
-            ++Round;
+            newRound = false;
+            return null;
+        }
+
+        var index = allCombatants.FindIndex(c => c.Alias == TurnAlias);
+        if (index == allCombatants.Count - 1)
+        {
             newRound = true;
+            TurnAlias = allCombatants[0].Alias;
+            return allCombatants[0];
         }
         else
         {
             newRound = false;
+            TurnAlias = allCombatants[index + 1].Alias;
+            return allCombatants[index + 1];
         }
-
-        TurnAlias = Variables.TurnOrder.Count > nextIndex
-            ? Variables.TurnOrder[nextIndex]
-            : null;
-
-        return GetCurrentCombatant();
     }
 
     /// <summary>
-    /// Rebuilds the turn order from the combatants.
+    /// Removes a combatant from combat, if possible.
     /// </summary>
-    public void RebuildTurnOrder()
+    public CombatantRemoveResult RemoveCombatant(string alias)
     {
-        Variables.TurnOrder.Clear();
-        foreach (var combatant in Combatants.OrderByDescending(c => c.Initiative).ThenBy(c => c.Alias))
+        var adventurerIndex = State.Adventurers.FindIndex(c => c.Alias == alias);
+        if (adventurerIndex >= 0)
         {
-            Variables.TurnOrder.Add(combatant.Alias);
+            if (State.Adventurers[adventurerIndex].Alias == TurnAlias) return CombatantRemoveResult.IsTheirTurn;
+            State.Adventurers.RemoveAt(adventurerIndex);
+            return CombatantRemoveResult.Success;
+        }
+
+        var monsterIndex = State.Monsters.FindIndex(c => c.Alias == alias);
+        if (monsterIndex >= 0)
+        {
+            if (State.Monsters[monsterIndex].Alias == TurnAlias) return CombatantRemoveResult.IsTheirTurn;
+            State.Monsters.RemoveAt(monsterIndex);
+            return CombatantRemoveResult.Success;
+        }
+
+        return CombatantRemoveResult.NotFound;
+    }
+
+    private void AddCombatant(CombatantBase combatant)
+    {
+        switch (combatant)
+        {
+            case AdventurerCombatant adventurerCombatant:
+                State.Adventurers.Add(adventurerCombatant);
+                break;
+
+            case MonsterCombatant monsterCombatant:
+                State.Monsters.Add(monsterCombatant);
+                break;
+
+            default:
+                throw new InvalidOperationException($"Unrecognised combatant type: {combatant.GetType()}");
         }
     }
 }
 
-public class EncounterVariables : ICounterSheet
+public enum CombatantRemoveResult
 {
+    Success,
+    NotFound,
+    IsTheirTurn
+}
+
+/// <summary>
+/// The JSON portion of the encounter record, encompassing all the structured data.
+/// I've decided to squash all encounter data in a single row to avoid issues with
+/// concurrent joins and dealing with the initiative order -- like this all updates will
+/// be atomic
+/// </summary>
+public class EncounterState : ICounterSheet
+{
+    public virtual IList<AdventurerCombatant> Adventurers { get; set; } = [];
+
+    public virtual IList<MonsterCombatant> Monsters { get; set; } = [];
+
     /// <summary>
     /// The encounter variable values.
     /// </summary>
     public virtual IList<PropertyValue<int>> Counters { get; set; } = [];
-
-    /// <summary>
-    /// The aliases in the initiative in the order in which turns are taken.
-    /// </summary>
-    public virtual IList<string> TurnOrder { get; set; } = [];
 }
 

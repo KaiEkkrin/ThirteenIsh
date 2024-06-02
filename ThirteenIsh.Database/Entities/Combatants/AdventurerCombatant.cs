@@ -4,6 +4,7 @@ namespace ThirteenIsh.Database.Entities.Combatants;
 
 /// <summary>
 /// This combatant is an adventurer. They use the adventurer record's counters.
+/// This is the JSON entity used so that all combatants can be packed into the one Encounter entity in the database.
 /// </summary>
 public class AdventurerCombatant : CombatantBase
 {
@@ -11,12 +12,11 @@ public class AdventurerCombatant : CombatantBase
 
     public override async Task<ITrackedCharacter?> GetCharacterAsync(
         DataContext dataContext,
+        Encounter encounter,
         CancellationToken cancellationToken = default)
     {
-        var encounter = Encounter ?? await dataContext.Encounters.SingleOrDefaultAsync(
-            e => e.Id == EncounterId, cancellationToken);
-
-        if (encounter is null) return null;
+        ArgumentNullException.ThrowIfNull(nameof(dataContext));
+        ArgumentNullException.ThrowIfNull(nameof(encounter));
 
         var adventurer = await dataContext.Adventurers.SingleOrDefaultAsync(
             a => a.Adventure.GuildId == encounter.GuildId &&

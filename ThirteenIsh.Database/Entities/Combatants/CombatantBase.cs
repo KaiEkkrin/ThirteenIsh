@@ -1,16 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿namespace ThirteenIsh.Database.Entities.Combatants;
 
-namespace ThirteenIsh.Database.Entities.Combatants;
-
-[Index(nameof(EncounterId), nameof(Alias), IsUnique = true)]
-public abstract class CombatantBase : EntityBase
+public abstract class CombatantBase
 {
-    public long EncounterId { get; set; }
-
-    [ForeignKey(nameof(EncounterId))]
-    public Encounter Encounter { get; set; } = null!;
-
     /// <summary>
     /// This combatant's character type.
     /// </summary>
@@ -24,8 +15,15 @@ public abstract class CombatantBase : EntityBase
 
     /// <summary>
     /// This combatant's initiative roll result.
+    /// TODO can I make this required?
     /// </summary>
     public int Initiative { get; set; }
+
+    /// <summary>
+    /// An initiative adjustment, for organising combatants that share the same
+    /// initiative roll.
+    /// </summary>
+    public int InitiativeAdjustment { get; set; }
 
     /// <summary>
     /// The initiative roll working, in case we want to display it again.
@@ -44,5 +42,28 @@ public abstract class CombatantBase : EntityBase
 
     public abstract Task<ITrackedCharacter?> GetCharacterAsync(
         DataContext dataContext,
+        Encounter encounter,
         CancellationToken cancellationToken = default);
+}
+
+/// <summary>
+/// Provides turn ordering for combatants.
+/// </summary>
+public sealed class CombatantTurnOrderComparer : Comparer<CombatantBase>
+{
+    public static readonly CombatantTurnOrderComparer Instance = new();
+
+    private CombatantTurnOrderComparer()
+    {
+    }
+
+    public override int Compare(CombatantBase? x, CombatantBase? y) => (x, y) switch
+    {
+        (null, null) => 0,
+        (null, _) => -1,
+        (_, null) => 1,
+        ({ } a, { } b) => a.Initiative.CompareTo(b.Initiative) is var cmp and not 0
+            ? -cmp
+            : -a.InitiativeAdjustment.CompareTo(b.InitiativeAdjustment)
+    };
 }

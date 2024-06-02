@@ -7,6 +7,7 @@
 /// that encounter.
 /// The alias will be unique. The name will correspond to the monster of this name,
 /// owned by the owning user, in the Characters collection.
+/// This is the JSON entity used so that all combatants can be packed into the one Encounter entity in the database.
 /// </summary>
 public class MonsterCombatant : CombatantBase, ITrackedCharacter
 {
@@ -28,6 +29,7 @@ public class MonsterCombatant : CombatantBase, ITrackedCharacter
 
     public override Task<ITrackedCharacter?> GetCharacterAsync(
         DataContext dataContext,
+        Encounter encounter,
         CancellationToken cancellationToken = default)
     {
         return Task.FromResult((ITrackedCharacter?)this);

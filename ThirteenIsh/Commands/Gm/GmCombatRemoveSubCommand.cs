@@ -55,19 +55,21 @@ internal sealed class GmCombatRemoveSubCommand() : SubCommandBase("remove", "Rem
     private sealed class EditOperation(string alias)
         : SyncEditOperation<EditOutput, EncounterResult>
     {
-        public override EditResult<EditOutput> DoEdit(DataContext context, EncounterResult result)
+        public override EditResult<EditOutput> DoEdit(DataContext context, EncounterResult param)
         {
-            var (adventure, encounter) = result;
+            var (adventure, encounter) = param;
+            return encounter.RemoveCombatant(alias) switch
+            {
+                CombatantRemoveResult.Success => new EditResult<EditOutput>(new EditOutput(adventure, encounter,
+                    GameSystem.Get(adventure.GameSystem))),
 
-            var toRemove = encounter.Combatants.SingleOrDefault(c => c.Alias == alias);
-            if (toRemove == null)
-                return CreateError($"There is no combatant matching alias '{alias}'.");
+                CombatantRemoveResult.NotFound => CreateError($"There is no combatant matching alias '{alias}'."),
+                CombatantRemoveResult.IsTheirTurn =>
+                    CreateError($"'{alias}' cannot be removed, because it is currently their turn."),
 
-            if (encounter.GetCurrentCombatant()?.Alias == toRemove.Alias)
-                return CreateError($"'{alias}' cannot be removed, because it is currently their turn.");
-
-            encounter.Combatants.Remove(toRemove);
-            return new EditResult<EditOutput>(new EditOutput(adventure, encounter, GameSystem.Get(adventure.GameSystem)));
+                { } unrecognisedResult => throw new InvalidOperationException(
+                    $"Unrecognised remove combatant result: {unrecognisedResult}")
+            };
         }
     }
 

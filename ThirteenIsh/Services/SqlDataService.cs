@@ -388,10 +388,10 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
         return matchingCharacters.Count == 1 ? matchingCharacters[0] : null;
     }
 
-    public Task<ITrackedCharacter?> GetCharacterAsync(CombatantBase combatant,
+    public Task<ITrackedCharacter?> GetCharacterAsync(CombatantBase combatant, Encounter encounter,
         CancellationToken cancellationToken = default)
     {
-        return combatant.GetCharacterAsync(_context, cancellationToken);
+        return combatant.GetCharacterAsync(_context, encounter, cancellationToken);
     }
 
     public async Task<EditResult<CombatantResult>> GetCombatantResultAsync(Guild guild, ulong channelId, ulong? userId,
@@ -406,7 +406,7 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
                 if (!TryGetCombatant(encounter, alias, userId, out var combatant, out var errorMessage))
                     return new EditResult<CombatantResult>(null, errorMessage);
 
-                var character = await GetCharacterAsync(combatant, cancellationToken);
+                var character = await GetCharacterAsync(combatant, encounter, cancellationToken);
                 if (character == null)
                     return new EditResult<CombatantResult>(null,
                         $"Cannot find a character sheet for the combatant with alias '{combatant.Alias}'.");
