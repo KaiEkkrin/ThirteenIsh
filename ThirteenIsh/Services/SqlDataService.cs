@@ -421,7 +421,6 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
         // I'll always include the combatants here, because pretty much all operations want
         // to see them.
         return _context.Encounters
-            .Include(e => e.Combatants)
             .SingleOrDefaultAsync(e => e.GuildId == guild.Id && e.ChannelId == channelId, cancellationToken);
     }
 
