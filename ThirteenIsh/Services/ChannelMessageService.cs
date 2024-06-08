@@ -14,6 +14,14 @@ namespace ThirteenIsh.Services;
 /// when a conflict is detected the processing task should not busy wait (as it currently does)
 /// but instead spawn another task to re-queue the message after a Polly-mediated delay, complete
 /// with the code to resolve conflicted data.
+/// Perhaps, I could subclass MessageBase as TransactionalMessageBase, and MessageHandlerBase as
+/// TransactionalMessageHandlerBase, thus:
+/// - TransactionalMessageBase would contain the scope (which would need to be persisted through
+/// retries) and the enumerator of retry delays (if using that), and the latest concurrency
+/// exception if any
+/// - TransactionalMessageHandlerBase would process the latest concurrency exception, and catch
+/// any new one that occurs, returning false on a concurrency exception (re-queue the message)
+/// or true on a success (discard the message, it's complete)
 /// </summary>
 internal sealed partial class ChannelMessageService : IAsyncDisposable
 {

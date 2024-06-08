@@ -1,10 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using System.Globalization;
-using System.Text;
-using ThirteenIsh.Database.Entities;
-using ThirteenIsh.Database.Entities.Combatants;
-using ThirteenIsh.Game;
+using ThirteenIsh.ChannelMessages.Combat;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Combat;
@@ -67,92 +63,18 @@ internal sealed class CombatAttackSubCommand()
             ? aliasString
             : null;
 
-        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var guild = await dataService.GetGuildAsync(guildId, cancellationToken);
-        var combatantResult = await dataService.GetCombatantResultAsync(guild, channelId, command.User.Id, alias,
-            cancellationToken);
-
-        await combatantResult.Handle(
-            errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
-            async output =>
-            {
-                var (adventure, encounter, combatant, character) = output;
-
-                var gameSystem = GameSystem.Get(adventure.GameSystem);
-                var characterSystem = gameSystem.GetCharacterSystem(combatant.CharacterType);
-                var counter = characterSystem.FindCounter(character.Sheet, namePart,
-                    c => c.Options.HasFlag(GameCounterOptions.CanRoll));
-
-                if (counter is null)
-                {
-                    await command.RespondAsync($"'{namePart}' does not uniquely match a rollable property.",
-                        ephemeral: true);
-                    return;
-                }
-
-                List<CombatantBase> targetCombatants = [];
-                if (!CommandUtil.TryFindCombatants(targets, encounter, targetCombatants, out var message))
-                {
-                    await command.RespondAsync(message, ephemeral: true);
-                    return;
-                }
-
-                await command.DeferAsync();
-                var random = serviceProvider.GetRequiredService<IRandomWrapper>();
-                StringBuilder stringBuilder = new();
-                SortedSet<string> vsCounterNames = []; // hopefully only one :P
-                for (var i = 0; i < targetCombatants.Count; ++i)
-                {
-                    if (i > 0) stringBuilder.AppendLine(); // space things out
-
-                    var target = targetCombatants[i];
-                    stringBuilder.Append(CultureInfo.CurrentCulture, $"vs {target.Alias}");
-                    var targetCharacter = await dataService.GetCharacterAsync(target, encounter, cancellationToken);
-                    if (targetCharacter is null)
-                    {
-                        stringBuilder.AppendLine(CultureInfo.CurrentCulture, $" : Target unresolved");
-                        continue;
-                    }
-
-                    var vsCharacterSystem = gameSystem.GetCharacterSystem(targetCharacter.Type);
-                    var vsCounter = vsCharacterSystem.FindCounter(targetCharacter.Sheet, vsNamePart, _ => true);
-                    if (vsCounter is null)
-                    {
-                        stringBuilder.AppendLine(CultureInfo.CurrentCulture,
-                            $" : Target has no counter unambiguously matching '{vsNamePart}'");
-                        continue;
-                    }
-
-                    vsCounterNames.Add(vsCounter.Name);
-                    var dc = vsCounter.GetValue(targetCharacter.Sheet);
-                    if (!dc.HasValue)
-                    {
-                        stringBuilder.AppendLine(CultureInfo.CurrentCulture,
-                            $" : Target has no value for {vsCounter.Name}");
-                        continue;
-                    }
-
-                    var result = counter.Roll(character.Sheet, bonus, random, rerolls, ref dc);
-                    stringBuilder.Append(CultureInfo.CurrentCulture, $" ({dc}) : {result.Roll}");
-                    if (result.Success.HasValue)
-                    {
-                        var successString = result.Success.Value ? "Success!" : "Failure!";
-                        stringBuilder.Append(" -- ").Append(successString);
-                    }
-                    stringBuilder.AppendLine();
-                    stringBuilder.AppendLine(result.Working);
-                }
-
-                var vsCounterNameSummary = vsCounterNames.Count == 0
-                    ? $"'{vsNamePart}'"
-                    : string.Join(", ", vsCounterNames);
-
-                var embedBuilder = new EmbedBuilder()
-                    .WithAuthor(command.User)
-                    .WithTitle($"{character.Name} : Rolled {counter.Name} vs {vsCounterNameSummary}")
-                    .WithDescription(stringBuilder.ToString());
-
-                await command.ModifyOriginalResponseAsync(properties => properties.Embed = embedBuilder.Build());
-            });
+        var channelMessageService = serviceProvider.GetRequiredService<ChannelMessageService>();
+        await channelMessageService.AddMessageAsync(command, new CombatAttackMessage
+        {
+            Alias = alias,
+            Bonus = bonus,
+            ChannelId = channelId,
+            GuildId = guildId,
+            NamePart = namePart,
+            Rerolls = rerolls,
+            Targets = targets,
+            UserId = command.User.Id,
+            VsNamePart = vsNamePart
+        });
     }
 }

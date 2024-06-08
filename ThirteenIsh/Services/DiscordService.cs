@@ -10,6 +10,7 @@ namespace ThirteenIsh.Services;
 internal sealed partial class DiscordService : IAsyncDisposable, IDisposable
 {
     private static readonly TimeSpan SlashCommandTimeout = TimeSpan.FromMilliseconds(1500);
+    private static readonly TimeSpan MessageTimeout = TimeSpan.FromSeconds(45);
 
     [LoggerMessage(Level = LogLevel.Error, EventId = 1, Message = "Error registering commands: {Details}")]
     private partial void RegisterCommandsErrorMessage(string details, Exception exception);
@@ -44,6 +45,10 @@ internal sealed partial class DiscordService : IAsyncDisposable, IDisposable
     [LoggerMessage(Level = LogLevel.Information, EventId = 9, Message =
         "Deleted global command {Name}")]
     private partial void DeletedGlobalCommandMessage(string name);
+
+    [LoggerMessage(Level = LogLevel.Warning, EventId = 10, Message =
+        "Message handler {Name} timed out after {Timeout}: {Details}")]
+    private partial void MessageTimeoutMessage(string name, TimeSpan timeout, string details, Exception exception);
 
     private readonly DiscordSocketClient _client = new();
     private readonly ConcurrentDictionary<string, CommandBase> _commandsMap = new();
@@ -152,7 +157,7 @@ internal sealed partial class DiscordService : IAsyncDisposable, IDisposable
     private async Task OnMessageAsync(SocketMessageComponent arg)
     {
         await using var scope = _serviceProvider.CreateAsyncScope();
-        using CancellationTokenSource cancellationSource = new(SlashCommandTimeout);
+        using CancellationTokenSource cancellationSource = new(MessageTimeout);
         try
         {
             if (!MessageBase.TryParseMessageId(arg.Data.CustomId, out var entityId, out var controlId)) return;
@@ -167,8 +172,16 @@ internal sealed partial class DiscordService : IAsyncDisposable, IDisposable
         }
         catch (OperationCanceledException ex)
         {
-            SlashCommandTimeoutMessage(arg.Data.CustomId, SlashCommandTimeout, ex.Message, ex);
-            await arg.RespondAsync($"Message timed out after {SlashCommandTimeout}: {arg.Data.CustomId}");
+            MessageTimeoutMessage(arg.Data.CustomId, MessageTimeout, ex.Message, ex);
+            var content = $"Message timed out after {MessageTimeout}: {arg.Data.CustomId}";
+            if (arg.HasResponded)
+            {
+                await arg.ModifyOriginalResponseAsync(properties => properties.Content = content);
+            }
+            else
+            {
+                await arg.RespondAsync(content);
+            }
         }
     }
 

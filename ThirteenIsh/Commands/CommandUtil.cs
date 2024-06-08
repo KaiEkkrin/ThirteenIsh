@@ -226,7 +226,7 @@ internal static partial class CommandUtil
     }
 
     public static bool TryGetCanonicalizedMultiPartOption(
-        SocketSlashCommandData data, string name, [MaybeNullWhen(false)] out string canonicalizedValue)
+        IApplicationCommandInteractionData data, string name, [MaybeNullWhen(false)] out string canonicalizedValue)
     {
         if (TryGetOption<string>(data, name, out var value) &&
             AttributeName.TryCanonicalizeMultiPart(value, out canonicalizedValue))
@@ -239,7 +239,7 @@ internal static partial class CommandUtil
     }
 
     public static bool TryGetCanonicalizedMultiPartOption(
-        SocketSlashCommandDataOption option, string name, [MaybeNullWhen(false)] out string canonicalizedValue)
+        IApplicationCommandInteractionDataOption option, string name, [MaybeNullWhen(false)] out string canonicalizedValue)
     {
         if (TryGetOption<string>(option, name, out var value) &&
             AttributeName.TryCanonicalizeMultiPart(value, out canonicalizedValue))
@@ -252,7 +252,7 @@ internal static partial class CommandUtil
     }
 
     public static bool TryGetCanonicalizedOption(
-        SocketSlashCommandData data, string name, [MaybeNullWhen(false)] out string canonicalizedValue)
+        IApplicationCommandInteractionData data, string name, [MaybeNullWhen(false)] out string canonicalizedValue)
     {
         if (TryGetOption<string>(data, name, out var value) &&
             AttributeName.TryCanonicalize(value, out canonicalizedValue))
@@ -265,7 +265,7 @@ internal static partial class CommandUtil
     }
 
     public static bool TryGetCanonicalizedOption(
-        SocketSlashCommandDataOption option, string name, [MaybeNullWhen(false)] out string canonicalizedValue)
+        IApplicationCommandInteractionDataOption option, string name, [MaybeNullWhen(false)] out string canonicalizedValue)
     {
         if (TryGetOption<string>(option, name, out var value) &&
             AttributeName.TryCanonicalize(value, out canonicalizedValue))
@@ -278,7 +278,7 @@ internal static partial class CommandUtil
     }
 
     public static bool TryGetOption<T>(
-        SocketSlashCommandData data,
+        IApplicationCommandInteractionData data,
         string name,
         [MaybeNullWhen(false)] out T typedValue)
     {
@@ -292,7 +292,7 @@ internal static partial class CommandUtil
     }
 
     public static bool TryGetOption<T>(
-        SocketSlashCommandDataOption option,
+        IApplicationCommandInteractionDataOption option,
         string name,
         [MaybeNullWhen(false)] out T typedValue)
     {
@@ -306,7 +306,7 @@ internal static partial class CommandUtil
     }
 
     public static bool TryGetTagOption(
-        SocketSlashCommandDataOption option, string name, [MaybeNullWhen(false)] out string tagValue)
+        IApplicationCommandInteractionDataOption option, string name, [MaybeNullWhen(false)] out string tagValue)
     {
         if (TryGetOption<string>(option, name, out var rawValue) &&
             AttributeName.TryCanonicalizeTag(rawValue, out tagValue)) return true;

@@ -1,11 +1,8 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using System.Text;
+using ThirteenIsh.ChannelMessages.Combat;
 using ThirteenIsh.Database.Entities;
-using ThirteenIsh.Database.Entities.Combatants;
-using ThirteenIsh.Database.Entities.Messages;
 using ThirteenIsh.Game;
 using ThirteenIsh.Parsing;
 using ThirteenIsh.Services;
@@ -44,6 +41,11 @@ internal sealed class CombatDamageSubCommand()
         IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
         if (command is not { ChannelId: { } channelId, GuildId: { } guildId }) return;
+
+        var counterNamePart = CommandUtil.TryGetOption<string>(option, "counter", out var counterNamePartValue)
+            ? counterNamePartValue
+            : null;
+
         if (!CommandUtil.TryGetOption<string>(option, "dice", out var diceString))
         {
             await command.RespondAsync("No dice supplied.", ephemeral: true);
@@ -77,137 +79,30 @@ internal sealed class CombatDamageSubCommand()
             ? aliasString
             : null;
 
-        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var guild = await dataService.GetGuildAsync(guildId, cancellationToken);
-        var combatantResult = await dataService.GetCombatantResultAsync(guild, channelId, command.User.Id, alias,
-            cancellationToken);
+        var multiplier = CommandUtil.TryGetOption<int>(option, "multiplier", out var multiplierValue)
+            ? multiplierValue
+            : 1;
 
-        await combatantResult.Handle(
-            errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
-            async output =>
-            {
-                var (adventure, encounter, combatant, character) = output;
+        var rollSeparately = CommandUtil.TryGetOption<bool>(option, "roll-separately", out var rollSeparatelyValue)
+            && rollSeparatelyValue;
 
-                var gameSystem = GameSystem.Get(adventure.GameSystem);
-                var characterSystem = gameSystem.GetCharacterSystem(combatant.CharacterType);
-
-                if (!TryGetCounter(characterSystem, option, character.Sheet, out var counter, out var message))
-                {
-                    await command.RespondAsync(message, ephemeral: true);
-                    return;
-                }
-
-                // If there is a counter it must have a value
-                int? counterValue = counter is null
-                    ? null
-                    : counter.GetValue(character.Sheet) is { } realCounterValue
-                        ? realCounterValue
-                        : throw new GamePropertyException(counter.Name);
-
-                if (!CommandUtil.TryGetOption<int>(option, "multiplier", out var multiplier)) multiplier = 1;
-                if (!CommandUtil.TryGetOption<bool>(option, "roll-separately", out var rollSeparately))
-                    rollSeparately = false;
-
-                List<CombatantBase> targetCombatants = [];
-                if (!CommandUtil.TryFindCombatants(targets, encounter, targetCombatants, out message))
-                {
-                    await command.RespondAsync(message, ephemeral: true);
-                    return;
-                }
-
-                // If we have a counter include that in the overall parse tree
-                if (counter is not null && counterValue.HasValue)
-                {
-                    ParseTreeBase counterParseTree = multiplier == 1
-                        ? new IntegerParseTree(0, counterValue.Value, counter.Name)
-                        : new BinaryOperationParseTree(0,
-                            new IntegerParseTree(0, counterValue.Value, counter.Name),
-                            new IntegerParseTree(0, multiplier, "multiplier"),
-                            '*');
-
-                    parseTree = new BinaryOperationParseTree(0, parseTree, counterParseTree, '+');
-                }
-
-                // The next bit could take a while (sending messages to potentially many targets)
-                // so we'll defer our response
-                await command.DeferAsync();
-
-                var random = serviceProvider.GetRequiredService<IRandomWrapper>();
-                DamageRoller damageRoller = rollSeparately
-                    ? new DamageRoller(parseTree, random)
-                    : new CombinedDamageRoller(parseTree, random);
-
-                var discordService = serviceProvider.GetRequiredService<DiscordService>();
-                StringBuilder stringBuilder = new();
-                SortedSet<string> vsCounterNames = []; // hopefully only one :P
-                for (var i = 0; i < targetCombatants.Count; ++i)
-                {
-                    if (i > 0) stringBuilder.AppendLine(); // space things out
-                    var targetCharacter = await dataService.GetCharacterAsync(targetCombatants[i], encounter, cancellationToken);
-                    if (targetCharacter is null) continue;
-                    await RollDamageVsAsync(targetCombatants[i], targetCharacter);
-                }
-
-                var vsCounterNameSummary = vsCounterNames.Count == 0
-                    ? $"'{vsNamePart}'"
-                    : string.Join(", ", vsCounterNames);
-
-                var embedBuilder = new EmbedBuilder()
-                    .WithAuthor(command.User)
-                    .WithTitle($"{combatant.Alias} : Rolled damage to {vsCounterNameSummary}")
-                    .WithDescription(stringBuilder.ToString());
-
-                await command.ModifyOriginalResponseAsync(properties => properties.Embed = embedBuilder.Build());
-                return;
-
-                async Task RollDamageVsAsync(CombatantBase target, ITrackedCharacter targetCharacter)
-                {
-                    stringBuilder.Append(CultureInfo.CurrentCulture, $"vs {target.Alias}");
-
-                    var result = damageRoller.Roll();
-                    stringBuilder.AppendLine(CultureInfo.CurrentCulture, $" : {result.Roll}");
-                    stringBuilder.AppendLine(result.Working);
-
-                    var vsCharacterSystem = gameSystem.GetCharacterSystem(targetCharacter.Type);
-                    var vsCounter = vsCharacterSystem.FindCounter(targetCharacter.Sheet, vsNamePart,
-                        c => c.Options.HasFlag(GameCounterOptions.HasVariable));
-
-                    if (vsCounter is null)
-                    {
-                        stringBuilder.AppendLine(CultureInfo.CurrentCulture,
-                            $" : Target has no variable counter unambiguously matching '{vsNamePart}'");
-                        return;
-                    }
-
-                    vsCounterNames.Add(vsCounter.Name);
-                    EncounterDamageMessage message = new()
-                    {
-                        Alias = target.Alias,
-                        ChannelId = channelId,
-                        CharacterType = targetCharacter.Type,
-                        Damage = result.Roll,
-                        GuildId = guildId,
-                        Name = adventure.Name,
-                        UserId = targetCharacter.UserId,
-                        VariableName = vsCounter.Name
-                    };
-                    await dataService.AddMessageAsync(message, cancellationToken);
-
-                    var component = new ComponentBuilder()
-                        .WithButton("Take full", message.GetMessageId(EncounterDamageMessage.TakeFullControlId))
-                        .WithButton("Take half", message.GetMessageId(EncounterDamageMessage.TakeHalfControlId))
-                        .WithButton("Take none", message.GetMessageId(EncounterDamageMessage.TakeNoneControlId))
-                        .WithButton("Take double", message.GetMessageId(EncounterDamageMessage.TakeDoubleControlId));
-
-                    var targetUser = await discordService.GetGuildUserAsync(guildId, targetCharacter.UserId);
-                    await targetUser.SendMessageAsync(
-                        $"{character.Name} dealt {result.Roll} damage to {target.Alias}'s {vsCounter.Name}",
-                        components: component.Build());
-                }
-            });
+        var channelMessageService = serviceProvider.GetRequiredService<ChannelMessageService>();
+        await channelMessageService.AddMessageAsync(command, new CombatDamageMessage
+        {
+            Alias = alias,
+            ChannelId = channelId,
+            CounterNamePart = counterNamePart,
+            DiceParseTree = parseTree,
+            GuildId = guildId,
+            Multiplier = multiplier,
+            RollSeparately = rollSeparately,
+            Targets = targets,
+            UserId = command.User.Id,
+            VsNamePart = vsNamePart
+        });
     }
 
-    private static bool TryGetCounter(CharacterSystem characterSystem, SocketSlashCommandDataOption option,
+    private static bool TryGetCounter(CharacterSystem characterSystem, IApplicationCommandInteractionDataOption option,
         CharacterSheet sheet, out GameCounter? counter, [MaybeNullWhen(true)] out string errorMessage)
     {
         if (!CommandUtil.TryGetOption<string>(option, "counter", out var namePart))
@@ -227,32 +122,5 @@ internal sealed class CombatDamageSubCommand()
 
         errorMessage = null;
         return true;
-    }
-
-    // Rolls separately each time
-    private class DamageRoller(ParseTreeBase parseTree, IRandomWrapper random)
-    {
-        public virtual GameCounterRollResult Roll()
-        {
-            var rolledValue = parseTree.Evaluate(random, out var working);
-            return new GameCounterRollResult
-            {
-                Roll = rolledValue,
-                Working = working
-            };
-        }
-    }
-
-    // Rolls once and retains the result
-    private class CombinedDamageRoller(ParseTreeBase parseTree, IRandomWrapper random)
-        : DamageRoller(parseTree, random)
-    {
-        private GameCounterRollResult? _result;
-
-        public override GameCounterRollResult Roll()
-        {
-            _result ??= base.Roll();
-            return _result.Value;
-        }
     }
 }
