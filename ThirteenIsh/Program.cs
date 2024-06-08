@@ -29,6 +29,7 @@ public class Program
                 });
 
                 context
+                    .AddSingleton<ChannelMessageService>()
                     .AddSingleton<DiscordService>()
                     .AddScoped<PinnedMessageService>()
                     .AddSingleton<IRandomWrapper, RandomWrapper>()

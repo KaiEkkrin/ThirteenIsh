@@ -17,7 +17,7 @@ internal static class MessageHandlerRegistration
             if (!ty.IsClass || ty.IsAbstract || !ty.IsAssignableTo(typeof(IMessageHandler)) ||
                 ty.GetCustomAttribute<MessageHandlerAttribute>() is not { } attribute) continue;
 
-            services.AddScoped(ty);
+            services.AddTransient(ty);
             if (!MessageHandlers.TryAdd(attribute.MessageType, ty))
                 throw new InvalidOperationException(
                     $"{ty} is a message handler for {attribute.MessageType} but one is already registered for that type");

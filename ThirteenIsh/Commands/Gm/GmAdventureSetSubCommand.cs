@@ -1,8 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ThirteenIsh.Database;
-using ThirteenIsh.Database.Entities;
-using ThirteenIsh.Results;
+using ThirteenIsh.ChannelMessages;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Gm;
@@ -30,25 +28,13 @@ internal sealed class GmAdventureSetSubCommand() : SubCommandBase("set", "Sets a
 
         if (!CommandUtil.TryGetOption<string>(option, "description", out var description)) description = string.Empty;
 
-        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var result = await dataService.EditAdventureAsync(
-            guildId, new EditOperation(description), name, cancellationToken);
-
-        await result.Handle(
-            errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
-            adventure =>
-            {
-                var discordService = serviceProvider.GetRequiredService<DiscordService>();
-                return discordService.RespondWithAdventureSummaryAsync(dataService, command, adventure, name);
-            });
-    }
-
-    private sealed class EditOperation(string description) : SyncEditOperation<Adventure, Adventure>
-    {
-        public override EditResult<Adventure> DoEdit(DataContext context, Adventure adventure)
+        var channelMessageService = serviceProvider.GetRequiredService<ChannelMessageService>();
+        await channelMessageService.AddMessageAsync(command, new GmAdventureSetMessage
         {
-            adventure.Description = description;
-            return new EditResult<Adventure>(adventure);
-        }
+            GuildId = guildId,
+            Name = name,
+            Description = description,
+            UserId = command.User.Id
+        });
     }
 }
