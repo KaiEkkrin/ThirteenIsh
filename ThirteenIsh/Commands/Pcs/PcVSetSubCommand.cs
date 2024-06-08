@@ -1,4 +1,5 @@
-﻿using ThirteenIsh.EditOperations;
+﻿using ThirteenIsh.ChannelMessages;
+using ThirteenIsh.ChannelMessages.Pcs;
 using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Commands.Pcs;
@@ -6,9 +7,16 @@ namespace ThirteenIsh.Commands.Pcs;
 internal sealed class PcVSetSubCommand(bool asGm) : PcVSubCommandBase(asGm, "vset", "Sets a variable value.",
     "The variable name to set.", "A number or dice expression to set it to.")
 {
-    protected override PcEditVariableOperation CreateEditOperation(
-        string counterNamePart, ParseTreeBase parseTree, IRandomWrapper random)
+    protected override PcVSubMessageBase BuildMessage(ulong guildId, ulong userId, string? name, string variableNamePart,
+        ParseTreeBase diceParseTree)
     {
-        return new PcEditVariableOperation(new SetVariableSubOperation(counterNamePart, parseTree, random));
+        return new PcVSetMessage
+        {
+            GuildId = guildId,
+            UserId = userId,
+            Name = name,
+            VariableNamePart = variableNamePart,
+            DiceParseTree = diceParseTree
+        };
     }
 }

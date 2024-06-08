@@ -1,8 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ThirteenIsh.Database;
+using ThirteenIsh.ChannelMessages.Pcs;
 using ThirteenIsh.Database.Entities;
-using ThirteenIsh.Game;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Pcs;
@@ -37,38 +36,13 @@ internal sealed class PcTagSubCommand(bool asGm) : SubCommandBase("tag", "Adds a
             return;
         }
 
-        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        AddTagOperation editOperation = new(tagValue);
-
-        var result = name != null
-            ? await dataService.EditAdventurerAsync(guildId, name, editOperation, cancellationToken)
-            : await dataService.EditAdventurerAsync(guildId, command.User.Id, editOperation, cancellationToken);
-
-        await result.Handle(
-            errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
-            output =>
-            {
-                return CommandUtil.RespondWithTrackedCharacterSummaryAsync(command, output.Adventurer, output.GameSystem,
-                    new CommandUtil.AdventurerSummaryOptions
-                    {
-                        OnlyTheseProperties = [],
-                        Flags = CommandUtil.AdventurerSummaryFlags.OnlyVariables | CommandUtil.AdventurerSummaryFlags.WithTags,
-                        Title = $"Added tag '{tagValue}' to {output.Adventurer.Name}"
-                    });
-            });
-    }
-
-    private sealed class AddTagOperation(string tagValue) : SyncEditOperation<AddTagResult, Adventurer>
-    {
-        public override EditResult<AddTagResult> DoEdit(DataContext context, Adventurer adventurer)
+        var channelMessageService = serviceProvider.GetRequiredService<ChannelMessageService>();
+        await channelMessageService.AddMessageAsync(command, new PcTagMessage
         {
-            var gameSystem = GameSystem.Get(adventurer.Adventure.GameSystem);
-            if (!adventurer.AddTag(tagValue))
-                return CreateError($"Cannot add the tag '{tagValue}' to this adventurer. Perhaps they already have it?");
-
-            return new EditResult<AddTagResult>(new AddTagResult(adventurer, gameSystem));
-        }
+            GuildId = guildId,
+            Name = name,
+            TagValue = tagValue,
+            UserId = command.User.Id
+        });
     }
-
-    private record AddTagResult(Adventurer Adventurer, GameSystem GameSystem);
 }

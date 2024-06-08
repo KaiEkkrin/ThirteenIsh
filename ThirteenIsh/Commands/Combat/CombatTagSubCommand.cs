@@ -1,8 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ThirteenIsh.Database;
-using ThirteenIsh.Game;
-using ThirteenIsh.Results;
+using ThirteenIsh.ChannelMessages.Combat;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Combat;
@@ -32,48 +30,15 @@ internal sealed class CombatTagSubCommand(bool asGm) : SubCommandBase("tag", "Ad
             return;
         }
 
-        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        AddTagOperation editOperation = new(tagValue);
-
-        var result = await dataService.EditCombatantAsync(
-            guildId, channelId, asGm ? null : command.User.Id, editOperation, alias, cancellationToken);
-
-        await result.Handle(
-            errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
-            async output =>
-            {
-                await command.DeferAsync();
-                var (adventure, encounter, combatant, character) = output.CombatantResult;
-
-                // Update the encounter table
-                var encounterTable = await CommandUtil.UpdateEncounterMessageAsync(serviceProvider, guildId,
-                    command.Channel, encounter, output.GameSystem, cancellationToken);
-
-                // If this wasn't a simple integer, show the working
-                var embed = CommandUtil.BuildTrackedCharacterSummaryEmbed(command, output.CombatantResult.Character,
-                    output.GameSystem,
-                    new CommandUtil.AdventurerSummaryOptions
-                    {
-                        OnlyTheseProperties = [],
-                        Flags = CommandUtil.AdventurerSummaryFlags.OnlyVariables | CommandUtil.AdventurerSummaryFlags.WithTags,
-                        Title = $"Added tag '{tagValue}' to {output.CombatantResult.Combatant.Alias}"
-                    });
-
-                await command.ModifyOriginalResponseAsync(properties => properties.Embed = embed);
-            });
-    }
-
-    private sealed class AddTagOperation(string tagValue) : SyncEditOperation<AddTagResult, CombatantResult>
-    {
-        public override EditResult<AddTagResult> DoEdit(DataContext context, CombatantResult param)
+        var channelMessageService = serviceProvider.GetRequiredService<ChannelMessageService>();
+        await channelMessageService.AddMessageAsync(command, new CombatTagMessage
         {
-            var gameSystem = GameSystem.Get(param.Adventure.GameSystem);
-            if (!param.Character.AddTag(tagValue))
-                return CreateError($"Cannot add the tag '{tagValue}' to this combatant. Perhaps they already have it?");
-
-            return new EditResult<AddTagResult>(new AddTagResult(param, gameSystem));
-        }
+            GuildId = guildId,
+            ChannelId = channelId,
+            AsGm = asGm,
+            Alias = alias,
+            TagValue = tagValue,
+            UserId = command.User.Id
+        });
     }
-
-    private record AddTagResult(CombatantResult CombatantResult, GameSystem GameSystem);
 }

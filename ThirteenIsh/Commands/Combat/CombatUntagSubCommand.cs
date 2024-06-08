@@ -33,47 +33,5 @@ internal sealed class CombatUntagSubCommand(bool asGm) : SubCommandBase("untag",
         }
 
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        RemoveTagOperation editOperation = new(tagValue);
-
-        var result = await dataService.EditCombatantAsync(
-            guildId, channelId, asGm ? null : command.User.Id, editOperation, alias, cancellationToken);
-
-        await result.Handle(
-            errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
-            async output =>
-            {
-                await command.DeferAsync();
-                var (adventure, encounter, combatant, character) = output.CombatantResult;
-
-                // Update the encounter table
-                var encounterTable = await CommandUtil.UpdateEncounterMessageAsync(serviceProvider, guildId,
-                    command.Channel, encounter, output.GameSystem, cancellationToken);
-
-                // If this wasn't a simple integer, show the working
-                var embed = CommandUtil.BuildTrackedCharacterSummaryEmbed(command, output.CombatantResult.Character,
-                    output.GameSystem,
-                    new CommandUtil.AdventurerSummaryOptions
-                    {
-                        OnlyTheseProperties = [],
-                        Flags = CommandUtil.AdventurerSummaryFlags.OnlyVariables | CommandUtil.AdventurerSummaryFlags.WithTags,
-                        Title = $"Removed tag '{tagValue}' from {output.CombatantResult.Combatant.Alias}"
-                    });
-
-                await command.ModifyOriginalResponseAsync(properties => properties.Embed = embed);
-            });
     }
-
-    private sealed class RemoveTagOperation(string tagValue) : SyncEditOperation<RemoveTagResult, CombatantResult>
-    {
-        public override EditResult<RemoveTagResult> DoEdit(DataContext context, CombatantResult param)
-        {
-            var gameSystem = GameSystem.Get(param.Adventure.GameSystem);
-            if (!param.Character.RemoveTag(tagValue))
-                return CreateError($"Cannot remove the tag '{tagValue}' from this combatant. Perhaps they do not have it?");
-
-            return new EditResult<RemoveTagResult>(new RemoveTagResult(param, gameSystem));
-        }
-    }
-
-    private record RemoveTagResult(CombatantResult CombatantResult, GameSystem GameSystem);
 }

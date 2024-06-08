@@ -1,7 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using ThirteenIsh.ChannelMessages.Pcs;
 using ThirteenIsh.Database.Entities;
-using ThirteenIsh.EditOperations;
 using ThirteenIsh.Parsing;
 using ThirteenIsh.Services;
 
@@ -58,38 +58,11 @@ internal abstract class PcVSubCommandBase(bool asGm, string name, string descrip
             return;
         }
 
-        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var random = serviceProvider.GetRequiredService<IRandomWrapper>();
-        var editOperation = CreateEditOperation(variableNamePart, parseTree, random);
-
-        var result = name != null
-            ? await dataService.EditAdventurerAsync(guildId, name, editOperation, cancellationToken)
-            : await dataService.EditAdventurerAsync(guildId, command.User.Id, editOperation, cancellationToken);
-
-        await result.Handle(
-            errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
-            output =>
-            {
-                // If this wasn't a simple integer, show the working
-                List<EmbedFieldBuilder> extraFields = [];
-                if (parseTree is not IntegerParseTree)
-                {
-                    extraFields.Add(new EmbedFieldBuilder()
-                        .WithName("Roll")
-                        .WithValue(output.Working));
-                }
-
-                return CommandUtil.RespondWithTrackedCharacterSummaryAsync(command, output.Adventurer, output.GameSystem,
-                    new CommandUtil.AdventurerSummaryOptions
-                    {
-                        ExtraFields = extraFields,
-                        OnlyTheseProperties = [output.GameCounter.Name],
-                        Flags = CommandUtil.AdventurerSummaryFlags.OnlyVariables,
-                        Title = $"Set {output.GameCounter.Name} on {output.Adventurer.Name}"
-                    });
-            });
+        var channelMessageService = serviceProvider.GetRequiredService<ChannelMessageService>();
+        await channelMessageService.AddMessageAsync(command,
+            BuildMessage(guildId, command.User.Id, name, variableNamePart, parseTree));
     }
 
-    protected abstract PcEditVariableOperation CreateEditOperation(
-        string counterNamePart, ParseTreeBase parseTree, IRandomWrapper random);
+    protected abstract PcVSubMessageBase BuildMessage(ulong guildId, ulong userId, string? name, string variableNamePart,
+        ParseTreeBase diceParseTree);
 }

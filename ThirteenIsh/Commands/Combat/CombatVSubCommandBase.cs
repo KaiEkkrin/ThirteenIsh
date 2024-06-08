@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using ThirteenIsh.ChannelMessages.Combat;
 using ThirteenIsh.EditOperations;
 using ThirteenIsh.Parsing;
 using ThirteenIsh.Services;
@@ -51,41 +52,11 @@ internal abstract class CombatVSubCommandBase(bool asGm, string name, string des
             ? aliasString
             : null;
 
-        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var random = serviceProvider.GetRequiredService<IRandomWrapper>();
-        var editOperation = CreateEditOperation(namePart, parseTree, random);
-
-        var result = await dataService.EditCombatantAsync(
-            guildId, channelId, asGm ? null : command.User.Id, editOperation, alias, cancellationToken);
-
-        await result.Handle(
-            errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
-            async output =>
-            {
-                await command.DeferAsync();
-                var (adventure, encounter, combatant, character) = output.CombatantResult;
-
-                // Update the encounter table
-                var encounterTable = await CommandUtil.UpdateEncounterMessageAsync(serviceProvider, guildId,
-                    command.Channel, encounter, output.GameSystem, cancellationToken);
-
-                // If this wasn't a simple integer, show the working
-                var embed = CommandUtil.BuildTrackedCharacterSummaryEmbed(null, character, output.GameSystem,
-                    new CommandUtil.AdventurerSummaryOptions
-                    {
-                        ExtraFields =
-                        [
-                            new EmbedFieldBuilder().WithName("Roll").WithValue(output.Working)
-                        ],
-                        OnlyTheseProperties = [output.GameCounter.Name],
-                        Flags = CommandUtil.AdventurerSummaryFlags.OnlyVariables,
-                        Title = $"Set {output.GameCounter.Name} on {combatant.Alias}"
-                    });
-
-                await command.ModifyOriginalResponseAsync(properties => properties.Embed = embed);
-            });
+        var channelMessageService = serviceProvider.GetRequiredService<ChannelMessageService>();
+        await channelMessageService.AddMessageAsync(command,
+            BuildMessage(guildId, channelId, command.User.Id, asGm, alias, namePart, parseTree));
     }
 
-    protected abstract CombatEditVariableOperation CreateEditOperation(
-        string counterNamePart, ParseTreeBase parseTree, IRandomWrapper random);
+    protected abstract CombatVSubMessageBase BuildMessage(ulong guildId, ulong channelId, ulong userId, bool asGm, string? alias,
+        string variableNamePart, ParseTreeBase diceParseTree);
 }

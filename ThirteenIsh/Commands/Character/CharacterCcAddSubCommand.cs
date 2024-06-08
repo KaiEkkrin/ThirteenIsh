@@ -1,6 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ThirteenIsh.Database;
+using ThirteenIsh.ChannelMessages.Character;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Services;
 
@@ -57,48 +57,15 @@ internal sealed class CharacterCcAddSubCommand(CharacterType characterType)
             return;
         }
 
-        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var character = await dataService.GetCharacterAsync(name, command.User.Id, characterType, 
-            cancellationToken: cancellationToken);
-        if (character is null)
+        var channelMessageService = serviceProvider.GetRequiredService<ChannelMessageService>();
+        await channelMessageService.AddMessageAsync(command, new CharacterCcAddMessage
         {
-            await command.RespondAsync(
-                $"Error getting {characterType.FriendlyName()} '{name}'. Perhaps they do not exist, or there is more than one character or monster matching that name?",
-                ephemeral: true);
-            return;
-        }
-
-        var result = await dataService.EditCharacterAsync(
-            name, new EditOperation(ccName, defaultValue, (GameCounterOptions)typeInt), command.User.Id,
-            characterType, cancellationToken);
-
-        await result.Handle(
-            errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
-            updatedCharacter =>
-            {
-                return CommandUtil.RespondWithCharacterSheetAsync(command, updatedCharacter,
-                    $"Edited {characterType.FriendlyName()} '{updatedCharacter.Name}'", [ccName]);
-            });
-    }
-
-    private sealed class EditOperation(string ccName, int defaultValue, GameCounterOptions options)
-        : SyncEditOperation<Database.Entities.Character, Database.Entities.Character>
-    {
-        public override EditResult<Database.Entities.Character> DoEdit(DataContext context,
-            Database.Entities.Character character)
-        {
-            var existingCc = character.Sheet.CustomCounters
-                ?.FirstOrDefault(cc => cc.Name.Equals(ccName, StringComparison.OrdinalIgnoreCase));
-
-            if (existingCc != null)
-            {
-                return CreateError(
-                    $"The character '{character.Name}' already has a custom counter named '{existingCc.Name}'");
-            }
-
-            character.Sheet.CustomCounters ??= [];
-            character.Sheet.CustomCounters.Add(new CustomCounter(ccName, defaultValue, options));
-            return new EditResult<Database.Entities.Character>(character);
-        }
+            CharacterType = characterType,
+            Name = name,
+            CcName = ccName,
+            DefaultValue = defaultValue,
+            GameCounterOptions = (GameCounterOptions)typeInt,
+            UserId = command.User.Id
+        });
     }
 }

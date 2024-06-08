@@ -1,8 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ThirteenIsh.Database;
+using ThirteenIsh.ChannelMessages.Pcs;
 using ThirteenIsh.Database.Entities;
-using ThirteenIsh.Game;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Pcs;
@@ -37,38 +36,13 @@ internal sealed class PcUntagSubCommand(bool asGm) : SubCommandBase("untag", "Re
             return;
         }
 
-        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        RemoveTagOperation editOperation = new(tagValue);
-
-        var result = name != null
-            ? await dataService.EditAdventurerAsync(guildId, name, editOperation, cancellationToken)
-            : await dataService.EditAdventurerAsync(guildId, command.User.Id, editOperation, cancellationToken);
-
-        await result.Handle(
-            errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
-            output =>
-            {
-                return CommandUtil.RespondWithTrackedCharacterSummaryAsync(command, output.Adventurer, output.GameSystem,
-                    new CommandUtil.AdventurerSummaryOptions
-                    {
-                        OnlyTheseProperties = [],
-                        Flags = CommandUtil.AdventurerSummaryFlags.OnlyVariables | CommandUtil.AdventurerSummaryFlags.WithTags,
-                        Title = $"Removed tag '{tagValue}' from {output.Adventurer.Name}"
-                    });
-            });
-    }
-
-    private sealed class RemoveTagOperation(string tagValue) : SyncEditOperation<RemoveTagResult, Adventurer>
-    {
-        public override EditResult<RemoveTagResult> DoEdit(DataContext context, Adventurer adventurer)
+        var channelMessageService = serviceProvider.GetRequiredService<ChannelMessageService>();
+        await channelMessageService.AddMessageAsync(command, new PcUntagMessage
         {
-            var gameSystem = GameSystem.Get(adventurer.Adventure.GameSystem);
-            if (!adventurer.RemoveTag(tagValue))
-                return CreateError($"Cannot remove the tag '{tagValue}' from this adventurer. Perhaps they do not have it?");
-
-            return new EditResult<RemoveTagResult>(new RemoveTagResult(adventurer, gameSystem));
-        }
+            GuildId = guildId,
+            Name = name,
+            TagValue = tagValue,
+            UserId = command.User.Id
+        });
     }
-
-    private record RemoveTagResult(Adventurer Adventurer, GameSystem GameSystem);
 }

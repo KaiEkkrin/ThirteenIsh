@@ -6,7 +6,7 @@ using ThirteenIsh.EditOperations;
 using ThirteenIsh.Game;
 using ThirteenIsh.Services;
 
-namespace ThirteenIsh.MessageHandlers;
+namespace ThirteenIsh.MessageHandlers.Character;
 
 [MessageHandler(MessageType = typeof(AddCharacterMessage))]
 internal sealed class AddCharacterMessageHandler(SqlDataService dataService) : MessageHandlerBase<AddCharacterMessage>

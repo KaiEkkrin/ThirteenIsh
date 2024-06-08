@@ -10,11 +10,15 @@ namespace ThirteenIsh.Services;
 /// These messages let me defer a response to a command for a longer time while attempting the
 /// transaction.
 /// The service lets me throttle the number of concurrent transaction attempts that go on.
+/// TODO Ideally, ChannelMessageService should be the thing managing SQL retries on conflict:
+/// when a conflict is detected the processing task should not busy wait (as it currently does)
+/// but instead spawn another task to re-queue the message after a Polly-mediated delay, complete
+/// with the code to resolve conflicted data.
 /// </summary>
 internal sealed partial class ChannelMessageService : IAsyncDisposable
 {
-    private const int BufferSize = 400;
     private const int Concurrency = 8;
+    private const int BufferSize = Concurrency * 20;
 
     private static readonly TimeSpan MessageTimeout = TimeSpan.FromSeconds(45);
 
@@ -65,6 +69,7 @@ internal sealed partial class ChannelMessageService : IAsyncDisposable
     /// Adds a message for processing. Takes care of deferring the interaction, and of
     /// finishing it and complaining if we're too busy.
     /// After calling this, you can return from the command handler without doing anything else.
+    /// TODO supply cancellation token here, do WriteAsync with that brief cancellation rather than TryWrite?
     /// </summary>
     public async Task AddMessageAsync(IDiscordInteraction interaction, MessageBase message, bool ephemeral = false)
     {

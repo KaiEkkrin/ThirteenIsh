@@ -32,9 +32,10 @@ internal sealed class DeleteCustomCounterMessageHandler(SqlDataService dataServi
         return true;
     }
 
-    private sealed class EditOperation(CharacterType characterType, string ccName) : SyncEditOperation<Character, Character>
+    private sealed class EditOperation(CharacterType characterType, string ccName)
+        : SyncEditOperation<Database.Entities.Character, Database.Entities.Character>
     {
-        public override EditResult<Character> DoEdit(DataContext context, Character character)
+        public override EditResult<Database.Entities.Character> DoEdit(DataContext context, Database.Entities.Character character)
         {
             var maybeIndex = character.Sheet.CustomCounters
                 ?.FindIndex(cc => cc.Name.Equals(ccName, StringComparison.OrdinalIgnoreCase));
@@ -46,7 +47,7 @@ internal sealed class DeleteCustomCounterMessageHandler(SqlDataService dataServi
             }
 
             character.Sheet.CustomCounters!.RemoveAt(index);
-            return new EditResult<Character>(character);
+            return new EditResult<Database.Entities.Character>(character);
         }
     }
 }

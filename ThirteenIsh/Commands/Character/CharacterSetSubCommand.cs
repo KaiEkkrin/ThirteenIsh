@@ -1,8 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using ThirteenIsh.ChannelMessages.Character;
 using ThirteenIsh.Database.Entities;
-using ThirteenIsh.EditOperations;
-using ThirteenIsh.Game;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Character;
@@ -43,37 +42,14 @@ internal sealed class CharacterSetSubCommand(CharacterType characterType)
             return;
         }
 
-        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var character = await dataService.GetCharacterAsync(name, command.User.Id, characterType, 
-            cancellationToken: cancellationToken);
-        if (character is null)
+        var channelMessageService = serviceProvider.GetRequiredService<ChannelMessageService>();
+        await channelMessageService.AddMessageAsync(command, new CharacterSetMessage
         {
-            await command.RespondAsync(
-                $"Error getting {characterType.FriendlyName()} '{name}'. Perhaps they do not exist, or there is more than one character or monster matching that name?",
-                ephemeral: true);
-            return;
-        }
-
-        var gameSystem = GameSystem.Get(character.GameSystem);
-        var characterSystem = gameSystem.GetCharacterSystem(characterType);
-        var property = characterSystem.FindStorableProperty(character.Sheet, propertyName);
-        if (property is null)
-        {
-            await command.RespondAsync($"'{propertyName}' does not uniquely match a settable property name.",
-                ephemeral: true);
-            return;
-        }
-
-        var result = await dataService.EditCharacterAsync(
-            name, new SetCharacterPropertyOperation(property, newValue), command.User.Id, characterType,
-            cancellationToken);
-
-        await result.Handle(
-            errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
-            updatedCharacter =>
-            {
-                return CommandUtil.RespondWithCharacterSheetAsync(command, updatedCharacter,
-                    $"Edited {characterType.FriendlyName()} '{updatedCharacter.Name}'", [property.Name]);
-            });
+            CharacterType = characterType,
+            Name = name,
+            PropertyName = propertyName,
+            NewValue = newValue,
+            UserId = command.User.Id
+        });
     }
 }

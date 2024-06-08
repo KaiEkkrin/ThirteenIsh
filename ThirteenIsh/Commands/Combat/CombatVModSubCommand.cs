@@ -1,4 +1,5 @@
-﻿using ThirteenIsh.EditOperations;
+﻿using ThirteenIsh.ChannelMessages;
+using ThirteenIsh.ChannelMessages.Combat;
 using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Commands.Combat;
@@ -7,9 +8,18 @@ internal sealed class CombatVModSubCommand(bool asGm) : CombatVSubCommandBase(as
     "Adds to or subtracts from a variable value,",
     "The variable name to change.", "A number or dice expression to change it by.")
 {
-    protected override CombatEditVariableOperation CreateEditOperation(string counterNamePart, ParseTreeBase parseTree,
-        IRandomWrapper random)
+    protected override CombatVSubMessageBase BuildMessage(ulong guildId, ulong channelId, ulong userId, bool asGm,
+        string? alias, string variableNamePart, ParseTreeBase diceParseTree)
     {
-        return new CombatEditVariableOperation(new ModVariableSubOperation(counterNamePart, parseTree, random));
+        return new CombatVModMessage()
+        {
+            GuildId = guildId,
+            ChannelId = channelId,
+            UserId = userId,
+            AsGm = asGm,
+            Alias = alias,
+            VariableNamePart = variableNamePart,
+            DiceParseTree = diceParseTree
+        };
     }
 }

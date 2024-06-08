@@ -1,11 +1,11 @@
 ﻿using Discord;
-using ThirteenIsh.ChannelMessages;
+using ThirteenIsh.ChannelMessages.Gm;
 using ThirteenIsh.Commands;
 using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Services;
 
-namespace ThirteenIsh.MessageHandlers;
+namespace ThirteenIsh.MessageHandlers.Gm;
 
 [MessageHandler(MessageType = typeof(GmAdventureSetMessage))]
 internal sealed class GmAdventureSetMessageHandler(SqlDataService dataService, DiscordService discordService)

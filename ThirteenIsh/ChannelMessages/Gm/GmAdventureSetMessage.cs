@@ -1,4 +1,4 @@
-﻿namespace ThirteenIsh.ChannelMessages;
+﻿namespace ThirteenIsh.ChannelMessages.Gm;
 
 internal sealed class GmAdventureSetMessage : GuildMessage
 {

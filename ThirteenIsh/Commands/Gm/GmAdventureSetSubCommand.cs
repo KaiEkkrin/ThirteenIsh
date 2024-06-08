@@ -1,6 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ThirteenIsh.ChannelMessages;
+using ThirteenIsh.ChannelMessages.Gm;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Gm;

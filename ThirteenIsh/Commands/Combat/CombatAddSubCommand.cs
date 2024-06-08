@@ -1,9 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ThirteenIsh.Database;
-using ThirteenIsh.Database.Entities;
-using ThirteenIsh.Game;
-using ThirteenIsh.Results;
+using ThirteenIsh.ChannelMessages.Combat;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Combat;
@@ -33,61 +30,14 @@ internal sealed class CombatAddSubCommand() : SubCommandBase("add", "Adds a mons
 
         if (!CommandUtil.TryGetOption<int>(option, "rerolls", out var rerolls)) rerolls = 0;
 
-        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var character = await dataService.GetCharacterAsync(name, command.User.Id, CharacterType.Monster, false,
-            cancellationToken);
-        if (character is null)
+        var channelMessageService = serviceProvider.GetRequiredService<ChannelMessageService>();
+        await channelMessageService.AddMessageAsync(command, new CombatAddMessage
         {
-            await command.RespondAsync(
-                $"Error getting monster '{name}'. Perhaps they do not exist, or there is more than one character or monster matching that name?",
-                ephemeral: true);
-            return;
-        }
-
-        var random = serviceProvider.GetRequiredService<IRandomWrapper>();
-        var result = await dataService.EditEncounterAsync(guildId, channelId,
-            new EditOperation(character, random, rerolls, command.User.Id), cancellationToken);
-
-        await result.Handle(
-            errorMessage => command.RespondAsync(errorMessage, ephemeral: true),
-            async output =>
-            {
-                // Update the encounter table
-                var encounterTable = await CommandUtil.UpdateEncounterMessageAsync(serviceProvider, guildId,
-                    command.Channel, output.Encounter, output.GameSystem, cancellationToken);
-
-                // Send an appropriate response
-                var embedBuilder = new EmbedBuilder()
-                    .WithAuthor(command.User)
-                    .WithTitle($"A {character.Name} joined the encounter as {output.Alias} : {output.Result.Roll}")
-                    .WithDescription($"{output.Result.Working}\n{encounterTable}");
-
-                await command.RespondAsync(embed: embedBuilder.Build());
-            });
+            ChannelId = channelId,
+            GuildId = guildId,
+            Name = name,
+            Rerolls = rerolls,
+            UserId = command.User.Id
+        });
     }
-
-    private sealed class EditOperation(Database.Entities.Character character,
-        IRandomWrapper random, int rerolls, ulong userId)
-        : SyncEditOperation<EditOutput, EncounterResult>
-    {
-        public override EditResult<EditOutput> DoEdit(DataContext context, EncounterResult encounterResult)
-        {
-            var (adventure, encounter) = encounterResult;
-            if (adventure.GameSystem != character.GameSystem)
-                return CreateError("This monster was not created in the same game system as the adventure.");
-
-            var gameSystem = GameSystem.Get(adventure.GameSystem);
-            NameAliasCollection nameAliasCollection = new(encounter);
-            var result = gameSystem.EncounterAdd(context, character, encounter, nameAliasCollection,
-                random, rerolls, userId, out var alias);
-
-            if (!result.HasValue) return CreateError(
-                $"You are not able to add a '{character.Name}' to this encounter at this time.");
-
-            return new EditResult<EditOutput>(new EditOutput(alias, adventure, encounter, gameSystem, result.Value));
-        }
-    }
-
-    private sealed record EditOutput(string Alias, Adventure Adventure, Encounter Encounter, GameSystem GameSystem,
-        GameCounterRollResult Result);
 }
