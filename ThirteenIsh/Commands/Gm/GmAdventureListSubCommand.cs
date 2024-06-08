@@ -30,7 +30,7 @@ internal sealed class GmAdventureListSubCommand() : SubCommandBase("list", "List
             embedBuilder.AddField(new EmbedFieldBuilder()
                 .WithIsInline(false)
                 .WithName(nameStringBuilder.ToString())
-                .WithValue($"{adventure.Adventurers.Count} adventurers"));
+                .WithValue($"{adventure.AdventurerCount} adventurers"));
         }
 
         await command.RespondAsync(embed: embedBuilder.Build());

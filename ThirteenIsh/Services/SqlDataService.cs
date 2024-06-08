@@ -355,10 +355,12 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
         return matchingAdventurers.Count == 1 ? matchingAdventurers[0] : null;
     }
 
-    public IAsyncEnumerable<Adventure> GetAdventuresAsync(Guild guild)
+    public IAsyncEnumerable<AdventureListResult> GetAdventuresAsync(Guild guild)
     {
-        return _context.Adventures.Where(a => a.GuildId == guild.Id)
+        return _context.Adventures.AsNoTracking()
+            .Where(a => a.GuildId == guild.Id)
             .OrderBy(a => a.Name)
+            .Select(a => new AdventureListResult(a.Name, a.GameSystem, a.Adventurers.Count()))
             .AsAsyncEnumerable();
     }
 
