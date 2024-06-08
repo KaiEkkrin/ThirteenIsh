@@ -1,4 +1,4 @@
-﻿using Discord.WebSocket;
+﻿using Discord;
 using ThirteenIsh.Database.Entities.Messages;
 using ThirteenIsh.Services;
 
@@ -9,13 +9,13 @@ internal sealed class EndEncounterMessageHandler(DiscordService discordService,
     SqlDataService dataService)
     : MessageHandlerBase<EndEncounterMessage>
 {
-    protected override async Task<bool> HandleInternalAsync(SocketMessageComponent component, string controlId,
+    protected override async Task<bool> HandleInternalAsync(IDiscordInteraction interaction, string controlId,
         EndEncounterMessage message, CancellationToken cancellationToken = default)
     {
         var encounter = await dataService.DeleteEncounterAsync(message.GuildId, message.ChannelId, cancellationToken);
         if (encounter == null)
         {
-            await component.RespondAsync("There is no active encounter in this channel.", ephemeral: true);
+            await interaction.RespondAsync("There is no active encounter in this channel.", ephemeral: true);
             return true;
         }
 
@@ -28,7 +28,7 @@ internal sealed class EndEncounterMessageHandler(DiscordService discordService,
                 await PinnedMessageService.DeleteEncounterMessageAsync(channel, pinnedMessageId);
         }
 
-        await component.RespondAsync("Encounter has ended.");
+        await interaction.RespondAsync("Encounter has ended.");
         return true;
     }
 }

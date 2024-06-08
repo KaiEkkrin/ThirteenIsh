@@ -1,5 +1,4 @@
 ﻿using Discord;
-using Discord.WebSocket;
 using ThirteenIsh.Commands;
 using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
@@ -16,21 +15,21 @@ internal sealed class EncounterDamageMessageHandler(SqlDataService dataService, 
     PinnedMessageService pinnedMessageService, IRandomWrapper random)
     : MessageHandlerBase<EncounterDamageMessage>
 {
-    protected override async Task<bool> HandleInternalAsync(SocketMessageComponent component, string controlId,
+    protected override async Task<bool> HandleInternalAsync(IDiscordInteraction interaction, string controlId,
         EncounterDamageMessage message, CancellationToken cancellationToken = default)
     {
         var guild = await dataService.GetGuildAsync(message.GuildId, cancellationToken);
         var encounter = await dataService.GetEncounterAsync(guild, message.ChannelId, cancellationToken);
         if (encounter == null)
         {
-            await component.RespondAsync("There is no encounter in progress in the designated channel.", ephemeral: true);
+            await interaction.RespondAsync("There is no encounter in progress in the designated channel.", ephemeral: true);
             return true;
         }
 
         var combatant = encounter.Combatants.SingleOrDefault(c => c.Alias == message.Alias);
         if (combatant == null)
         {
-            await component.RespondAsync($"There is no combatant '{message.Alias}' in the current encounter.",
+            await interaction.RespondAsync($"There is no combatant '{message.Alias}' in the current encounter.",
                 ephemeral: true);
             return true;
         }
@@ -38,7 +37,7 @@ internal sealed class EncounterDamageMessageHandler(SqlDataService dataService, 
         var adventure = await dataService.GetAdventureAsync(guild, encounter.AdventureName, cancellationToken);
         if (adventure == null || adventure.Name != guild.CurrentAdventureName)
         {
-            await component.RespondAsync("The current encounter does not match the current adventure.", ephemeral: true);
+            await interaction.RespondAsync("The current encounter does not match the current adventure.", ephemeral: true);
             return true;
         }
 
@@ -48,7 +47,7 @@ internal sealed class EncounterDamageMessageHandler(SqlDataService dataService, 
         return await result.Handle(
             async errorMessage =>
             {
-                await component.RespondAsync(errorMessage, ephemeral: true);
+                await interaction.RespondAsync(errorMessage, ephemeral: true);
                 return true;
             },
             async output =>
@@ -79,7 +78,7 @@ internal sealed class EncounterDamageMessageHandler(SqlDataService dataService, 
                         encounterTable, cancellationToken);
                 }
 
-                await component.RespondAsync(embed: embed);
+                await interaction.RespondAsync(embed: embed);
                 return true;
             });
     }

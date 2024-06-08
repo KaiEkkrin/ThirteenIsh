@@ -1,5 +1,4 @@
 ﻿using Discord;
-using Discord.WebSocket;
 using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Database.Entities.Messages;
@@ -11,7 +10,7 @@ namespace ThirteenIsh.MessageHandlers;
 internal sealed class DeleteCustomCounterMessageHandler(SqlDataService dataService)
     : MessageHandlerBase<DeleteCustomCounterMessage>
 {
-    protected override async Task<bool> HandleInternalAsync(SocketMessageComponent component, string controlId,
+    protected override async Task<bool> HandleInternalAsync(IDiscordInteraction interaction, string controlId,
         DeleteCustomCounterMessage message, CancellationToken cancellationToken = default)
     {
         var result = await dataService.EditCharacterAsync(message.Name,
@@ -19,15 +18,15 @@ internal sealed class DeleteCustomCounterMessageHandler(SqlDataService dataServi
             cancellationToken);
 
         await result.Handle(
-            error => component.RespondAsync(error, ephemeral: true),
+            error => interaction.RespondAsync(error, ephemeral: true),
             updatedCharacter =>
             {
                 EmbedBuilder embedBuilder = new();
-                embedBuilder.WithAuthor(component.User);
+                embedBuilder.WithAuthor(interaction.User);
                 embedBuilder.WithTitle(
                     $"Removed '{message.CcName}' from {message.CharacterType.FriendlyName()} '{updatedCharacter.Name}'");
 
-                return component.RespondAsync(embed: embedBuilder.Build());
+                return interaction.RespondAsync(embed: embedBuilder.Build());
             });
 
         return true;

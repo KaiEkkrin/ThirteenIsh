@@ -1,4 +1,4 @@
-﻿using Discord.WebSocket;
+﻿using Discord;
 using ThirteenIsh.Commands;
 using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
@@ -11,17 +11,17 @@ namespace ThirteenIsh.MessageHandlers;
 [MessageHandler(MessageType = typeof(ResetAdventurerMessage))]
 internal sealed class ResetAdventureMessageHandler(SqlDataService dataService) : MessageHandlerBase<ResetAdventurerMessage>
 {
-    protected override async Task<bool> HandleInternalAsync(SocketMessageComponent component, string controlId,
+    protected override async Task<bool> HandleInternalAsync(IDiscordInteraction interaction, string controlId,
         ResetAdventurerMessage message, CancellationToken cancellationToken = default)
     {
         var result = await dataService.EditAdventurerAsync(
             message.GuildId, message.UserId, new EditOperation(), cancellationToken);
 
         await result.Handle(
-            errorMessage => component.RespondAsync(errorMessage, ephemeral: true),
+            errorMessage => interaction.RespondAsync(errorMessage, ephemeral: true),
             output =>
             {
-                return CommandUtil.RespondWithTrackedCharacterSummaryAsync(component, output.Adventurer, output.GameSystem,
+                return CommandUtil.RespondWithTrackedCharacterSummaryAsync(interaction, output.Adventurer, output.GameSystem,
                     new CommandUtil.AdventurerSummaryOptions
                     {
                         Flags = CommandUtil.AdventurerSummaryFlags.OnlyVariables,
