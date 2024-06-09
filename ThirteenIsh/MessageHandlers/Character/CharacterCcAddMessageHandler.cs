@@ -56,7 +56,7 @@ internal sealed class CharacterCcAddMessageHandler(SqlDataService dataService) :
             }
 
             character.Sheet.CustomCounters ??= [];
-            character.Sheet.CustomCounters.Add(new CustomCounter(ccName, defaultValue, options));
+            character.Sheet.CustomCounters.Add(new CustomCounter { Name = ccName, DefaultValue = defaultValue, Options = options });
             return new EditResult<Database.Entities.Character>(character);
         }
     }
