@@ -173,15 +173,12 @@ internal sealed partial class DiscordService : IAsyncDisposable, IDisposable
         catch (OperationCanceledException ex)
         {
             MessageTimeoutMessage(arg.Data.CustomId, MessageTimeout, ex.Message, ex);
-            var content = $"Message timed out after {MessageTimeout}: {arg.Data.CustomId}";
-            if (arg.HasResponded)
-            {
-                await arg.ModifyOriginalResponseAsync(properties => properties.Content = content);
-            }
-            else
-            {
-                await arg.RespondAsync(content);
-            }
+            await CommandUtil.RespondWithTimeoutMessageAsync(arg, MessageTimeout, arg.Data.CustomId);
+        }
+        catch (Exception)
+        {
+            await CommandUtil.RespondWithInternalErrorMessageAsync(arg, arg.Data.CustomId);
+            throw;
         }
     }
 
@@ -211,7 +208,12 @@ internal sealed partial class DiscordService : IAsyncDisposable, IDisposable
             catch (OperationCanceledException ex)
             {
                 SlashCommandTimeoutMessage(command.Data.Name, SlashCommandTimeout, ex.Message, ex);
-                await command.RespondAsync($"Command timed out after {SlashCommandTimeout}: {command.Data.Name}");
+                await CommandUtil.RespondWithTimeoutMessageAsync(command, SlashCommandTimeout, command.Data.Name);
+            }
+            catch (Exception)
+            {
+                await CommandUtil.RespondWithInternalErrorMessageAsync(command, command.Data.Name);
+                throw;
             }
         }
         else

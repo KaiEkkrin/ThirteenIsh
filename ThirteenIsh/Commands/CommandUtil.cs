@@ -135,6 +135,37 @@ internal static partial class CommandUtil
         return command.RespondAsync(embed: embed);
     }
 
+    public static Task RespondWithInternalErrorMessageAsync(
+        IDiscordInteraction command,
+        string message)
+    {
+        var content = $"An internal error occurred, see the logs for details. {message}";
+        if (command.HasResponded)
+        {
+            return command.ModifyOriginalResponseAsync(properties => properties.Content = content);
+        }
+        else
+        {
+            return command.RespondAsync(content, ephemeral: true);
+        }
+    }
+
+    public static Task RespondWithTimeoutMessageAsync(
+        IDiscordInteraction command,
+        TimeSpan timeout,
+        string message)
+    {
+        var content = $"Message timed out after {timeout}: {message}";
+        if (command.HasResponded)
+        {
+            return command.ModifyOriginalResponseAsync(properties => properties.Content = content);
+        }
+        else
+        {
+            return command.RespondAsync(content, ephemeral: true);
+        }
+    }
+
     public static Task RespondWithTrackedCharacterSummaryAsync(
         IDiscordInteraction command,
         ITrackedCharacter character,
