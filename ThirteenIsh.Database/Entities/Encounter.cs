@@ -151,6 +151,29 @@ public class Encounter : EntityBase
         return CombatantRemoveResult.NotFound;
     }
 
+    /// <summary>
+    /// Sets the current combatant to the one with the given alias, if possible.
+    /// </summary>
+    public CombatantRemoveResult SetCurrentCombatant(string alias)
+    {
+        if (TurnAlias == alias) return CombatantRemoveResult.IsTheirTurn;
+        var adventurerIndex = State.Adventurers.FindIndex(c => c.Alias == alias);
+        if (adventurerIndex >= 0)
+        {
+            TurnAlias = alias;
+            return CombatantRemoveResult.Success;
+        }
+
+        var monsterIndex = State.Monsters.FindIndex(c => c.Alias == alias);
+        if (monsterIndex >= 0)
+        {
+            TurnAlias = alias;
+            return CombatantRemoveResult.Success;
+        }
+
+        return CombatantRemoveResult.NotFound;
+    }
+
     private void AddCombatant(CombatantBase combatant)
     {
         switch (combatant)
