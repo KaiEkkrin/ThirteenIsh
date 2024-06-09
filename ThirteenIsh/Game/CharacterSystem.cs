@@ -172,6 +172,14 @@ internal abstract class CharacterSystem
     }
 
     /// <summary>
+    /// Gets the default counter to apply combat damage to if none is specified. (Typically hit points)
+    /// </summary>
+    public virtual GameCounter? GetDefaultDamageCounter(CharacterSheet sheet)
+    {
+        return null;
+    }
+
+    /// <summary>
     /// Gets the counters to show in the encounter table for this character.
     /// </summary>
     public IEnumerable<GameCounter> GetEncounterTableCounters(CharacterSheet sheet)

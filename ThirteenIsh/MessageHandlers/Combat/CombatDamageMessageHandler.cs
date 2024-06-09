@@ -104,8 +104,10 @@ internal sealed class CombatDamageMessageHandler(SqlDataService dataService, Dis
                     stringBuilder.AppendLine(result.Working);
 
                     var vsCharacterSystem = gameSystem.GetCharacterSystem(targetCharacter.Type);
-                    var vsCounter = vsCharacterSystem.FindCounter(targetCharacter.Sheet, message.VsNamePart,
-                        c => c.Options.HasFlag(GameCounterOptions.HasVariable));
+                    var vsCounter = string.IsNullOrEmpty(message.VsNamePart)
+                        ? vsCharacterSystem.GetDefaultDamageCounter(targetCharacter.Sheet)
+                        : vsCharacterSystem.FindCounter(targetCharacter.Sheet, message.VsNamePart,
+                            c => c.Options.HasFlag(GameCounterOptions.HasVariable));
 
                     if (vsCounter is null)
                     {

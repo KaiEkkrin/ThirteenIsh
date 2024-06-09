@@ -34,7 +34,7 @@ internal sealed class CombatDamageSubCommand()
             .AddOption("target", ApplicationCommandOptionType.String,
                 "The target(s) in the current encounter (comma separated). Specify `vs` and the counter targeted.",
                 isRequired: true)
-            .AddOption("vs", ApplicationCommandOptionType.String, "The variable targeted.", isRequired: true);
+            .AddOption("vs", ApplicationCommandOptionType.String, "The variable targeted.");
     }
 
     public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
@@ -69,12 +69,6 @@ internal sealed class CombatDamageSubCommand()
         }
 
         var vsNamePart = CommandUtil.TryGetOption<string>(option, "vs", out var vsString) ? vsString : null;
-        if (string.IsNullOrWhiteSpace(vsNamePart))
-        {
-            await command.RespondAsync("No vs supplied.", ephemeral: true);
-            return;
-        }
-
         var alias = CommandUtil.TryGetOption<string>(option, "alias", out var aliasString)
             ? aliasString
             : null;

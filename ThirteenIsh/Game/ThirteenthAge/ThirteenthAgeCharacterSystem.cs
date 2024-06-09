@@ -27,4 +27,9 @@ internal class ThirteenthAgeCharacterSystem(CharacterType characterType, string 
             ? escalationDieParseTree
             : new BinaryOperationParseTree(0, bonus, escalationDieParseTree, '+');
     }
+
+    public override GameCounter? GetDefaultDamageCounter(CharacterSheet sheet)
+    {
+        return FindCounter(sheet, ThirteenthAgeSystem.HitPoints, _ => true);
+    }
 }

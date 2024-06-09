@@ -10,5 +10,5 @@ internal sealed class CombatDamageMessage : CombatMessage
     public required int Multiplier { get; init; }
     public required bool RollSeparately { get; init; }
     public required IReadOnlyCollection<string> Targets { get; init; }
-    public required string VsNamePart { get; init; }
+    public string? VsNamePart { get; init; }
 }
