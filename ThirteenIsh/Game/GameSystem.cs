@@ -103,7 +103,10 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
         if (!encounter.Combatants.Any()) return null;
 
         var nextCombatant = encounter.NextTurn(out var newRound);
-        return newRound ? EncounterNextRound(encounter, random) : nextCombatant;
+        if (!newRound) return nextCombatant;
+
+        ++encounter.Round;
+        return EncounterNextRound(encounter, random);
     }
 
     /// <summary>
