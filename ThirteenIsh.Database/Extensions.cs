@@ -79,11 +79,11 @@ public static class Extensions
         var index = propertyList.FindIndex(p => p.Name == name);
         if (index >= 0)
         {
-            propertyList[index].Value = value;
+            propertyList[index] = propertyList[index] with { Value = value };
         }
         else
         {
-            propertyList.Add(new PropertyValue<TValue> { Name = name, Value = value });
+            propertyList.Add(new PropertyValue<TValue>(name, value));
         }
     }
 
