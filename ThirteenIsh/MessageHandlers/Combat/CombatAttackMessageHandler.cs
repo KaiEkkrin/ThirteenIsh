@@ -40,6 +40,8 @@ internal sealed class CombatAttackMessageHandler(SqlDataService dataService, Dis
                     return;
                 }
 
+                var attackBonus = characterSystem.GetAttackBonus(character, encounter, message.Bonus);
+
                 List<CombatantBase> targetCombatants = [];
                 if (!CommandUtil.TryFindCombatants(message.Targets, encounter, targetCombatants, out var errorMessage))
                 {
@@ -80,7 +82,7 @@ internal sealed class CombatAttackMessageHandler(SqlDataService dataService, Dis
                         continue;
                     }
 
-                    var result = counter.Roll(character.Sheet, message.Bonus, random, message.Rerolls, ref dc);
+                    var result = counter.Roll(character.Sheet, attackBonus, random, message.Rerolls, ref dc);
                     stringBuilder.Append(CultureInfo.CurrentCulture, $" ({dc}) : {result.Roll}");
                     if (result.Success.HasValue)
                     {

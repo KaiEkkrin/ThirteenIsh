@@ -3,6 +3,7 @@ using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
 using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
+using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Game;
 
@@ -158,6 +159,16 @@ internal abstract class CharacterSystem
             .ToList();
 
         return matchingProperties.Count == 1 ? matchingProperties[0] : null;
+    }
+
+    /// <summary>
+    /// Gets the attack bonus to use in the given circumstances.
+    /// (Obvious place to extend for game systems that do different things with attacks. More
+    /// parameters likely needed.)
+    /// </summary>
+    public virtual ParseTreeBase? GetAttackBonus(ITrackedCharacter character, Encounter? encounter, ParseTreeBase? bonus)
+    {
+        return bonus;
     }
 
     /// <summary>

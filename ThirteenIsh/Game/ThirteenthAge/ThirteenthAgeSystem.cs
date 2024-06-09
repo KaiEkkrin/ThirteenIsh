@@ -56,7 +56,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
     public const string Sorcerer = "Sorcerer";
     public const string Wizard = "Wizard";
 
-    private const string EscalationDie = "EscalationDie";
+    internal const string EscalationDie = "EscalationDie";
 
     private ThirteenthAgeSystem(params CharacterSystem[] characterSystems) : base(SystemName, characterSystems)
     {
