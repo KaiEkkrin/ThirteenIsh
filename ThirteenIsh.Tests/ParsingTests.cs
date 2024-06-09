@@ -18,9 +18,11 @@ public class ParsingTests
 
     [Theory]
     [InlineData("11", 11)]
+    [InlineData("+5", 5)]
     [InlineData("-11", -11)]
     [InlineData("3+4+5", 12)]
     [InlineData("13-4-5", 4)]
+    [InlineData("+13+4++5", 22)]
     [InlineData("13-4--5", 14)]
     [InlineData("13--4-5", 12)]
     [InlineData("13--4--5", 22)]
@@ -63,6 +65,7 @@ public class ParsingTests
     [InlineData("d6", 2, 6, 2)]
     [InlineData("2d8 + 2d6", 12, 8, 4, 8, 5, 6, 2, 6, 1)]
     [InlineData("2d8 + d6", 11, 8, 4, 8, 5, 6, 2)]
+    [InlineData("+2d8+d6", 11, 8, 4, 8, 5, 6, 2)]
     [InlineData("1d20", 4, 20, 4)]
     [InlineData("1d20", 7, 20, 7)]
     [InlineData("4d20 - 2d6", 32,
@@ -113,6 +116,8 @@ public class ParsingTests
     [InlineData("4d20l2", 8,
         20, 18, 20, 4, 20, 4, 20, 4)]
     [InlineData("4d8", 14,
+        8, 2, 8, 3, 8, 4, 8, 5)]
+    [InlineData("+4d8", 14,
         8, 2, 8, 3, 8, 4, 8, 5)]
     [InlineData("-4d8", -15,
         8, 2, 8, 3, 8, 4, 8, 6)]

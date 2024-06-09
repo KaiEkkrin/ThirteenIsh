@@ -12,7 +12,7 @@ internal sealed class IntegerParser : ParserBase
         CheckMaxDepth(offset, ref depth);
 
         var nextOffset = offset;
-        if (nextOffset < input.Length && input[nextOffset] == '-') ++nextOffset; // accept leading `-`
+        if (nextOffset < input.Length && input[nextOffset] is '-' or '+') ++nextOffset; // accept leading `-` or `+`
         while (nextOffset < input.Length && char.IsAsciiDigit(input[nextOffset])) ++nextOffset;
 
         if (nextOffset == offset)
