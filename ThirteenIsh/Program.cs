@@ -31,7 +31,7 @@ public class Program
                 context
                     .AddSingleton<ChannelMessageService>()
                     .AddSingleton<DiscordService>()
-                    .AddScoped<PinnedMessageService>()
+                    .AddSingleton<PinnedMessageService>()
                     .AddSingleton<IRandomWrapper, RandomWrapper>()
                     .AddScoped<SqlDataService>()
                     .AddHostedService<Worker>();

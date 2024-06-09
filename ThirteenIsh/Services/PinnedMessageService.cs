@@ -9,8 +9,8 @@ namespace ThirteenIsh.Services;
 /// Helps handle pinned messages.
 /// </summary>
 internal sealed partial class PinnedMessageService(
-    SqlDataService dataService,
-    ILogger<PinnedMessageService> logger)
+    ILogger<PinnedMessageService> logger,
+    IServiceProvider serviceProvider)
 {
     [LoggerMessage(Level = LogLevel.Warning, EventId = 1, Message = "Pinned message {Action} : {Message}")]
     private partial void ErrorWritingMessage(string action, string message, Exception exception);
@@ -25,6 +25,10 @@ internal sealed partial class PinnedMessageService(
     public async Task SetEncounterMessageAsync(IMessageChannel channel, string adventureName, ulong guildId, string text,
         CancellationToken cancellationToken = default)
     {
+        // These needs to operate with its own database context so that it doesn't run into
+        // issues with tracked changes from the command's work
+        await using var scope = serviceProvider.CreateAsyncScope();
+        var dataService = scope.ServiceProvider.GetRequiredService<SqlDataService>();
         await dataService.EditEncounterAsync(
             guildId, channel.Id,
             new SetEncounterMessageOperation(this, channel, adventureName, text),
