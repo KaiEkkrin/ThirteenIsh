@@ -24,8 +24,7 @@ internal sealed class ModVariableSubOperation(string counterNamePart, ParseTreeB
         }
 
         var currentValue = gameCounter.GetVariableValue(character)
-            ?? gameCounter.GetStartingValue(character.Sheet)
-            ?? throw new InvalidOperationException($"Variable {gameCounter.Name} has no current or starting value");
+            ?? throw new InvalidOperationException($"Variable {gameCounter.Name} has no value");
 
         var modParseTree = new BinaryOperationParseTree(0,
             new IntegerParseTree(0, currentValue, gameCounter.Name),

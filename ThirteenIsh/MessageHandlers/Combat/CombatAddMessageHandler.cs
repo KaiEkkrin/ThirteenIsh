@@ -27,7 +27,7 @@ internal sealed class CombatAddMessageHandler(SqlDataService dataService, Discor
         }
 
         var result = await dataService.EditEncounterAsync(message.GuildId, message.ChannelId,
-            new EditOperation(character, random, message.Rerolls, message.UserId), cancellationToken);
+            new EditOperation(character, random, message.Rerolls, message.SwarmCount, message.UserId), cancellationToken);
 
         await result.Handle(
             errorMessage => interaction.ModifyOriginalResponseAsync(properties => properties.Content = errorMessage),
@@ -55,7 +55,7 @@ internal sealed class CombatAddMessageHandler(SqlDataService dataService, Discor
     }
 
     private sealed class EditOperation(Database.Entities.Character character,
-        IRandomWrapper random, int rerolls, ulong userId)
+        IRandomWrapper random, int rerolls, int swarmCount, ulong userId)
         : SyncEditOperation<EditOutput, EncounterResult>
     {
         public override EditResult<EditOutput> DoEdit(DataContext context, EncounterResult encounterResult)
@@ -67,7 +67,7 @@ internal sealed class CombatAddMessageHandler(SqlDataService dataService, Discor
             var gameSystem = GameSystem.Get(adventure.GameSystem);
             NameAliasCollection nameAliasCollection = new(encounter);
             var result = gameSystem.EncounterAdd(context, character, encounter, nameAliasCollection,
-                random, rerolls, userId, out var alias);
+                random, rerolls, swarmCount, userId, out var alias);
 
             if (!result.HasValue) return CreateError(
                 $"You are not able to add a '{character.Name}' to this encounter at this time.");

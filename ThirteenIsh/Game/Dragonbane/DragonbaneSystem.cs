@@ -173,6 +173,7 @@ internal sealed class DragonbaneSystem : GameSystem
         NameAliasCollection nameAliasCollection,
         IRandomWrapper random,
         int rerolls,
+        int swarmCount,
         ulong userId,
         out string alias)
     {

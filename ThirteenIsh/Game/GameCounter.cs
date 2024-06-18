@@ -50,7 +50,16 @@ internal class GameCounter(string name, string? alias = null,
 
     public override string GetDisplayValue(ITrackedCharacter character)
     {
-        return (GetValue(character.Sheet), GetVariableValue(character)) switch
+        if (!options.HasFlag(GameCounterOptions.HasVariable))
+        {
+            return GetValue(character.Sheet) switch
+            {
+                { } value => $"{value}",
+                _ => Unset
+            };
+        }
+
+        return (GetMaxVariableValue(character), GetVariableValue(character)) switch
         {
             ({ } maxValue, { } varValue) => $"{varValue}/{maxValue}",
             ({ } maxValue, null) => $"{maxValue}",
@@ -65,20 +74,22 @@ internal class GameCounter(string name, string? alias = null,
 
     /// <summary>
     /// Gets the maximum value of this counter's variable
-    /// (only relevant if it has an associated variable.)
+    /// (only if it has an associated variable.)
     /// </summary>
-    public virtual int? GetMaxVariableValue(ICounterSheet sheet)
+    public virtual int? GetMaxVariableValue(ITrackedCharacter character)
     {
-        return GetValue(sheet);
+        if (!options.HasFlag(GameCounterOptions.HasVariable)) return null;
+        return GetValue(character.Sheet);
     }
 
     /// <summary>
     /// Gets the starting value of this counter's variable from the character sheet
-    /// (only relevant if it has an associated variable.)
+    /// (only if it has an associated variable.)
     /// </summary>
-    public virtual int? GetStartingValue(ICounterSheet sheet)
+    public virtual int? GetStartingValue(ITrackedCharacter character)
     {
-        return GetValue(sheet);
+        if (!options.HasFlag(GameCounterOptions.HasVariable)) return null;
+        return GetValue(character.Sheet);
     }
 
     /// <summary>
@@ -94,7 +105,8 @@ internal class GameCounter(string name, string? alias = null,
     /// </summary>
     public virtual int? GetVariableValue(ITrackedCharacter character)
     {
-        return character.GetVariables().Counters.TryGetValue(Name, out var value) ? value : null;
+        if (!options.HasFlag(GameCounterOptions.HasVariable)) return null;
+        return character.GetVariables().Counters.TryGetValue(Name, out var value) ? value : GetStartingValue(character);
     }
 
     /// <summary>
@@ -121,16 +133,17 @@ internal class GameCounter(string name, string? alias = null,
 
     public void SetVariableClamped(int newValue, ITrackedCharacter character)
     {
-        var maxValue = GetMaxVariableValue(character.Sheet);
+        if (!options.HasFlag(GameCounterOptions.HasVariable))
+            throw new InvalidOperationException(
+                $"Cannot set the variable value of {Name}, this counter does not have a variable.");
+
+        var maxValue = GetMaxVariableValue(character);
         if (maxValue.HasValue)
         {
-            newValue = Math.Min(maxValue.Value, Math.Max(minValue, newValue));
-        }
-        else
-        {
-            newValue = Math.Max(minValue, newValue);
+            newValue = Math.Min(maxValue.Value, newValue);
         }
 
+        newValue = Math.Max(minValue, newValue);
         var variables = character.GetVariables();
         variables.Counters.SetValue(Name, newValue);
     }
@@ -168,7 +181,11 @@ internal class GameCounter(string name, string? alias = null,
 
     public bool TrySetVariable(int newValue, ITrackedCharacter character, [MaybeNullWhen(true)] out string errorMessage)
     {
-        var maxValue = GetMaxVariableValue(character.Sheet);
+        if (!options.HasFlag(GameCounterOptions.HasVariable))
+            throw new InvalidOperationException(
+                $"Cannot set the variable value of {Name}, this counter does not have a variable.");
+
+        var maxValue = GetMaxVariableValue(character);
         if (newValue < minValue || newValue > maxValue)
         {
             errorMessage = $"{Name} must be between {minValue} and {maxValue}.";

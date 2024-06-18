@@ -11,13 +11,6 @@ internal class ThirteenthAgeCustomCounter(CustomCounter customCounter)
         return base.GetValue(sheet) ?? DefaultValue;
     }
 
-    public override int? GetVariableValue(ITrackedCharacter character)
-    {
-        return Options.HasFlag(GameCounterOptions.HasVariable)
-            ? base.GetVariableValue(character) ?? DefaultValue
-            : null;
-    }
-
     public override GameCounterRollResult Roll(
         CharacterSheet sheet,
         ParseTreeBase? bonus,

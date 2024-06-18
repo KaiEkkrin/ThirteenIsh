@@ -6,15 +6,21 @@
 /// </summary>
 public interface ITrackedCharacter
 {
-    public string Name { get; }
+    string Name { get; }
 
-    public DateTimeOffset LastUpdated { get; set; }
+    DateTimeOffset LastUpdated { get; set; }
 
-    public CharacterSheet Sheet { get; }
+    CharacterSheet Sheet { get; }
 
-    public CharacterType Type { get; }
+    /// <summary>
+    /// The number of individuals this character is made up of -- used as a multiplier to
+    /// the starting and maximum values of variables. By default should be 1 (not a swarm.)
+    /// </summary>
+    int SwarmCount { get; }
 
-    public ulong UserId { get; }
+    CharacterType Type { get; }
 
-    public VariablesSheet GetVariables();
+    ulong UserId { get; }
+
+    VariablesSheet GetVariables();
 }

@@ -1,5 +1,6 @@
 ﻿using Discord;
 using System.Collections.Frozen;
+using System.Globalization;
 using System.Text;
 using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
@@ -72,6 +73,7 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
         NameAliasCollection nameAliasCollection,
         IRandomWrapper random,
         int rerolls,
+        int swarmCount,
         ulong userId,
         out string alias);
 
@@ -155,8 +157,13 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
             var character = await dataService.GetCharacterAsync(combatant, encounter, cancellationToken)
                 ?? throw new InvalidOperationException($"Character not found for {combatant.Alias}");
 
+            StringBuilder combatantAliasBuilder = new(combatant.Alias.Length + 5);
+            if (combatant.Alias == encounter.TurnAlias) combatantAliasBuilder.Append('+');
+            combatantAliasBuilder.Append(combatant.Alias);
+            characterSystem.DecorateCharacterAlias(combatantAliasBuilder, character);
+
             List<TableCell> cells = [
-                new TableCell(combatant.Alias == encounter.TurnAlias ? "+" + combatant.Alias : combatant.Alias),
+                new TableCell(combatantAliasBuilder.ToString()),
                 TableCell.Integer(combatant.Initiative)
                 ];
 
@@ -187,24 +194,6 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
 
         TableHelper.BuildTableEx(stringBuilder, rows, false, maxTableWidth: TableHelper.MaxPinnedTableWidth,
             language: "diff");
-    }
-
-    protected static async Task<string> BuildPointsEncounterTableCellAsync(
-        SqlDataService dataService,
-        Encounter encounter,
-        CombatantBase combatant,
-        GameCounter counter,
-        CancellationToken cancellationToken = default)
-    {
-        var character = await dataService.GetCharacterAsync(combatant, encounter, cancellationToken);
-        if (character is null) return "???";
-
-        var currentPoints = counter.GetVariableValue(character);
-        var maxPoints = counter.GetValue(character.Sheet);
-
-        var currentPointsString = currentPoints.HasValue ? $"{currentPoints.Value}" : "???";
-        var maxPointsString = maxPoints.HasValue ? $"{maxPoints.Value}" : "???";
-        return $"{currentPointsString}/{maxPointsString}";
     }
 
     protected abstract CombatantBase? EncounterNextRound(Encounter encounter, IRandomWrapper random);

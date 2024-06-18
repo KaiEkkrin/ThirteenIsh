@@ -17,6 +17,8 @@ public class MonsterCombatant : CombatantBase, ITrackedCharacter
 
     public required CharacterSheet Sheet { get; set; }
 
+    public int SwarmCount { get; set; } = 1;
+
     CharacterType ITrackedCharacter.Type => CharacterType.Monster;
 
     /// <summary>

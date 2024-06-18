@@ -6,7 +6,7 @@
 /// </summary>
 public interface ICounterSheet
 {
-    public IList<PropertyValue<int>> Counters { get; set; }
+    IList<PropertyValue<int>> Counters { get; set; }
 }
 
 /// <summary>

@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ThirteenIsh.Database.Entities;
 
@@ -25,6 +26,9 @@ public class Adventurer : SearchableNamedEntityBase, ITrackedCharacter
     /// The copy of the character's sheet as of the last updated time.
     /// </summary>
     public required CharacterSheet Sheet { get; set; }
+
+    [NotMapped]
+    public int SwarmCount => 1;
 
     public CharacterType Type => CharacterType.PlayerCharacter;
 

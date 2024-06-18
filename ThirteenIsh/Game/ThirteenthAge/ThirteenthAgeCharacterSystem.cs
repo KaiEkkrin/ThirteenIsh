@@ -1,4 +1,6 @@
-﻿using ThirteenIsh.Database;
+﻿using System.Globalization;
+using System.Text;
+using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Parsing;
 
@@ -10,6 +12,22 @@ internal class ThirteenthAgeCharacterSystem(CharacterType characterType, string 
     protected override GameCounter BuildCustomCounter(CustomCounter cc)
     {
         return new ThirteenthAgeCustomCounter(cc);
+    }
+
+    public override void DecorateCharacterAlias(StringBuilder builder, ITrackedCharacter character)
+    {
+        if (character.SwarmCount <= 1) return;
+
+        var hitPointsCounter = GetDefaultDamageCounter(character.Sheet)
+            ?? throw new InvalidOperationException("Failed to find hit points counter");
+
+        if (hitPointsCounter.GetValue(character.Sheet) is not { } individualHitPoints ||
+            hitPointsCounter.GetVariableValue(character) is not { } currentHitPoints) return;
+
+        var currentSwarmCount = Math.DivRem(currentHitPoints, individualHitPoints, out var rem);
+        if (rem > 0) ++currentSwarmCount; // round up
+
+        builder.Append(CultureInfo.CurrentCulture, $" x{currentSwarmCount}");
     }
 
     public override ParseTreeBase? GetAttackBonus(ITrackedCharacter character, Encounter? encounter, ParseTreeBase? bonus)

@@ -107,7 +107,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         // they are for players
         var monsterStatsBuilder = new GamePropertyGroupBuilder(MonsterStats)
             .AddProperty(new MonsterInitiativeCounter())
-            .AddProperty(new GameCounter(HitPoints, HitPointsAlias, options: GameCounterOptions.HasVariable))
+            .AddProperty(new MonsterHitPointsCounter(HitPoints, HitPointsAlias))
             .AddProperty(new GameCounter(ArmorClass, ArmorClassAlias))
             .AddProperty(new GameCounter(PhysicalDefense, PhysicalDefenseAlias))
             .AddProperty(new GameCounter(MentalDefense, MentalDefenseAlias));
@@ -135,6 +135,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         NameAliasCollection nameAliasCollection,
         IRandomWrapper random,
         int rerolls,
+        int swarmCount,
         ulong userId,
         out string alias)
     {
@@ -148,6 +149,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
             LastUpdated = DateTimeOffset.UtcNow,
             Name = character.Name,
             Sheet = character.Sheet,
+            SwarmCount = swarmCount,
             UserId = userId
         };
 

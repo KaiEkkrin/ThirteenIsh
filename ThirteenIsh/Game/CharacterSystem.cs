@@ -1,6 +1,7 @@
 ﻿using Discord;
 using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Parsing;
@@ -110,6 +111,15 @@ internal abstract class CharacterSystem
 
         if (withTags) AddTagsFields(builder, character);
         return builder;
+    }
+
+    /// <summary>
+    /// Provides the opportunity to write anything short that should come immediately after the
+    /// character alias in the encounter initiative table. Used for displaying swarm (mook) count
+    /// in 13th Age
+    /// </summary>
+    public virtual void DecorateCharacterAlias(StringBuilder builder, ITrackedCharacter character)
+    {
     }
 
     /// <summary>
@@ -229,7 +239,7 @@ internal abstract class CharacterSystem
         {
             foreach (var counter in group.Properties)
             {
-                if (counter.GetValue(character.Sheet) is { } counterValue)
+                if (counter.GetStartingValue(character) is { } counterValue)
                     variables.Counters.SetValue(counter.Name, counterValue);
             }
         }

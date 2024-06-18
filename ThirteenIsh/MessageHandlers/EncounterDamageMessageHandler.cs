@@ -130,8 +130,7 @@ internal sealed class EncounterDamageMessageHandler(SqlDataService dataService, 
 
             // Illustrating this as a parse tree should make it clearer what has happened
             var currentValue = counter.GetVariableValue(character)
-                ?? counter.GetStartingValue(character.Sheet)
-                ?? throw new InvalidOperationException($"Variable {counter.Name} has no current or starting value");
+                ?? throw new InvalidOperationException($"Variable {counter.Name} has no value");
 
             var parseTree = new BinaryOperationParseTree(0,
                 new IntegerParseTree(0, currentValue),
