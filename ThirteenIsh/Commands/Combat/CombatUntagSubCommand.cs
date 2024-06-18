@@ -1,8 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ThirteenIsh.Database;
-using ThirteenIsh.Game;
-using ThirteenIsh.Results;
+using ThirteenIsh.ChannelMessages.Combat;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Combat;
@@ -32,6 +30,15 @@ internal sealed class CombatUntagSubCommand(bool asGm) : SubCommandBase("untag",
             return;
         }
 
-        var dataService = serviceProvider.GetRequiredService<SqlDataService>();
+        var channelMessageService = serviceProvider.GetRequiredService<ChannelMessageService>();
+        await channelMessageService.AddMessageAsync(command, new CombatUntagMessage
+        {
+            GuildId = guildId,
+            ChannelId = channelId,
+            AsGm = asGm,
+            Alias = alias,
+            TagValue = tagValue,
+            UserId = command.User.Id
+        });
     }
 }
