@@ -39,7 +39,13 @@ public class Adventurer : SearchableNamedEntityBase, ITrackedCharacter
 
     public FixesSheet Fixes { get; set; } = new();
 
-    public FixesSheet GetFixes() => Fixes;
+    public FixesSheet GetFixes()
+    {
+        // The Counters property can end up null in the database even though according
+        // to our annotations it can't be
+        Fixes.Counters ??= [];
+        return Fixes;
+    }
 
     /// <summary>
     /// This adventurer's variables. These are the current values of counters that
@@ -47,5 +53,11 @@ public class Adventurer : SearchableNamedEntityBase, ITrackedCharacter
     /// </summary>
     public VariablesSheet Variables { get; set; } = new();
 
-    public VariablesSheet GetVariables() => Variables;
+    public VariablesSheet GetVariables()
+    {
+        // The Counters property can end up null in the database even though according
+        // to our annotations it can't be
+        Variables.Counters ??= [];
+        return Variables;
+    }
 }
