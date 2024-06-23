@@ -1,6 +1,4 @@
-﻿using ThirteenIsh.Database.Entities;
-
-namespace ThirteenIsh.Game.ThirteenthAge;
+﻿namespace ThirteenIsh.Game.ThirteenthAge;
 
 internal class MentalDefenseCounter(
     GameProperty classProperty,
@@ -8,14 +6,11 @@ internal class MentalDefenseCounter(
     AbilityBonusCounter intelligenceBonusCounter,
     AbilityBonusCounter wisdomBonusCounter,
     AbilityBonusCounter charismaBonusCounter)
-    : GameCounter(ThirteenthAgeSystem.MentalDefense, ThirteenthAgeSystem.MentalDefenseAlias)
+    : ClassBasedCounter(ThirteenthAgeSystem.MentalDefense, ThirteenthAgeSystem.MentalDefenseAlias, classProperty)
 {
-    public override bool CanStore => false;
-
-    public override int? GetValue(ICounterSheet sheet)
+    protected override int? GetValueInternal(string? classValue, Func<GameCounter, int?> getCounterValue)
     {
-        if (sheet is not CharacterSheet characterSheet) return null;
-        int? baseMD = classProperty.GetValue(characterSheet) switch
+        int? baseMD = classValue switch
         {
             ThirteenthAgeSystem.Barbarian => 10,
             ThirteenthAgeSystem.Bard => 11,
@@ -38,12 +33,12 @@ internal class MentalDefenseCounter(
         if (!baseMD.HasValue) return null;
         var bonuses = new List<int?>
         {
-            intelligenceBonusCounter.GetValue(characterSheet),
-            wisdomBonusCounter.GetValue(characterSheet),
-            charismaBonusCounter.GetValue(characterSheet)
+            getCounterValue(intelligenceBonusCounter),
+            getCounterValue(wisdomBonusCounter),
+            getCounterValue(charismaBonusCounter)
         };
 
         bonuses.Sort();
-        return baseMD + bonuses[1] + levelCounter.GetValue(characterSheet);
+        return baseMD + bonuses[1] + getCounterValue(levelCounter);
     }
 }

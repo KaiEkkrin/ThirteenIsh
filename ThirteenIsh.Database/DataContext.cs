@@ -43,6 +43,11 @@ public class DataContext : DbContext
                 s.OwnsMany(s => s.Properties);
                 s.OwnsMany(s => s.CustomCounters);
             })
+            .OwnsOne(c => c.Fixes, f =>
+            {
+                f.ToJson();
+                f.OwnsMany(f => f.Counters);
+            })
             .OwnsOne(c => c.Variables, v =>
             {
                 v.ToJson();
@@ -70,6 +75,10 @@ public class DataContext : DbContext
                         h.OwnsMany(h => h.Counters);
                         h.OwnsMany(h => h.Properties);
                         h.OwnsMany(h => h.CustomCounters);
+                    });
+                    m.OwnsOne(m => m.Fixes, f =>
+                    {
+                        f.OwnsMany(f => f.Counters);
                     });
                     m.OwnsOne(m => m.Variables, v =>
                     {

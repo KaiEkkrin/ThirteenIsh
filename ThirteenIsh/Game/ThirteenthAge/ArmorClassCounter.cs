@@ -1,6 +1,4 @@
-﻿using ThirteenIsh.Database.Entities;
-
-namespace ThirteenIsh.Game.ThirteenthAge;
+﻿namespace ThirteenIsh.Game.ThirteenthAge;
 
 internal class ArmorClassCounter(
     GameProperty classProperty,
@@ -8,14 +6,11 @@ internal class ArmorClassCounter(
     AbilityBonusCounter constitutionBonusCounter,
     AbilityBonusCounter dexterityBonusCounter,
     AbilityBonusCounter wisdomBonusCounter)
-    : GameCounter(ThirteenthAgeSystem.ArmorClass, ThirteenthAgeSystem.ArmorClassAlias)
+    : ClassBasedCounter(ThirteenthAgeSystem.ArmorClass, ThirteenthAgeSystem.ArmorClassAlias, classProperty)
 {
-    public override bool CanStore => false;
-
-    public override int? GetValue(ICounterSheet sheet)
+    protected override int? GetValueInternal(string? classValue, Func<GameCounter, int?> getCounterValue)
     {
-        if (sheet is not CharacterSheet characterSheet) return null;
-        int? baseAC = classProperty.GetValue(characterSheet) switch
+        int? baseAC = classValue switch
         {
             ThirteenthAgeSystem.Barbarian => 12,
             ThirteenthAgeSystem.Bard => 12,
@@ -38,12 +33,12 @@ internal class ArmorClassCounter(
         if (!baseAC.HasValue) return null;
         var bonuses = new List<int?>
         {
-            constitutionBonusCounter.GetValue(sheet),
-            dexterityBonusCounter.GetValue(sheet),
-            wisdomBonusCounter.GetValue(sheet)
+            getCounterValue(constitutionBonusCounter),
+            getCounterValue(dexterityBonusCounter),
+            getCounterValue(wisdomBonusCounter)
         };
 
         bonuses.Sort();
-        return baseAC + bonuses[1] + levelCounter.GetValue(sheet);
+        return baseAC + bonuses[1] + getCounterValue(levelCounter);
     }
 }

@@ -19,7 +19,7 @@ internal class AbilityBonusCounter(GameCounter levelCounter, GameCounter scoreCo
     }
 
     public override GameCounterRollResult Roll(
-        CharacterSheet sheet,
+        ITrackedCharacter character,
         ParseTreeBase? bonus,
         IRandomWrapper random,
         int rerolls,
@@ -27,11 +27,11 @@ internal class AbilityBonusCounter(GameCounter levelCounter, GameCounter scoreCo
     {
         // TODO throwing GamePropertyException here currently fails the whole command, instead fix it
         // so that a suitable error message is returned
-        var value = GetValue(sheet);
+        var value = GetValue(character);
         if (!value.HasValue) throw new GamePropertyException(Name);
 
         // In 13th Age we always add the character's level bonus to rolls like this
-        IntegerParseTree levelBonus = new(0, levelCounter.GetValue(sheet) ?? 0, "level");
+        IntegerParseTree levelBonus = new(0, levelCounter.GetValue(character) ?? 0, "level");
         ParseTreeBase parseTree =
             new BinaryOperationParseTree(0,
                 new BinaryOperationParseTree(0,

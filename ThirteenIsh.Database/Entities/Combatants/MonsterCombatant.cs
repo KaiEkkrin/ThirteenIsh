@@ -21,6 +21,10 @@ public class MonsterCombatant : CombatantBase, ITrackedCharacter
 
     CharacterType ITrackedCharacter.Type => CharacterType.Monster;
 
+    public FixesSheet Fixes { get; set; } = new();
+
+    public FixesSheet GetFixes() => Fixes;
+
     /// <summary>
     /// This monster's variables. These are the current values of counters that
     /// can have them.

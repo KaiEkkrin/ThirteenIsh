@@ -37,6 +37,10 @@ public class Adventurer : SearchableNamedEntityBase, ITrackedCharacter
     /// </summary>
     public required ulong UserId { get; set; }
 
+    public FixesSheet Fixes { get; set; } = new();
+
+    public FixesSheet GetFixes() => Fixes;
+
     /// <summary>
     /// This adventurer's variables. These are the current values of counters that
     /// can have them.

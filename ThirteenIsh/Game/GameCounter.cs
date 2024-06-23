@@ -52,7 +52,7 @@ internal class GameCounter(string name, string? alias = null,
     {
         if (!options.HasFlag(GameCounterOptions.HasVariable))
         {
-            return GetValue(character.Sheet) switch
+            return GetValue(character) switch
             {
                 { } value => $"{value}",
                 _ => Unset
@@ -79,7 +79,7 @@ internal class GameCounter(string name, string? alias = null,
     public virtual int? GetMaxVariableValue(ITrackedCharacter character)
     {
         if (!options.HasFlag(GameCounterOptions.HasVariable)) return null;
-        return GetValue(character.Sheet);
+        return GetValue(character);
     }
 
     /// <summary>
@@ -89,15 +89,26 @@ internal class GameCounter(string name, string? alias = null,
     public virtual int? GetStartingValue(ITrackedCharacter character)
     {
         if (!options.HasFlag(GameCounterOptions.HasVariable)) return null;
-        return GetValue(character.Sheet);
+        return GetValue(character);
     }
 
     /// <summary>
     /// Gets this counter's value from the sheet.
+    /// TODO Change this so that all calls that would have the opportunity to apply fixes
+    /// go through that overload.
     /// </summary>
     public virtual int? GetValue(ICounterSheet sheet)
     {
         return sheet.Counters.TryGetValue(Name, out var value) ? value : null;
+    }
+
+    /// <summary>
+    /// Gets this counter's value for the character, including any fix that applies.
+    /// </summary>
+    public virtual int? GetValue(ITrackedCharacter character)
+    {
+        var baseValue = GetValue(character.Sheet);
+        return AddFix(baseValue, character);
     }
 
     /// <summary>
@@ -112,7 +123,7 @@ internal class GameCounter(string name, string? alias = null,
     /// <summary>
     /// Makes a roll based on this counter.
     /// </summary>
-    /// <param name="sheet">The character sheet to roll for.</param>
+    /// <param name="character">The character to roll for.</param>
     /// <param name="bonus">An optional bonus to add.</param>
     /// <param name="random">The random provider.</param>
     /// <param name="rerolls">The number of times to reroll and take highest, or
@@ -122,13 +133,19 @@ internal class GameCounter(string name, string? alias = null,
     /// <returns>The roll result.</returns>
     /// <exception cref="NotSupportedException">If this counter cannot be rolled.</exception>
     public virtual GameCounterRollResult Roll(
-        CharacterSheet sheet,
+        ITrackedCharacter character,
         ParseTreeBase? bonus,
         IRandomWrapper random,
         int rerolls,
         ref int? targetValue)
     {
         throw new NotSupportedException(nameof(Roll));
+    }
+
+    public void SetFixValue(int newValue, ITrackedCharacter character)
+    {
+        var fixes = character.GetFixes();
+        fixes.Counters.SetValue(Name, newValue);
     }
 
     public void SetVariableClamped(int newValue, ITrackedCharacter character)
@@ -196,6 +213,13 @@ internal class GameCounter(string name, string? alias = null,
         variables.Counters.SetValue(Name, newValue);
         errorMessage = null;
         return true;
+    }
+
+    protected int? AddFix(int? baseValue, ITrackedCharacter character)
+    {
+        return character.GetFixes().Counters.TryGetValue(Name, out var fixValue)
+            ? baseValue + fixValue
+            : baseValue;
     }
 }
 

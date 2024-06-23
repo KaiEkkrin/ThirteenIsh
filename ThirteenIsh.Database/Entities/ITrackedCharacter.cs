@@ -22,5 +22,7 @@ public interface ITrackedCharacter
 
     ulong UserId { get; }
 
+    FixesSheet GetFixes();
+
     VariablesSheet GetVariables();
 }

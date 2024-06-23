@@ -8,7 +8,6 @@ internal class RecoveriesCounter() : GameCounter("Recoveries", options: GameCoun
 
     public override int? GetValue(ICounterSheet sheet)
     {
-        // TODO implement a customised bonus for this
         return 8;
     }
 }

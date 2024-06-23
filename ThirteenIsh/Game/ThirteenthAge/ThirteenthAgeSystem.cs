@@ -185,7 +185,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
             .GetProperty<GameCounter>(adventurer.Sheet, AbilityBonusCounter.GetBonusCounterName(Dexterity));
 
         int? targetValue = null;
-        var initiative = dexterityBonusCounter.Roll(adventurer.Sheet, null, random, rerolls, ref targetValue);
+        var initiative = dexterityBonusCounter.Roll(adventurer, null, random, rerolls, ref targetValue);
 
         AdventurerCombatant combatant = new()
         {
@@ -251,7 +251,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
 
         var initiativeCounter = characterSystem.GetProperty<GameCounter>(combatant.Sheet, Initiative);
         int? targetValue = null;
-        var initiative = initiativeCounter.Roll(combatant.Sheet, null, random, rerolls, ref targetValue);
+        var initiative = initiativeCounter.Roll(combatant, null, random, rerolls, ref targetValue);
         return initiative;
     }
 }

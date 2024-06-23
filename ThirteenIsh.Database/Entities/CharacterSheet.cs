@@ -10,6 +10,14 @@ public interface ICounterSheet
 }
 
 /// <summary>
+/// Fixes are ad-hoc offsets to counter values applied on a tracked character.
+/// </summary>
+public class FixesSheet : ICounterSheet
+{
+    public virtual IList<PropertyValue<int>> Counters { get; set; } = [];
+}
+
+/// <summary>
 /// A concrete sheet of counters, used as variables.
 /// </summary>
 public class VariablesSheet : ICounterSheet
