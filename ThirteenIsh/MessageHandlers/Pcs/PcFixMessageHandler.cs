@@ -44,7 +44,11 @@ internal sealed class PcFixMessageHandler(SqlDataService dataService) : MessageH
             var gameSystem = GameSystem.Get(adventurer.Adventure.GameSystem);
             var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
 
-            var counter = characterSystem.FindCounter(adventurer.Sheet, counterNamePart, _ => true);
+            // Important -- don't allow fixing hidden counters! Then you wouldn't be able to tell they
+            // had been fixed (no display), which would be super confusing
+            var counter = characterSystem.FindCounter(adventurer.Sheet, counterNamePart,
+                c => !c.Options.HasFlag(GameCounterOptions.IsHidden));
+
             if (counter is null)
                 return CreateError($"'{counterNamePart}' does not uniquely match a counter name.");
 

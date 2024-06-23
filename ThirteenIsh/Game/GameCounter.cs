@@ -118,8 +118,6 @@ internal class GameCounter(string name, string? alias = null,
 
     /// <summary>
     /// Gets this counter's value from the sheet.
-    /// TODO Change this so that all calls that would have the opportunity to apply fixes
-    /// go through that overload.
     /// </summary>
     public virtual int? GetValue(ICounterSheet sheet)
     {
