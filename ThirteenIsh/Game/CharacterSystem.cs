@@ -252,15 +252,22 @@ internal abstract class CharacterSystem
     /// </summary>
     public void ScrubCustomCounters(ITrackedCharacter character)
     {
-        HashSet<string> propertyNames = new(EnumeratePropertyGroups(character.Sheet)
-            .SelectMany(group => group.Properties)
-            .Select(property => property.Name));
-
         var fixes = character.GetFixes();
-        fixes.Counters.RemoveValues(c => !propertyNames.Contains(c.Name));
+        fixes.Counters.RemoveValues(c => !TryGetProperty<GameCounter>(character.Sheet, c.Name, out var counter) ||
+                                         counter.Options.HasFlag(GameCounterOptions.IsHidden));
 
         var variables = character.GetVariables();
-        variables.Counters.RemoveValues(v => !propertyNames.Contains(v.Name));
+        variables.Counters.RemoveValues(v => !TryGetProperty<GameCounter>(character.Sheet, v.Name, out var counter) ||
+                                             !counter.Options.HasFlag(GameCounterOptions.HasVariable));
+
+        foreach (var counter in EnumerateVariableCounterGroups(character.Sheet).SelectMany(group => group.Properties))
+        {
+            if (counter.GetVariableValue(character) is not { } variableValue ||
+                counter.GetMaxVariableValue(character) is not { } maxValue ||
+                variableValue <= maxValue) continue;
+
+            variables.Counters.SetValue(counter.Name, maxValue);
+        }
     }
 
     public bool TryBuildPropertyValueChoiceComponent(string messageId, string propertyName, CharacterSheet sheet,
