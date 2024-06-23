@@ -185,7 +185,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
             .GetProperty<GameCounter>(adventurer.Sheet, AbilityBonusCounter.GetBonusCounterName(Dexterity));
 
         int? targetValue = null;
-        var initiative = dexterityBonusCounter.Roll(adventurer.Sheet, null, random, rerolls, ref targetValue);
+        var initiative = dexterityBonusCounter.Roll(adventurer, null, random, rerolls, ref targetValue);
 
         AdventurerCombatant combatant = new()
         {
@@ -216,6 +216,26 @@ internal sealed class ThirteenthAgeSystem : GameSystem
 
             default:
                 throw new ArgumentException("Unrecognised character type", nameof(type));
+        }
+    }
+
+    public override string GetCharacterSummary(ITrackedCharacter character)
+    {
+        var sheet = character.Sheet;
+        var characterSystem = GetCharacterSystem(character.Type);
+        switch (character.Type)
+        {
+            case CharacterType.PlayerCharacter:
+                var characterClass = characterSystem.GetProperty<GameProperty>(sheet, Class).GetValue(sheet);
+                var level = characterSystem.GetProperty<GameCounter>(sheet, Level).GetValue(character);
+                return $"Level {level} {characterClass}";
+
+            case CharacterType.Monster:
+                // TODO Add a monster type and level or what have you to display here
+                return "Monster";
+
+            default:
+                throw new ArgumentException("Unrecognised character type", nameof(character));
         }
     }
 
@@ -251,7 +271,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
 
         var initiativeCounter = characterSystem.GetProperty<GameCounter>(combatant.Sheet, Initiative);
         int? targetValue = null;
-        var initiative = initiativeCounter.Roll(combatant.Sheet, null, random, rerolls, ref targetValue);
+        var initiative = initiativeCounter.Roll(combatant, null, random, rerolls, ref targetValue);
         return initiative;
     }
 }

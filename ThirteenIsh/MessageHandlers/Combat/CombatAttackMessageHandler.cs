@@ -74,7 +74,7 @@ internal sealed class CombatAttackMessageHandler(SqlDataService dataService, Dis
                     }
 
                     vsCounterNames.Add(vsCounter.Name);
-                    var dc = vsCounter.GetValue(targetCharacter.Sheet);
+                    var dc = vsCounter.GetValue(targetCharacter);
                     if (!dc.HasValue)
                     {
                         stringBuilder.AppendLine(CultureInfo.CurrentCulture,
@@ -82,7 +82,7 @@ internal sealed class CombatAttackMessageHandler(SqlDataService dataService, Dis
                         continue;
                     }
 
-                    var result = counter.Roll(character.Sheet, attackBonus, random, message.Rerolls, ref dc);
+                    var result = counter.Roll(character, attackBonus, random, message.Rerolls, ref dc);
                     stringBuilder.Append(CultureInfo.CurrentCulture, $" ({dc}) : {result.Roll}");
                     if (result.Success.HasValue)
                     {

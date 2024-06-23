@@ -1,6 +1,4 @@
-﻿using ThirteenIsh.Database.Entities;
-
-namespace ThirteenIsh.Game.ThirteenthAge;
+﻿namespace ThirteenIsh.Game.ThirteenthAge;
 
 internal class PhysicalDefenseCounter(
     GameProperty classProperty,
@@ -8,14 +6,12 @@ internal class PhysicalDefenseCounter(
     AbilityBonusCounter strengthBonusCounter,
     AbilityBonusCounter constitutionBonusCounter,
     AbilityBonusCounter dexterityBonusCounter)
-    : GameCounter(ThirteenthAgeSystem.PhysicalDefense, ThirteenthAgeSystem.PhysicalDefenseAlias)
+    : ClassBasedCounter(ThirteenthAgeSystem.PhysicalDefense, ThirteenthAgeSystem.PhysicalDefenseAlias,
+        classProperty)
 {
-    public override bool CanStore => false;
-
-    public override int? GetValue(ICounterSheet sheet)
+    protected override int? GetValueInternal(string? classValue, Func<GameCounter, int?> getCounterValue)
     {
-        if (sheet is not CharacterSheet characterSheet) return null;
-        int? basePD = classProperty.GetValue(characterSheet) switch
+        int? basePD = classValue switch
         {
             ThirteenthAgeSystem.Barbarian => 11,
             ThirteenthAgeSystem.Bard => 10,
@@ -38,12 +34,12 @@ internal class PhysicalDefenseCounter(
         if (!basePD.HasValue) return null;
         var bonuses = new List<int?>
         {
-            strengthBonusCounter.GetValue(characterSheet),
-            constitutionBonusCounter.GetValue(characterSheet),
-            dexterityBonusCounter.GetValue(characterSheet)
+            getCounterValue(strengthBonusCounter),
+            getCounterValue(constitutionBonusCounter),
+            getCounterValue(dexterityBonusCounter)
         };
 
         bonuses.Sort();
-        return basePD + bonuses[1] + levelCounter.GetValue(characterSheet);
+        return basePD + bonuses[1] + getCounterValue(levelCounter);
     }
 }

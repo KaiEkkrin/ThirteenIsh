@@ -247,6 +247,29 @@ internal abstract class CharacterSystem
         character.LastUpdated = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Removes any values assigned for custom counters that the character no longer has.
+    /// </summary>
+    public void ScrubCustomCounters(ITrackedCharacter character)
+    {
+        var fixes = character.GetFixes();
+        fixes.Counters.RemoveValues(c => !TryGetProperty<GameCounter>(character.Sheet, c.Name, out var counter) ||
+                                         counter.Options.HasFlag(GameCounterOptions.IsHidden));
+
+        var variables = character.GetVariables();
+        variables.Counters.RemoveValues(v => !TryGetProperty<GameCounter>(character.Sheet, v.Name, out var counter) ||
+                                             !counter.Options.HasFlag(GameCounterOptions.HasVariable));
+
+        foreach (var counter in EnumerateVariableCounterGroups(character.Sheet).SelectMany(group => group.Properties))
+        {
+            if (counter.GetVariableValue(character) is not { } variableValue ||
+                counter.GetMaxVariableValue(character) is not { } maxValue ||
+                variableValue <= maxValue) continue;
+
+            variables.Counters.SetValue(counter.Name, maxValue);
+        }
+    }
+
     public bool TryBuildPropertyValueChoiceComponent(string messageId, string propertyName, CharacterSheet sheet,
         [MaybeNullWhen(false)] out SelectMenuBuilder? menuBuilder, [MaybeNullWhen(true)] out string? errorMessage)
     {

@@ -50,7 +50,7 @@ internal class SkillLevelCounter(GameAbilityCounter attribute, GameCounter skill
     }
 
     public override GameCounterRollResult Roll(
-        CharacterSheet sheet,
+        ITrackedCharacter character,
         ParseTreeBase? bonus,
         IRandomWrapper random,
         int rerolls,
@@ -64,7 +64,7 @@ internal class SkillLevelCounter(GameAbilityCounter attribute, GameCounter skill
 
         var rolledValue = parseTree.Evaluate(random, out var working);
 
-        targetValue ??= GetValue(sheet);
+        targetValue ??= GetValue(character);
         return new GameCounterRollResult
         {
             Roll = rolledValue,

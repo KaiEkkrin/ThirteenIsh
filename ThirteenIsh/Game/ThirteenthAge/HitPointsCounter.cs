@@ -6,19 +6,14 @@ internal class HitPointsCounter(
     GameProperty classProperty,
     GameCounter levelCounter,
     AbilityBonusCounter constitutionBonusCounter)
-    : GameCounter(ThirteenthAgeSystem.HitPoints, ThirteenthAgeSystem.HitPointsAlias,
-        options: GameCounterOptions.HasVariable)
+    : ClassBasedCounter(ThirteenthAgeSystem.HitPoints, ThirteenthAgeSystem.HitPointsAlias, classProperty,
+        GameCounterOptions.HasVariable)
 {
-    public override bool CanStore => false;
-
-    public override int? GetValue(ICounterSheet sheet)
+    protected override int? GetValueInternal(string? classValue, Func<GameCounter, int?> getCounterValue)
     {
-        if (sheet is not CharacterSheet characterSheet) return null;
-
         // See page 31, 76 and onwards. Why is this so baroque?!
-        var conBonus = constitutionBonusCounter.GetValue(characterSheet);
-        var classValue = classProperty.GetValue(characterSheet);
-        var level = levelCounter.GetValue(characterSheet);
+        var conBonus = getCounterValue(constitutionBonusCounter);
+        var level = getCounterValue(levelCounter);
 
         int? baseValue = conBonus + classValue switch
         {

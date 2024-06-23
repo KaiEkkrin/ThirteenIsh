@@ -1,5 +1,7 @@
 ﻿using Discord;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.Text;
 using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Parsing;
@@ -50,21 +52,43 @@ internal class GameCounter(string name, string? alias = null,
 
     public override string GetDisplayValue(ITrackedCharacter character)
     {
-        if (!options.HasFlag(GameCounterOptions.HasVariable))
+        StringBuilder builder = new();
+        if (options.HasFlag(GameCounterOptions.HasVariable))
         {
-            return GetValue(character.Sheet) switch
+            switch (GetMaxVariableValue(character), GetVariableValue(character))
             {
-                { } value => $"{value}",
-                _ => Unset
-            };
+                case ({ } maxValue, { } varValue):
+                    builder.Append(CultureInfo.CurrentCulture, $"{varValue}/{maxValue}");
+                    break;
+
+                case ({ } maxValue, null):
+                    builder.Append(CultureInfo.CurrentCulture, $"{maxValue}");
+                    break;
+
+                default:
+                    return Unset;
+            }
+        }
+        else if (GetValue(character) is { } value)
+        {
+            builder.Append(CultureInfo.CurrentCulture, $"{value}");
+        }
+        else
+        {
+            return Unset;
         }
 
-        return (GetMaxVariableValue(character), GetVariableValue(character)) switch
+        var fixValue = character.GetFixes().Counters.FirstOrDefault(c => c.Name == Name)?.Value;
+        if (fixValue is > 0)
         {
-            ({ } maxValue, { } varValue) => $"{varValue}/{maxValue}",
-            ({ } maxValue, null) => $"{maxValue}",
-            _ => Unset
-        };
+            builder.Append(CultureInfo.CurrentCulture, $" [+{fixValue}]");
+        }
+        else if (fixValue is < 0)
+        {
+            builder.Append(CultureInfo.CurrentCulture, $" [{fixValue}]");
+        }
+
+        return builder.ToString();
     }
 
     public override string GetDisplayValue(CharacterSheet sheet)
@@ -79,7 +103,7 @@ internal class GameCounter(string name, string? alias = null,
     public virtual int? GetMaxVariableValue(ITrackedCharacter character)
     {
         if (!options.HasFlag(GameCounterOptions.HasVariable)) return null;
-        return GetValue(character.Sheet);
+        return GetValue(character);
     }
 
     /// <summary>
@@ -89,7 +113,7 @@ internal class GameCounter(string name, string? alias = null,
     public virtual int? GetStartingValue(ITrackedCharacter character)
     {
         if (!options.HasFlag(GameCounterOptions.HasVariable)) return null;
-        return GetValue(character.Sheet);
+        return GetValue(character);
     }
 
     /// <summary>
@@ -98,6 +122,15 @@ internal class GameCounter(string name, string? alias = null,
     public virtual int? GetValue(ICounterSheet sheet)
     {
         return sheet.Counters.TryGetValue(Name, out var value) ? value : null;
+    }
+
+    /// <summary>
+    /// Gets this counter's value for the character, including any fix that applies.
+    /// </summary>
+    public virtual int? GetValue(ITrackedCharacter character)
+    {
+        var baseValue = GetValue(character.Sheet);
+        return AddFix(baseValue, character);
     }
 
     /// <summary>
@@ -112,7 +145,7 @@ internal class GameCounter(string name, string? alias = null,
     /// <summary>
     /// Makes a roll based on this counter.
     /// </summary>
-    /// <param name="sheet">The character sheet to roll for.</param>
+    /// <param name="character">The character to roll for.</param>
     /// <param name="bonus">An optional bonus to add.</param>
     /// <param name="random">The random provider.</param>
     /// <param name="rerolls">The number of times to reroll and take highest, or
@@ -122,13 +155,26 @@ internal class GameCounter(string name, string? alias = null,
     /// <returns>The roll result.</returns>
     /// <exception cref="NotSupportedException">If this counter cannot be rolled.</exception>
     public virtual GameCounterRollResult Roll(
-        CharacterSheet sheet,
+        ITrackedCharacter character,
         ParseTreeBase? bonus,
         IRandomWrapper random,
         int rerolls,
         ref int? targetValue)
     {
         throw new NotSupportedException(nameof(Roll));
+    }
+
+    public void SetFixValue(int newValue, ITrackedCharacter character)
+    {
+        var fixes = character.GetFixes();
+        if (newValue == 0)
+        {
+            fixes.Counters.RemoveValue(Name);
+        }
+        else
+        {
+            fixes.Counters.SetValue(Name, newValue);
+        }
     }
 
     public void SetVariableClamped(int newValue, ITrackedCharacter character)
@@ -196,6 +242,13 @@ internal class GameCounter(string name, string? alias = null,
         variables.Counters.SetValue(Name, newValue);
         errorMessage = null;
         return true;
+    }
+
+    protected int? AddFix(int? baseValue, ITrackedCharacter character)
+    {
+        return character.GetFixes().Counters.TryGetValue(Name, out var fixValue)
+            ? baseValue + fixValue
+            : baseValue;
     }
 }
 

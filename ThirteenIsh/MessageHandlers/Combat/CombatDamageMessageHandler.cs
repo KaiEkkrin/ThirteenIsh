@@ -43,7 +43,7 @@ internal sealed class CombatDamageMessageHandler(SqlDataService dataService, Dis
                 // If there is a counter it must have a value
                 int? counterValue = counter is null
                     ? null
-                    : counter.GetValue(character.Sheet) is { } realCounterValue
+                    : counter.GetValue(character) is { } realCounterValue
                         ? realCounterValue
                         : throw new GamePropertyException(counter.Name);
 

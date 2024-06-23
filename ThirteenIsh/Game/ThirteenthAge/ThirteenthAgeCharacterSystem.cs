@@ -21,7 +21,7 @@ internal class ThirteenthAgeCharacterSystem(CharacterType characterType, string 
         var hitPointsCounter = GetDefaultDamageCounter(character.Sheet)
             ?? throw new InvalidOperationException("Failed to find hit points counter");
 
-        if (hitPointsCounter.GetValue(character.Sheet) is not { } individualHitPoints ||
+        if (hitPointsCounter.GetValue(character) is not { } individualHitPoints ||
             hitPointsCounter.GetVariableValue(character) is not { } currentHitPoints) return;
 
         var currentSwarmCount = Math.DivRem(currentHitPoints, individualHitPoints, out var rem);
