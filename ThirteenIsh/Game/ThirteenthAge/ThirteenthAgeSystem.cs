@@ -219,6 +219,26 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         }
     }
 
+    public override string GetCharacterSummary(ITrackedCharacter character)
+    {
+        var sheet = character.Sheet;
+        var characterSystem = GetCharacterSystem(character.Type);
+        switch (character.Type)
+        {
+            case CharacterType.PlayerCharacter:
+                var characterClass = characterSystem.GetProperty<GameProperty>(sheet, Class).GetValue(sheet);
+                var level = characterSystem.GetProperty<GameCounter>(sheet, Level).GetValue(character);
+                return $"Level {level} {characterClass}";
+
+            case CharacterType.Monster:
+                // TODO Add a monster type and level or what have you to display here
+                return "Monster";
+
+            default:
+                throw new ArgumentException("Unrecognised character type", nameof(character));
+        }
+    }
+
     protected override void AddEncounterHeadingRow(List<TableRow> data, Encounter encounter)
     {
         base.AddEncounterHeadingRow(data, encounter);

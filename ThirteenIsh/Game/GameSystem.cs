@@ -122,6 +122,14 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
     public abstract string GetCharacterSummary(CharacterSheet sheet, CharacterType type);
 
     /// <summary>
+    /// Provides a one-line summary of the character for character list purposes.
+    /// </summary>
+    public virtual string GetCharacterSummary(ITrackedCharacter character)
+    {
+        return GetCharacterSummary(character.Sheet, character.Type);
+    }
+
+    /// <summary>
     /// Gets the character system for a character type.
     /// </summary>
     public CharacterSystem GetCharacterSystem(CharacterType characterType) => _characterSystems[characterType];

@@ -53,7 +53,7 @@ internal static partial class CommandUtil
             embedBuilder.AddField(new EmbedFieldBuilder()
                 .WithIsInline(true)
                 .WithName($"{adventurer.Name} [{guildUser.DisplayName}]")
-                .WithValue(gameSystem.GetCharacterSummary(adventurer.Sheet, CharacterType.PlayerCharacter)));
+                .WithValue(gameSystem.GetCharacterSummary(adventurer)));
         }
 
         return embedBuilder.Build();
