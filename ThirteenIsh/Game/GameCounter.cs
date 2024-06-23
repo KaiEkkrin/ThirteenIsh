@@ -1,5 +1,7 @@
 ﻿using Discord;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.Text;
 using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Parsing;
@@ -50,21 +52,43 @@ internal class GameCounter(string name, string? alias = null,
 
     public override string GetDisplayValue(ITrackedCharacter character)
     {
-        if (!options.HasFlag(GameCounterOptions.HasVariable))
+        StringBuilder builder = new();
+        if (options.HasFlag(GameCounterOptions.HasVariable))
         {
-            return GetValue(character) switch
+            switch (GetMaxVariableValue(character), GetVariableValue(character))
             {
-                { } value => $"{value}",
-                _ => Unset
-            };
+                case ({ } maxValue, { } varValue):
+                    builder.Append(CultureInfo.CurrentCulture, $"{varValue}/{maxValue}");
+                    break;
+
+                case ({ } maxValue, null):
+                    builder.Append(CultureInfo.CurrentCulture, $"{maxValue}");
+                    break;
+
+                default:
+                    return Unset;
+            }
+        }
+        else if (GetValue(character) is { } value)
+        {
+            builder.Append(CultureInfo.CurrentCulture, $"{value}");
+        }
+        else
+        {
+            return Unset;
         }
 
-        return (GetMaxVariableValue(character), GetVariableValue(character)) switch
+        var fixValue = character.GetFixes().Counters.FirstOrDefault(c => c.Name == Name)?.Value;
+        if (fixValue is > 0)
         {
-            ({ } maxValue, { } varValue) => $"{varValue}/{maxValue}",
-            ({ } maxValue, null) => $"{maxValue}",
-            _ => Unset
-        };
+            builder.Append(CultureInfo.CurrentCulture, $" [+{fixValue}]");
+        }
+        else if (fixValue is < 0)
+        {
+            builder.Append(CultureInfo.CurrentCulture, $" [{fixValue}]");
+        }
+
+        return builder.ToString();
     }
 
     public override string GetDisplayValue(CharacterSheet sheet)

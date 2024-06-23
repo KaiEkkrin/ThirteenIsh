@@ -4,7 +4,7 @@ namespace ThirteenIsh.Game.ThirteenthAge;
 
 internal abstract class ClassBasedCounter(
     string name,
-    string alias,
+    string? alias,
     GameProperty classProperty,
     GameCounterOptions options = GameCounterOptions.None)
     : GameCounter(name, alias, options: options)

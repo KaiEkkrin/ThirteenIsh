@@ -74,6 +74,13 @@ public static class Extensions
         return true;
     }
 
+    public static void RemoveValue<TValue>(this IList<PropertyValue<TValue>> propertyList, string name)
+    {
+        var index = propertyList.FindIndex(p => p.Name == name);
+        if (index < 0) return;
+        propertyList.RemoveAt(index);
+    }
+
     public static void SetValue<TValue>(this IList<PropertyValue<TValue>> propertyList, string name, TValue value)
     {
         var index = propertyList.FindIndex(p => p.Name == name);

@@ -11,11 +11,13 @@ internal class AbilityBonusCounter(GameCounter levelCounter, GameCounter scoreCo
     public override int? GetValue(ICounterSheet sheet)
     {
         var score = scoreCounter.GetValue(sheet);
-        if (!score.HasValue) return null;
+        return GetBonusValue(score);
+    }
 
-        // Always round this down, rather than towards zero
-        var (div, rem) = Math.DivRem(score.Value - 10, 2);
-        return rem < 0 ? div - 1 : div;
+    public override int? GetValue(ITrackedCharacter character)
+    {
+        var score = scoreCounter.GetValue(character);
+        return GetBonusValue(score);
     }
 
     public override GameCounterRollResult Roll(
@@ -56,4 +58,13 @@ internal class AbilityBonusCounter(GameCounter levelCounter, GameCounter scoreCo
     }
 
     public static string GetBonusCounterName(string counterName) => $"{counterName} Bonus";
+
+    private static int? GetBonusValue(int? score)
+    {
+        if (!score.HasValue) return null;
+
+        // Always round this down, rather than towards zero
+        var (div, rem) = Math.DivRem(score.Value - 10, 2);
+        return rem < 0 ? div - 1 : div;
+    }
 }
