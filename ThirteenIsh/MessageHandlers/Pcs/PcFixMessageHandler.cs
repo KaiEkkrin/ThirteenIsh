@@ -48,16 +48,7 @@ internal sealed class PcFixMessageHandler(SqlDataService dataService) : MessageH
             if (counter is null)
                 return CreateError($"'{counterNamePart}' does not uniquely match a counter name.");
 
-            var fixes = adventurer.GetFixes();
-            if (fixValue == 0)
-            {
-                fixes.Counters.RemoveValue(counter.Name);
-            }
-            else
-            {
-                fixes.Counters.SetValue(counter.Name, fixValue);
-            }
-
+            counter.SetFixValue(fixValue, adventurer);
             return new EditResult<FixResult>(new FixResult(adventurer, counter, gameSystem));
         }
     }

@@ -169,7 +169,25 @@ internal class GameCounter(string name, string? alias = null,
     public void SetFixValue(int newValue, ITrackedCharacter character)
     {
         var fixes = character.GetFixes();
-        fixes.Counters.SetValue(Name, newValue);
+        if (newValue == 0)
+        {
+            fixes.Counters.RemoveValue(Name);
+        }
+        else
+        {
+            fixes.Counters.SetValue(Name, newValue);
+        }
+
+        // If this character has a variable value for the counter we just fixed, clamp it within
+        // the new range
+        if (!options.HasFlag(GameCounterOptions.HasVariable)) return;
+
+        var variables = character.GetVariables();
+        if (!variables.Counters.TryGetValue(Name, out var variableValue) ||
+            GetMaxVariableValue(character) is not { } maxValue ||
+            variableValue < maxValue) return;
+
+        variables.Counters.SetValue(Name, maxValue);
     }
 
     public void SetVariableClamped(int newValue, ITrackedCharacter character)
