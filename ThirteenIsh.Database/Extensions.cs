@@ -81,6 +81,16 @@ public static class Extensions
         propertyList.RemoveAt(index);
     }
 
+    public static void RemoveValues<TValue>(this IList<PropertyValue<TValue>> propertyList,
+        Func<PropertyValue<TValue>, bool> predicate)
+    {
+        for (var i = propertyList.Count - 1; i >= 0; --i)
+        {
+            if (!predicate(propertyList[i])) continue;
+            propertyList.RemoveAt(i);
+        }
+    }
+
     public static void SetValue<TValue>(this IList<PropertyValue<TValue>> propertyList, string name, TValue value)
     {
         var index = propertyList.FindIndex(p => p.Name == name);

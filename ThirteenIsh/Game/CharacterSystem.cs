@@ -247,6 +247,22 @@ internal abstract class CharacterSystem
         character.LastUpdated = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>
+    /// Removes any values assigned for custom counters that the character no longer has.
+    /// </summary>
+    public void ScrubCustomCounters(ITrackedCharacter character)
+    {
+        HashSet<string> propertyNames = new(EnumeratePropertyGroups(character.Sheet)
+            .SelectMany(group => group.Properties)
+            .Select(property => property.Name));
+
+        var fixes = character.GetFixes();
+        fixes.Counters.RemoveValues(c => !propertyNames.Contains(c.Name));
+
+        var variables = character.GetVariables();
+        variables.Counters.RemoveValues(v => !propertyNames.Contains(v.Name));
+    }
+
     public bool TryBuildPropertyValueChoiceComponent(string messageId, string propertyName, CharacterSheet sheet,
         [MaybeNullWhen(false)] out SelectMenuBuilder? menuBuilder, [MaybeNullWhen(true)] out string? errorMessage)
     {
