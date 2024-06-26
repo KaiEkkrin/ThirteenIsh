@@ -12,6 +12,7 @@ namespace ThirteenIsh.Commands.Gm;
 internal class GmCombatSubCommandGroup() : SubCommandGroupBase("combat", "Manage encounters.",
     new GmCombatBeginSubCommand(),
     new GmCombatEndSubCommand(),
+    new CombatGetSubCommand(true),
     new GmCombatRemoveSubCommand(),
     new GmCombatSwitchCommand(),
     new CombatTagSubCommand(true),
