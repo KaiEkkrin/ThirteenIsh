@@ -153,7 +153,6 @@ internal class GameCounter(string name, string? alias = null,
     /// <param name="targetValue">An optional target value. If one is not supplied and this
     /// game system implies one, the implied one will be filled in.</param>
     /// <returns>The roll result.</returns>
-    /// <exception cref="NotSupportedException">If this counter cannot be rolled.</exception>
     public virtual GameCounterRollResult Roll(
         ITrackedCharacter character,
         ParseTreeBase? bonus,
@@ -161,7 +160,7 @@ internal class GameCounter(string name, string? alias = null,
         int rerolls,
         ref int? targetValue)
     {
-        throw new NotSupportedException(nameof(Roll));
+        return new GameCounterRollResult { CounterName = Name, Error = GameCounterRollError.NotRollable };
     }
 
     public void SetFixValue(int newValue, ITrackedCharacter character)
@@ -250,22 +249,4 @@ internal class GameCounter(string name, string? alias = null,
             ? baseValue + fixValue
             : baseValue;
     }
-}
-
-public readonly struct GameCounterRollResult
-{
-    /// <summary>
-    /// The number rolled after modifiers.
-    /// </summary>
-    public int Roll { get; init; }
-
-    /// <summary>
-    /// If success is defined, whether or not this roll was successful.
-    /// </summary>
-    public bool? Success { get; init; }
-
-    /// <summary>
-    /// The roll working.
-    /// </summary>
-    public string Working { get; init; }
 }

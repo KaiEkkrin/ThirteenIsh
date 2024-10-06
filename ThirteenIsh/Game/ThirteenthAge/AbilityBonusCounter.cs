@@ -27,10 +27,8 @@ internal class AbilityBonusCounter(GameCounter levelCounter, GameCounter scoreCo
         int rerolls,
         ref int? targetValue)
     {
-        // TODO throwing GamePropertyException here currently fails the whole command, instead fix it
-        // so that a suitable error message is returned
         var value = GetValue(character);
-        if (!value.HasValue) throw new GamePropertyException(Name);
+        if (!value.HasValue) return new GameCounterRollResult { CounterName = Name, Error = GameCounterRollError.NoValue };
 
         // In 13th Age we always add the character's level bonus to rolls like this
         IntegerParseTree levelBonus = new(0, levelCounter.GetValue(character) ?? 0, "level");
@@ -51,6 +49,8 @@ internal class AbilityBonusCounter(GameCounter levelCounter, GameCounter scoreCo
         var rolledValue = parseTree.Evaluate(random, out var working);
         return new GameCounterRollResult
         {
+            CounterName = Name,
+            Error = GameCounterRollError.Success,
             Roll = rolledValue,
             Success = targetValue.HasValue ? rolledValue >= targetValue.Value : null,
             Working = working

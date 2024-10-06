@@ -1,6 +1,5 @@
 ﻿using Discord;
 using System.Collections.Frozen;
-using System.Globalization;
 using System.Text;
 using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
@@ -64,9 +63,9 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
     /// <summary>
     /// Adds a monster to the encounter. Returns the roll result and emits the working;
     /// also populates the string out parameter with the new alias for the monster.
-    /// If this monster cannot join the encounter, returns null.
+    /// If this monster cannot join the encounter, returns an error roll result.
     /// </summary>
-    public abstract GameCounterRollResult? EncounterAdd(
+    public abstract EncounterRollResult EncounterAdd(
         DataContext dataContext,
         Character character,
         Encounter encounter,
@@ -74,8 +73,7 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
         IRandomWrapper random,
         int rerolls,
         int swarmCount,
-        ulong userId,
-        out string alias);
+        ulong userId);
 
     /// <summary>
     /// Sets up the beginning of an encounter.
@@ -85,9 +83,9 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
     /// <summary>
     /// Has this adventurer join an encounter. Returns the roll result and emits
     /// the working.
-    /// If this adventurer cannot join the encounter, returns null.
+    /// If this adventurer cannot join the encounter, returns an error roll result.
     /// </summary>
-    public abstract GameCounterRollResult? EncounterJoin(
+    public abstract EncounterRollResult EncounterJoin(
         DataContext dataContext,
         Adventurer adventurer,
         Encounter encounter,
@@ -212,4 +210,3 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
         public int Multiplier { get; init; }
     }
 }
-

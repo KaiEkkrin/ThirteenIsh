@@ -176,6 +176,8 @@ internal sealed class CombatDamageMessageHandler(SqlDataService dataService, Dis
             var rolledValue = parseTree.Evaluate(random, out var working);
             return new GameCounterRollResult
             {
+                CounterName = "Damage",
+                Error = GameCounterRollError.Success,
                 Roll = rolledValue,
                 Working = working
             };
@@ -191,7 +193,7 @@ internal sealed class CombatDamageMessageHandler(SqlDataService dataService, Dis
         public override GameCounterRollResult Roll()
         {
             _result ??= base.Roll();
-            return _result.Value;
+            return _result;
         }
     }
 }

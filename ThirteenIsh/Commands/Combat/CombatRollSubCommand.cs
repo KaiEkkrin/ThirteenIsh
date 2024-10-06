@@ -72,6 +72,11 @@ internal sealed class CombatRollSubCommand() : SubCommandBase("roll", "Rolls aga
 
                 var random = serviceProvider.GetRequiredService<IRandomWrapper>();
                 var result = counter.Roll(character, bonus, random, rerolls, ref dc);
+                if (result.Error != GameCounterRollError.Success)
+                {
+                    await command.RespondAsync($"'{namePart}' : {result.ErrorMessage}", ephemeral: true);
+                    return;
+                }
 
                 var titleBuilder = new StringBuilder()
                     .Append(CultureInfo.CurrentCulture, $"{character.Name} ({combatant.Alias}) : Rolled {counter.Name}");

@@ -20,11 +20,8 @@ internal class ThirteenthAgeCustomCounter(CustomCounter customCounter)
     {
         // The 13th Age custom counter rolls by adding its value to a d20, with nothing else --
         // seems like the simplest thing to do. Like this it can be used e.g. to define monster attacks.
-
-        // TODO throwing GamePropertyException here currently fails the whole command, instead fix it
-        // so that a suitable error message is returned
         var value = GetValue(character);
-        if (!value.HasValue) throw new GamePropertyException(Name);
+        if (!value.HasValue) return new GameCounterRollResult { CounterName = Name, Error = GameCounterRollError.NoValue };
 
         ParseTreeBase parseTree =
             new BinaryOperationParseTree(0,
@@ -40,6 +37,8 @@ internal class ThirteenthAgeCustomCounter(CustomCounter customCounter)
         var rolledValue = parseTree.Evaluate(random, out var working);
         return new GameCounterRollResult
         {
+            CounterName = Name,
+            Error = GameCounterRollError.Success,
             Roll = rolledValue,
             Success = targetValue.HasValue ? rolledValue >= targetValue.Value : null,
             Working = working

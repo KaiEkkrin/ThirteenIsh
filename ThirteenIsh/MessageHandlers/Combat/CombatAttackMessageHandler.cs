@@ -1,4 +1,5 @@
 ﻿using Discord;
+using Polly.Caching;
 using System.Globalization;
 using System.Text;
 using ThirteenIsh.ChannelMessages.Combat;
@@ -83,6 +84,13 @@ internal sealed class CombatAttackMessageHandler(SqlDataService dataService, Dis
                     }
 
                     var result = counter.Roll(character, attackBonus, random, message.Rerolls, ref dc);
+                    if (result.Error != GameCounterRollError.Success)
+                    {
+                        stringBuilder.AppendLine(CultureInfo.CurrentCulture,
+                            $" : {vsCounter.Name} : {result.ErrorMessage}");
+                        continue;
+                    }
+
                     stringBuilder.Append(CultureInfo.CurrentCulture, $" ({dc}) : {result.Roll}");
                     if (result.Success.HasValue)
                     {

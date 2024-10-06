@@ -16,7 +16,7 @@ internal class MonsterInitiativeCounter() : GameCounter(ThirteenthAgeSystem.Init
         ref int? targetValue)
     {
         var value = GetValue(character);
-        if (!value.HasValue) throw new GamePropertyException(Name);
+        if (!value.HasValue) return new GameCounterRollResult { CounterName = Name, Error = GameCounterRollError.NoValue };
 
         ParseTreeBase parseTree =
             new BinaryOperationParseTree(0,
@@ -32,6 +32,8 @@ internal class MonsterInitiativeCounter() : GameCounter(ThirteenthAgeSystem.Init
         var rolledValue = parseTree.Evaluate(random, out var working);
         return new GameCounterRollResult
         {
+            CounterName = Name,
+            Error = GameCounterRollError.Success,
             Roll = rolledValue,
             Success = targetValue.HasValue ? rolledValue >= targetValue.Value : null,
             Working = working

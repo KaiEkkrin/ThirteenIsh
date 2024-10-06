@@ -67,6 +67,8 @@ internal class SkillLevelCounter(GameAbilityCounter attribute, GameCounter skill
         targetValue ??= GetValue(character);
         return new GameCounterRollResult
         {
+            CounterName = Name,
+            Error = GameCounterRollError.Success,
             Roll = rolledValue,
             Success = targetValue.HasValue ? rolledValue <= targetValue.Value : null,
             Working = working

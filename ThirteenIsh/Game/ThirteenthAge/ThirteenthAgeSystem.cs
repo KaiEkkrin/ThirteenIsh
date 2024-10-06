@@ -128,7 +128,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         return bonusCounter;
     }
 
-    public override GameCounterRollResult? EncounterAdd(
+    public override EncounterRollResult EncounterAdd(
         DataContext dataContext,
         Character character,
         Encounter encounter,
@@ -136,8 +136,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         IRandomWrapper random,
         int rerolls,
         int swarmCount,
-        ulong userId,
-        out string alias)
+        ulong userId)
     {
         if (character.CharacterType != CharacterType.Monster)
             throw new ArgumentException("EncounterAdd requires a monster", nameof(character));
@@ -158,13 +157,14 @@ internal sealed class ThirteenthAgeSystem : GameSystem
 
         // Roll its initiative
         var initiative = RollMonsterInitiative(characterSystem, combatant, encounter, random, rerolls, userId);
+        if (initiative.Error != GameCounterRollError.Success)
+            return EncounterRollResult.BuildError(initiative);
 
         // Add it to the encounter
         combatant.Initiative = initiative.Roll;
         combatant.InitiativeRollWorking = initiative.Working;
         encounter.InsertCombatantIntoTurnOrder(combatant);
-        alias = combatant.Alias;
-        return initiative;
+        return EncounterRollResult.BuildSuccess(initiative, combatant.Alias);
     }
 
     public override void EncounterBegin(Encounter encounter)
@@ -172,7 +172,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         encounter.State.Counters.SetValue(EscalationDie, 0);
     }
 
-    public override GameCounterRollResult? EncounterJoin(
+    public override EncounterRollResult EncounterJoin(
         DataContext dataContext,
         Adventurer adventurer,
         Encounter encounter,
@@ -186,6 +186,8 @@ internal sealed class ThirteenthAgeSystem : GameSystem
 
         int? targetValue = null;
         var initiative = dexterityBonusCounter.Roll(adventurer, null, random, rerolls, ref targetValue);
+        if (initiative.Error != GameCounterRollError.Success)
+            return EncounterRollResult.BuildError(initiative);
 
         AdventurerCombatant combatant = new()
         {
@@ -197,7 +199,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         };
 
         encounter.InsertCombatantIntoTurnOrder(combatant);
-        return initiative;
+        return EncounterRollResult.BuildSuccess(initiative, combatant.Alias);
     }
 
     public override string GetCharacterSummary(CharacterSheet sheet, CharacterType type)
@@ -263,13 +265,14 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         var matchingMonster = encounter.Combatants.OfType<MonsterCombatant>()
             .FirstOrDefault(c => c.Name == combatant.Name && c.UserId == userId);
 
+        var initiativeCounter = characterSystem.GetProperty<GameCounter>(combatant.Sheet, Initiative);
         if (matchingMonster is { Initiative: { } roll, InitiativeRollWorking: { } working })
         {
             // We have already rolled for this monster type -- re-use the same one.
-            return new GameCounterRollResult { Roll = roll, Working = working };
+            return new GameCounterRollResult
+            { CounterName = initiativeCounter.Name, Error = GameCounterRollError.Success, Roll = roll, Working = working };
         }
 
-        var initiativeCounter = characterSystem.GetProperty<GameCounter>(combatant.Sheet, Initiative);
         int? targetValue = null;
         var initiative = initiativeCounter.Roll(combatant, null, random, rerolls, ref targetValue);
         return initiative;

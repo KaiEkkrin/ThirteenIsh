@@ -65,6 +65,11 @@ internal sealed class PcRollSubCommand() : SubCommandBase("roll", "Rolls against
 
         var random = serviceProvider.GetRequiredService<IRandomWrapper>();
         var result = counter.Roll(adventurer, bonus, random, rerolls, ref dc);
+        if (result.Error != GameCounterRollError.Success)
+        {
+            await command.RespondAsync($"'{namePart}' : '{result.ErrorMessage}'", ephemeral: true);
+            return;
+        }
 
         var titleBuilder = new StringBuilder()
             .Append(CultureInfo.CurrentCulture, $"{adventurer.Name} : Rolled {counter.Name}");

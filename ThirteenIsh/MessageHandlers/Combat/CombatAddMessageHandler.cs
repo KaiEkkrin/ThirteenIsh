@@ -45,7 +45,7 @@ internal sealed class CombatAddMessageHandler(SqlDataService dataService, Discor
                 // Send an appropriate response
                 var embedBuilder = new EmbedBuilder()
                     .WithAuthor(user)
-                    .WithTitle($"A {character.Name} joined the encounter as {output.Alias} : {output.Result.Roll}")
+                    .WithTitle($"A {character.Name} joined the encounter as {output.Result.Alias} : {output.Result.Roll}")
                     .WithDescription($"{output.Result.Working}\n{encounterTable}");
 
                 await interaction.ModifyOriginalResponseAsync(properties => properties.Embed = embedBuilder.Build());
@@ -67,15 +67,15 @@ internal sealed class CombatAddMessageHandler(SqlDataService dataService, Discor
             var gameSystem = GameSystem.Get(adventure.GameSystem);
             NameAliasCollection nameAliasCollection = new(encounter);
             var result = gameSystem.EncounterAdd(context, character, encounter, nameAliasCollection,
-                random, rerolls, swarmCount, userId, out var alias);
+                random, rerolls, swarmCount, userId);
 
-            if (!result.HasValue) return CreateError(
-                $"You are not able to add a '{character.Name}' to this encounter at this time.");
+            if (result.Error != GameCounterRollError.Success)
+                return CreateError($"Unable to add a '{character.Name}' to this encounter : {result.ErrorMessage}.");
 
-            return new EditResult<EditOutput>(new EditOutput(alias, adventure, encounter, gameSystem, result.Value));
+            return new EditResult<EditOutput>(new EditOutput(adventure, encounter, gameSystem, result));
         }
     }
 
-    private sealed record EditOutput(string Alias, Adventure Adventure, Encounter Encounter, GameSystem GameSystem,
-        GameCounterRollResult Result);
+    private sealed record EditOutput(Adventure Adventure, Encounter Encounter, GameSystem GameSystem,
+        EncounterRollResult Result);
 }

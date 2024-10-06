@@ -166,7 +166,7 @@ internal sealed class DragonbaneSystem : GameSystem
         builder.AddProperties(skillCounter, skillLevelCounter);
     }
 
-    public override GameCounterRollResult? EncounterAdd(
+    public override EncounterRollResult EncounterAdd(
         DataContext dataContext,
         Character character,
         Encounter encounter,
@@ -174,8 +174,7 @@ internal sealed class DragonbaneSystem : GameSystem
         IRandomWrapper random,
         int rerolls,
         int swarmCount,
-        ulong userId,
-        out string alias)
+        ulong userId)
     {
         // TODO implement this
         throw new NotImplementedException();
@@ -186,7 +185,7 @@ internal sealed class DragonbaneSystem : GameSystem
         ResetInitiativeDeck(encounter);
     }
 
-    public override GameCounterRollResult? EncounterJoin(
+    public override EncounterRollResult EncounterJoin(
         DataContext dataContext,
         Adventurer adventurer,
         Encounter encounter,
@@ -197,7 +196,7 @@ internal sealed class DragonbaneSystem : GameSystem
     {
         // TODO -- support surprise
         var card = DrawInitiativeDeck(encounter, random, out var working);
-        if (!card.HasValue) return null;
+        if (!card.HasValue) return new EncounterRollResult { CounterName = "Initiative", Error = GameCounterRollError.NoValue };
 
         AdventurerCombatant newCombatant = new()
         {
@@ -209,7 +208,14 @@ internal sealed class DragonbaneSystem : GameSystem
         };
 
         encounter.InsertCombatantIntoTurnOrder(newCombatant);
-        return new GameCounterRollResult { Roll = card.Value, Working = working };
+        return new EncounterRollResult
+        {
+            Alias = newCombatant.Alias,
+            CounterName = "Initiative",
+            Error = GameCounterRollError.Success,
+            Roll = card.Value,
+            Working = working
+        };
     }
 
     public override string GetCharacterSummary(CharacterSheet sheet, CharacterType type)

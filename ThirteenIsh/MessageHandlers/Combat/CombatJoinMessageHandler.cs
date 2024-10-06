@@ -66,13 +66,13 @@ internal sealed class CombatJoinMessageHandler(SqlDataService dataService, Disco
             var result = gameSystem.EncounterJoin(context, adventurer, encounter, nameAliasCollection,
                 random, rerolls, userId);
 
-            if (!result.HasValue) return CreateError("You are not able to join this encounter at this time.");
+            if (result.Error != GameCounterRollError.Success)
+                return CreateError($"Unable to join this encounter : {result.ErrorMessage}.");
 
-            return new EditResult<EditOutput>(new EditOutput(
-                adventure, adventurer, encounter, gameSystem, result.Value));
+            return new EditResult<EditOutput>(new EditOutput(adventure, adventurer, encounter, gameSystem, result));
         }
     }
 
     private sealed record EditOutput(Adventure Adventure, Adventurer Adventurer, Encounter Encounter, GameSystem GameSystem,
-        GameCounterRollResult Result);
+        EncounterRollResult Result);
 }
