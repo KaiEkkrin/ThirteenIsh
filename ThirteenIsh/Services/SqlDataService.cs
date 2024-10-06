@@ -396,6 +396,26 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
         return combatant.GetCharacterAsync(_context, encounter, cancellationToken);
     }
 
+    public Task<List<Character>> GetCharactersPageAsync(ulong userId, CharacterType characterType,
+        string? name, bool after, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var queryable = _context.Characters
+            .AsNoTracking()
+            .Where(c => c.UserId == userId && c.CharacterType == characterType);
+
+        if (!string.IsNullOrEmpty(name))
+        {
+            queryable = after
+                ? queryable.Where(c => c.NameUpper.CompareTo(name.ToUpperInvariant()) > 0)
+                : queryable.Where(c => c.NameUpper.CompareTo(name.ToUpperInvariant()) >= 0);
+        }
+
+        return queryable
+            .OrderBy(c => c.NameUpper)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<EditResult<CombatantResult>> GetCombatantResultAsync(Guild guild, ulong channelId, ulong? userId,
         string? alias = null, CancellationToken cancellationToken = default)
     {
@@ -452,16 +472,6 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
     public Task<MessageBase?> GetMessageAsync(long id, CancellationToken cancellationToken = default)
     {
         return _context.Messages.SingleOrDefaultAsync(m => m.Id == id, cancellationToken);
-    }
-
-    public IAsyncEnumerable<Character> ListCharactersAsync(ulong userId, CharacterType characterType,
-        bool asTracking = true)
-    {
-        return _context.Characters
-            .AsTracking(asTracking ? QueryTrackingBehavior.TrackAll : QueryTrackingBehavior.NoTracking)
-            .Where(c => c.UserId == userId && c.CharacterType == characterType)
-            .OrderBy(c => c.Name)
-            .AsAsyncEnumerable();
     }
 
     private IAsyncEnumerable<Character> ListCharactersAsync(string name, ulong userId, CharacterType characterType,

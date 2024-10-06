@@ -50,6 +50,10 @@ internal sealed partial class DiscordService : IAsyncDisposable, IDisposable
         "Message handler {Name} timed out after {Timeout}: {Details}")]
     private partial void MessageTimeoutMessage(string name, TimeSpan timeout, string details, Exception exception);
 
+    [LoggerMessage(Level = LogLevel.Error, EventId = 11, Message =
+        "Message handler {Name} failed: {Details}")]
+    private partial void MessageErrorMessage(string name, string details, Exception exception);
+
     private readonly DiscordSocketClient _client = new();
     private readonly ConcurrentDictionary<string, CommandBase> _commandsMap = new();
 
@@ -175,8 +179,9 @@ internal sealed partial class DiscordService : IAsyncDisposable, IDisposable
             MessageTimeoutMessage(arg.Data.CustomId, MessageTimeout, ex.Message, ex);
             await CommandUtil.RespondWithTimeoutMessageAsync(arg, MessageTimeout, arg.Data.CustomId);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            MessageErrorMessage(arg.Data.CustomId, ex.Message, ex);
             await CommandUtil.RespondWithInternalErrorMessageAsync(arg, arg.Data.CustomId);
             throw;
         }

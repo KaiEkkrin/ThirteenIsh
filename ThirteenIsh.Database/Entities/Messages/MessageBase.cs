@@ -38,6 +38,7 @@ public class MessageBase
     /// </summary>
     public string GetMessageId(string? controlId = null)
     {
+        if (Id == 0) throw new InvalidOperationException("Cannot generate a custom ID without a valid message ID");
         return string.IsNullOrEmpty(controlId) ? $"{Id}" : $"{Id}:{controlId}";
     }
 

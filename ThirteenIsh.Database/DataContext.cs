@@ -24,6 +24,7 @@ public class DataContext : DbContext
     public DbSet<EncounterDamageMessage> EncounterDamageMessages { get; set; }
     public DbSet<EndEncounterMessage> EndEncounterMessages { get; set; }
     public DbSet<LeaveAdventureMessage> LeaveAdventureMessages { get; set; }
+    public DbSet<ListCharactersMessage> ListCharactersMessages { get; set; }
     public DbSet<ResetAdventurerMessage> ResetAdventurerMessages { get; set; }
 
     public DataContext(DbContextOptions<DataContext> options) : base(options)
