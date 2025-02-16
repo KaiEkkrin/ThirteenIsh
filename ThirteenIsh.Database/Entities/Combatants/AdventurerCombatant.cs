@@ -15,9 +15,6 @@ public class AdventurerCombatant : CombatantBase
         Encounter encounter,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(nameof(dataContext));
-        ArgumentNullException.ThrowIfNull(nameof(encounter));
-
         var adventurer = await dataContext.Adventurers.SingleOrDefaultAsync(
             a => a.Adventure.GuildId == encounter.GuildId &&
                  a.Adventure.Name == encounter.AdventureName &&

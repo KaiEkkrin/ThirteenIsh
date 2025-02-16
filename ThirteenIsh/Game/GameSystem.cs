@@ -4,6 +4,7 @@ using System.Text;
 using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Database.Entities.Combatants;
+using ThirteenIsh.Game.Swn;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Game;
@@ -19,7 +20,8 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
     public static readonly IReadOnlyList<GameSystem> AllGameSystems =
     [
         ThirteenthAge.ThirteenthAgeSystem.Build(),
-        Dragonbane.DragonbaneSystem.Build()
+        Dragonbane.DragonbaneSystem.Build(),
+        SwnSystem.Build()
     ];
 
     /// <summary>
