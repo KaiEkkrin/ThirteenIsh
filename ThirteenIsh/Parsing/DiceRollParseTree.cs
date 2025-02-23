@@ -11,12 +11,12 @@ internal sealed class DiceRollParseTree(int offset, int diceCount, int diceSign,
 {
     public string AsString => ToString();
 
-    public static DiceRollParseTree BuildWithRerolls(int diceSize, int rerolls)
+    public static DiceRollParseTree BuildWithRerolls(int diceSize, int rerolls, int baseDiceCount = 1)
     {
-        int? keepHighest = rerolls >= 1 ? 1 : null;
-        int? keepLowest = rerolls <= -1 ? 1 : null;
+        int? keepHighest = rerolls >= 1 ? baseDiceCount : null;
+        int? keepLowest = rerolls <= -1 ? baseDiceCount : null;
         return new DiceRollParseTree(
-            0, Math.Abs(rerolls) + 1, 1, diceSize, keepHighest, keepLowest);
+            0, Math.Abs(rerolls) + baseDiceCount, 1, diceSize, keepHighest, keepLowest);
     }
 
     public override int Evaluate(IRandomWrapper random, out string working)

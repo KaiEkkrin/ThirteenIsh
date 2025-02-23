@@ -152,13 +152,16 @@ internal class GameCounter(string name, string? alias = null,
     /// lowest (if negative). 0 means roll only once.</param>
     /// <param name="targetValue">An optional target value. If one is not supplied and this
     /// game system implies one, the implied one will be filled in.</param>
+    /// <param name="secondCounter">A second counter to use as part of this roll.
+    /// Only relevant to SWN skill checks right now.</param>
     /// <returns>The roll result.</returns>
     public virtual GameCounterRollResult Roll(
         ITrackedCharacter character,
         ParseTreeBase? bonus,
         IRandomWrapper random,
         int rerolls,
-        ref int? targetValue)
+        ref int? targetValue,
+        GameCounter? secondCounter = null)
     {
         return new GameCounterRollResult { CounterName = Name, Error = GameCounterRollError.NotRollable };
     }

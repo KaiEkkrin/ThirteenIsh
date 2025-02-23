@@ -17,7 +17,8 @@ internal sealed class PcRollSubCommand() : SubCommandBase("roll", "Rolls against
                 isRequired: true)
             .AddOption("bonus", ApplicationCommandOptionType.String, "A bonus dice expression to add.")
             .AddOption("dc", ApplicationCommandOptionType.Integer, "The amount that counts as a success.")
-            .AddRerollsOption("rerolls");
+            .AddRerollsOption("rerolls")
+            .AddOption("second", ApplicationCommandOptionType.String, "The secondary property for this roll, e.g. for SWN skill checks.");
     }
 
     public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
@@ -63,8 +64,22 @@ internal sealed class PcRollSubCommand() : SubCommandBase("roll", "Rolls against
             return;
         }
 
+        GameCounter? secondaryCounter = null;
+        if (CommandUtil.TryGetOption<string>(option, "second", out var secondaryNamePart))
+        {
+            secondaryCounter = characterSystem.FindCounter(adventurer.Sheet, secondaryNamePart,
+                c => c.Options.HasFlag(GameCounterOptions.CanRoll));
+
+            if (secondaryCounter is null)
+            {
+                await command.RespondAsync($"'{secondaryNamePart}' does not uniquely match a rollable property.",
+                    ephemeral: true);
+                return;
+            }
+        }
+
         var random = serviceProvider.GetRequiredService<IRandomWrapper>();
-        var result = counter.Roll(adventurer, bonus, random, rerolls, ref dc);
+        var result = counter.Roll(adventurer, bonus, random, rerolls, ref dc, secondaryCounter);
         if (result.Error != GameCounterRollError.Success)
         {
             await command.RespondAsync($"'{namePart}' : '{result.ErrorMessage}'", ephemeral: true);

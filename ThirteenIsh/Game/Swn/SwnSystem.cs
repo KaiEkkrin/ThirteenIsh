@@ -195,7 +195,7 @@ internal class SwnSystem : GameSystem
 
     public static GameCounter BuildSkill(GamePropertyGroupBuilder builder, string skillName)
     {
-        GameCounter skillCounter = new(skillName, defaultValue: -1, minValue: -1, maxValue: 4, options: GameCounterOptions.CanRoll);
+        SkillCounter skillCounter = new(skillName);
         builder.AddProperty(skillCounter);
         return skillCounter;
     }

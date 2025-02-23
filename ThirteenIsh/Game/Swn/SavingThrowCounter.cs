@@ -17,7 +17,8 @@ internal class SavingThrowCounter(string name, params AttributeBonusCounter[] at
     }
 
     public override GameCounterRollResult Roll(
-        ITrackedCharacter character, ParseTreeBase? bonus, IRandomWrapper random, int rerolls, ref int? targetValue)
+        ITrackedCharacter character, ParseTreeBase? bonus, IRandomWrapper random, int rerolls, ref int? targetValue,
+        GameCounter? secondCounter = null)
     {
         ParseTreeBase parseTree = DiceRollParseTree.BuildWithRerolls(20, rerolls);
         if (bonus is not null)
