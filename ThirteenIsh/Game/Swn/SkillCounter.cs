@@ -1,4 +1,6 @@
-﻿using ThirteenIsh.Database.Entities;
+﻿using System.Globalization;
+using System.Text;
+using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Game.Swn;
@@ -32,10 +34,18 @@ internal class SkillCounter(string name) : GameCounter(name, defaultValue: -1, m
             parseTree = new BinaryOperationParseTree(0, parseTree, bonus, '+');
         }
 
+        StringBuilder rollNameBuilder = new($"{Name}");
+        if (secondCounter is not null)
+        {
+            rollNameBuilder.Append(CultureInfo.CurrentCulture, $" ({secondCounter.Name[..3].ToUpper(CultureInfo.CurrentCulture)})");
+        }
+
+        if (skillBonus < 0) rollNameBuilder.Append(" unskilled");
+
         var rolledValue = parseTree.Evaluate(random, out var working);
         return new GameCounterRollResult
         {
-            CounterName = Name,
+            CounterName = rollNameBuilder.ToString(),
             Error = GameCounterRollError.Success,
             Roll = rolledValue,
             Working = working,

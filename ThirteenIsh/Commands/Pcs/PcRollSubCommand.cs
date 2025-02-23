@@ -87,7 +87,7 @@ internal sealed class PcRollSubCommand() : SubCommandBase("roll", "Rolls against
         }
 
         var titleBuilder = new StringBuilder()
-            .Append(CultureInfo.CurrentCulture, $"{adventurer.Name} : Rolled {counter.Name}");
+            .Append(CultureInfo.CurrentCulture, $"{adventurer.Name} : Rolled {result.CounterName}");
 
         if (dc.HasValue)
             titleBuilder.Append(CultureInfo.CurrentCulture, $" vs {dc.Value}");
