@@ -82,7 +82,7 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
     }
 
     public async Task<Character?> CreateCharacterAsync(string name, CharacterType characterType,
-        string gameSystem, ulong userId, CancellationToken cancellationToken = default)
+        string gameSystem, ulong userId, Action<Character>? initialiseCharacter = null, CancellationToken cancellationToken = default)
     {
         // TODO what error happens when the character already exists / their name overlaps
         // another one?
@@ -94,6 +94,7 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
             UserId = userId
         };
 
+        initialiseCharacter?.Invoke(character);
         _context.Characters.Add(character);
         await _context.SaveChangesAsync(cancellationToken);
         return character;

@@ -23,9 +23,9 @@ internal class AttributeBonusCounter(GameCounter attributeCounter)
 
     private static int? GetBonusValue(int? score)
     {
-        if (!score.HasValue) return null;
         return score switch
         {
+            null => null,
             <= 3 => -2,
             <= 7 => -1,
             <= 13 => 0,

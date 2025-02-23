@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using ThirteenIsh.Database;
+﻿using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Database.Entities.Combatants;
 
@@ -15,10 +14,13 @@ internal class SwnSystem : GameSystem
     public const string PsychicSkills = "Psychic Skills";
     public const string General = "General";
     public const string SavingThrows = "Saving Throws";
+    public const string Equipment = "Equipment";
 
     public const string Expert = "Expert";
     public const string Psychic = "Psychic";
     public const string Warrior = "Warrior";
+
+    public const string Level = "Level";
 
     public const string Strength = "Strength";
     public const string Dexterity = "Dexterity";
@@ -76,7 +78,7 @@ internal class SwnSystem : GameSystem
         // matching partial classes.
         GameProperty class1Property = new("Class 1", [Expert, Psychic, Warrior], true);
         GameProperty class2Property = new("Class 2", [Expert, Psychic, Warrior], true);
-        GameCounter levelCounter = new("Level", defaultValue: 1, minValue: 1);
+        GameCounter levelCounter = new(Level, defaultValue: 1, minValue: 1);
 
         var basics = new GamePropertyGroupBuilder(Basics)
             .AddProperties(class1Property, class2Property, levelCounter)
@@ -125,6 +127,10 @@ internal class SwnSystem : GameSystem
         // Players can fix Armor Value to the base AC of their armor so that the actual AC counter
         // has their Dexterity bonus added automatically.
         GameCounter armorValueCounter = new(ArmorValue, defaultValue: 10, minValue: 10, maxValue: 21);
+        
+        var equipment = new GamePropertyGroupBuilder(Equipment)
+            .AddProperty(armorValueCounter)
+            .Build();
 
         ArmorClassCounter armorClassCounter = new(armorValueCounter, dexterity);
         AttackBonusCounter attackBonusCounter = new(class1Property, class2Property, levelCounter);
@@ -135,7 +141,6 @@ internal class SwnSystem : GameSystem
 
         var general = new GamePropertyGroupBuilder(General)
             .AddProperty(armorClassCounter)
-            .AddProperty(armorValueCounter)
             .AddProperty(attackBonusCounter)
             .AddProperty(effortCounter)
             .AddProperty(hitPointsCounter)
@@ -149,7 +154,7 @@ internal class SwnSystem : GameSystem
             .Build();
 
         // TODO build a monster system as well (make sure I can make characters successfully first)
-        SwnCharacterSystem playerCharacterSystem = new([basics, attributes, skills, psychicSkills, general, savingThrows]);
+        SwnCharacterSystem playerCharacterSystem = new([basics, attributes, skills, psychicSkills, general, savingThrows, equipment]);
         return new SwnSystem(SystemName, [playerCharacterSystem]);
     }
 

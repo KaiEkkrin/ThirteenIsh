@@ -39,7 +39,7 @@ internal sealed class CharacterAddSubCommand(CharacterType characterType)
         // Add the character
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var character = await dataService.CreateCharacterAsync(name, characterType, gameSystemName,
-            command.User.Id, cancellationToken);
+            command.User.Id, gameSystem.GetCharacterSystem(characterType).SetNewCharacterStartingValues, cancellationToken);
         if (character is null)
         {
             await command.RespondAsync(

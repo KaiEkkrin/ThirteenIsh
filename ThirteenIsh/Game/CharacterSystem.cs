@@ -207,6 +207,14 @@ internal abstract class CharacterSystem
     }
 
     /// <summary>
+    /// Enumerates all property groups.
+    /// </summary>
+    public IEnumerable<GamePropertyGroup> GetPropertyGroups()
+    {
+        return _propertyGroups;
+    }
+
+    /// <summary>
     /// Gets a property of a known type by exact name match, or throws if not found.
     /// For game logic use :)
     /// </summary>
@@ -268,6 +276,13 @@ internal abstract class CharacterSystem
 
             variables.Counters.SetValue(counter.Name, maxValue);
         }
+    }
+
+    /// <summary>
+    /// Sets the starting values for a new character, if applicable to this game system.
+    /// </summary>
+    public virtual void SetNewCharacterStartingValues(Character character)
+    {
     }
 
     public bool TryBuildPropertyValueChoiceComponent(string messageId, string propertyName, CharacterSheet sheet,
