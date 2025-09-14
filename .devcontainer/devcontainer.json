@@ -4,6 +4,10 @@
   "service": "devcontainer",
   "workspaceFolder": "/workspace",
   "shutdownAction": "stopCompose",
+  "mounts": [
+    "source=~/.claude,target=/home/node/.claude,type=bind,consistency=cached",
+    "source=~/.claude.json,target=/home/node/.claude.json,type=bind,consistency=cached"
+  ],
 
   "features": {
     "ghcr.io/devcontainers/features/dotnet:2": {
