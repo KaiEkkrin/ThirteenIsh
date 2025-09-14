@@ -1,6 +1,7 @@
 ﻿using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Database.Entities.Combatants;
+using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Game.Swn;
 
@@ -166,13 +167,44 @@ internal class SwnSystem : GameSystem
 
     public override void EncounterBegin(Encounter encounter)
     {
-        throw new NotImplementedException();
+        // No special setup needed at the start of an encounter
     }
 
     public override EncounterRollResult EncounterJoin(DataContext dataContext, Adventurer adventurer, Encounter encounter,
         NameAliasCollection nameAliasCollection, IRandomWrapper random, int rerolls, ulong userId)
     {
-        throw new NotImplementedException();
+        // In Stars Without Number, the initiative roll is 1d8 + Dexterity bonus.
+        var dexterityBonusCounter = GetCharacterSystem(CharacterType.PlayerCharacter)
+            .GetProperty<GameCounter>(adventurer.Sheet, AttributeBonusCounter.GetBonusCounterName(Dexterity));
+
+        ParseTreeBase parseTree = DiceRollParseTree.BuildWithRerolls(8, 0, 1);
+        var dexterityBonus = dexterityBonusCounter.GetValue(adventurer);
+        if (dexterityBonus.HasValue)
+        {
+            parseTree = new BinaryOperationParseTree(0, parseTree, new IntegerParseTree(
+                0, dexterityBonus.Value, dexterityBonusCounter.Name), '+');
+        }
+
+        var initiative = parseTree.Evaluate(random, out var working);
+        GameCounterRollResult initiativeRollResult = new()
+        {
+            CounterName = "Initiative",
+            Error = GameCounterRollError.Success,
+            Roll = initiative,
+            Working = working
+        };
+
+        AdventurerCombatant combatant = new()
+        {
+            Alias = nameAliasCollection.Add(adventurer.Name, 10, false),
+            Initiative = initiative,
+            InitiativeRollWorking = working,
+            Name = adventurer.Name,
+            UserId = userId
+        };
+
+        encounter.InsertCombatantIntoTurnOrder(combatant);
+        return EncounterRollResult.BuildSuccess(initiativeRollResult, combatant.Alias);
     }
 
     public override string GetCharacterSummary(CharacterSheet sheet, CharacterType type)
@@ -220,7 +252,8 @@ internal class SwnSystem : GameSystem
 
     protected override CombatantBase? EncounterNextRound(Encounter encounter, IRandomWrapper random)
     {
-        throw new NotImplementedException();
+        // Nothing special to do here
+        return encounter.GetCurrentCombatant();
     }
 
     private static AttributeBonusCounter BuildAttribute(GamePropertyGroupBuilder builder, string attributeName)

@@ -110,10 +110,10 @@ ThirteenIsh includes support for the **Stars Without Number: Revised Edition** t
 
 **SwnSystem.cs:**
 - [ ] `EncounterAdd` (line 164)
-- [ ] `EncounterBegin` (line 169)
-- [ ] `EncounterJoin` (line 175)
+- [x] `EncounterBegin` (line 169) - ✅ **COMPLETED**
+- [x] `EncounterJoin` (line 175) - ✅ **COMPLETED**
 - [x] `GetCharacterSummary` (line 180) - ✅ **COMPLETED**
-- [ ] `EncounterNextRound` (line 185)
+- [x] `EncounterNextRound` (line 185) - ✅ **COMPLETED**
 
 **SwnCharacterSystem.cs:**
 - [ ] `BuildCustomCounter` (line 27)
@@ -134,7 +134,6 @@ ThirteenIsh includes support for the **Stars Without Number: Revised Edition** t
 
 **High Priority** (Core gameplay):
 1. Character backgrounds and starting packages
-2. Basic encounter/combat system implementation
 
 **Medium Priority** (Enhanced features):
 1. Character foci system
