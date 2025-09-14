@@ -2,6 +2,25 @@
 
 An experimental Discord bot for dice rolling and TTRPG tracking
 
+## Development with VS Code Dev Container
+
+This project includes a VS Code dev container setup for easy development. The dev container provides:
+
+- Latest .NET SDK with `dotnet ef` tool pre-installed
+- Node.js LTS
+- PostgreSQL database (automatically configured)
+- All necessary VS Code extensions
+
+To use the dev container:
+
+1. Ensure you have Docker and the "Dev Containers" VS Code extension installed
+2. Create the `my.docker.env` file in the project root (see Docker-compose section below for required variables)
+3. Open the project in VS Code
+4. When prompted, click "Reopen in Container" or use Command Palette → "Dev Containers: Reopen in Container"
+5. The container will build and start automatically, including the PostgreSQL database
+
+All environment variables from `my.docker.env` are automatically loaded into the dev container.
+
 ## Setup
 
 I followed the instructions in [Discord.net -- Your First Bot](https://discordnet.dev/guides/getting_started/first-bot.html) and in [Discord.net -- Getting started with application commands](https://discordnet.dev/guides/int_basics/application-commands/intro.html). The bot will need to be added to servers with the following permissions:
