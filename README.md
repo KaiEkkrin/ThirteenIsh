@@ -21,6 +21,14 @@ To use the dev container:
 
 All environment variables from `my.docker.env` are automatically loaded into the dev container.
 
+To use Claude Code within the dev container:
+
+1. Run `claude setup-token` in a host shell. This will create an OAuth token.
+2. Add a row `CLAUDE_CODE_OAUTH_TOKEN="...token..."` to my.docker.env.
+3. Use "Reopen in Container" in VS Code.
+4. Within the container, run `npm install -g @anthropic-ai/claude-code`, install the Claude Code VS Code plugin
+(optional), and then run `claude` (as you'd expect); it should not require authentication.
+
 ## Setup
 
 I followed the instructions in [Discord.net -- Your First Bot](https://discordnet.dev/guides/getting_started/first-bot.html) and in [Discord.net -- Getting started with application commands](https://discordnet.dev/guides/int_basics/application-commands/intro.html). The bot will need to be added to servers with the following permissions:
