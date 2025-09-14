@@ -15,6 +15,11 @@
     }
   },
 
+  "mounts": [
+    "source=${localEnv:USERPROFILE}\\.claude,target=/home/vscode/.claude,type=bind,consistency=cached",
+    "source=${localEnv:USERPROFILE}\\.claude.json,target=/home/vscode/.claude.json,type=bind,consistency=cached"
+  ],
+
   "postCreateCommand": "dotnet tool install --global dotnet-ef",
 
   "containerEnv": {
