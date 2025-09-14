@@ -17,6 +17,10 @@
 
   "postCreateCommand": "dotnet tool install --global dotnet-ef",
 
+  "mounts": [
+    "source=${localWorkspaceFolder}/my.docker.env,target=/workspace/my.docker.env,type=bind,consistency=cached"
+  ],
+
   "customizations": {
     "vscode": {
       "extensions": [
