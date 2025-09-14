@@ -8,13 +8,16 @@ services:
       - thirteenish-network
     depends_on:
       - postgres
-    env_file:
-      - ../my.docker.env
+    environment:
+      - POSTGRES_USER=thirteenish
+      - POSTGRES_PASSWORD=devcontainerpassword
+      - DbConnectionString=Host=postgres;Database=thirteenish;Username=thirteenish;Password=devcontainerpassword
 
   postgres:
     image: postgres:16
-    env_file:
-      - ../my.docker.env
+    environment:
+      - POSTGRES_USER=thirteenish
+      - POSTGRES_PASSWORD=devcontainerpassword
     ports:
       - "5432:5432"
     volumes:
