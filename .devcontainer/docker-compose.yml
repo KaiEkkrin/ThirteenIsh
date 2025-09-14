@@ -4,8 +4,6 @@ services:
     volumes:
       - ../:/workspace:cached
     command: sleep infinity
-    networks:
-      - thirteenish-network
     depends_on:
       - postgres
     environment:
@@ -22,11 +20,6 @@ services:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
-    networks:
-      - thirteenish-network
 
 volumes:
   postgres-data:
-
-networks:
-  thirteenish-network:
