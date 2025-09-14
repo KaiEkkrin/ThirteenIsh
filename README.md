@@ -8,18 +8,58 @@ This project includes a VS Code dev container setup for easy development. The de
 
 - Latest .NET SDK with `dotnet ef` tool pre-installed
 - Node.js LTS
-- PostgreSQL database (automatically configured)
+- PostgreSQL database (automatically configured with default credentials)
 - All necessary VS Code extensions
 
-To use the dev container:
+### Setting Up the Dev Container
 
-1. Ensure you have Docker and the "Dev Containers" VS Code extension installed
-2. Create the `my.docker.env` file in the project root (see Docker-compose section below for required variables)
-3. Open the project in VS Code
-4. When prompted, click "Reopen in Container" or use Command Palette → "Dev Containers: Reopen in Container"
-5. The container will build and start automatically, including the PostgreSQL database
+1. **Install Prerequisites:**
+   - Ensure you have Docker and the "Dev Containers" VS Code extension installed
 
-All environment variables from `my.docker.env` are automatically loaded into the dev container.
+2. **Configure Your Bot Token (Secret):**
+
+   **IMPORTANT:** Your Discord bot token is a secret and must never be committed to the repository.
+
+   Set your bot token as an environment variable on your local machine:
+
+   **On Windows (PowerShell):**
+   ```powershell
+   $env:BOT_TOKEN = "your-actual-bot-token-here"
+   ```
+
+   **On Windows (Command Prompt):**
+   ```cmd
+   set BOT_TOKEN=your-actual-bot-token-here
+   ```
+
+   **On macOS/Linux:**
+   ```bash
+   export BOT_TOKEN="your-actual-bot-token-here"
+   ```
+
+   **For Permanent Setup:**
+   - **Windows:** Add the variable to your system environment variables via System Properties → Environment Variables
+   - **macOS/Linux:** Add the export line to your `~/.bashrc`, `~/.zshrc`, or equivalent shell profile file
+
+3. **Start the Dev Container:**
+
+   **Recommended Method (Better Performance):**
+   - Use Command Palette (Ctrl/Cmd+Shift+P) → "Dev Containers: Clone Repository in Container Volume"
+   - Enter the repository URL: `https://github.com/KaiEkkrin/ThirteenIsh.git`
+   - This clones the repository directly into a Docker volume for optimal performance
+
+   **Alternative Method:**
+   - Open the project in VS Code locally first
+   - When prompted, click "Reopen in Container" or use Command Palette → "Dev Containers: Reopen in Container"
+
+   The container will build and start automatically, including the PostgreSQL database. Your `BOT_TOKEN` will be securely injected from your local environment.
+
+The dev container automatically configures a PostgreSQL database with these credentials:
+- Username: `thirteenish`
+- Password: `devcontainerpassword`
+- Database: `thirteenish`
+
+**Note:** The PostgreSQL password is hardcoded for development convenience since it's only accessible within the local container.
 
 ## Setup
 
@@ -49,12 +89,13 @@ Configure these via command line, environment variables or user secrets.
 
 ## Docker-compose based deployment
 
-* Create a file "my.docker.env" in the project root and add to it the following:
-	* `BotToken="...my bot token..."`.
-	* `DbConnectionString="...my database connection string..."` (as above)
-	* `POSTGRES_USER="...my postgres user name..."`
-	* `POSTGRES_PASSWORD="...my postgres user password..."`
-* Run e.g. `docker-compose up -d --build`
+**Note:** The dev container setup above is recommended for development. For production deployment, you'll need to configure environment variables appropriately for your deployment environment.
+
+For local testing with docker-compose, you can use the main `docker-compose.yaml` file, but you'll need to set the required environment variables in your deployment environment:
+* `BotToken` - your Discord bot token
+* `DbConnectionString` - your database connection string
+* `POSTGRES_USER` - your PostgreSQL username
+* `POSTGRES_PASSWORD` - your PostgreSQL password
 
 ## If you make a change to the data model (ThirteenIsh.Database)
 

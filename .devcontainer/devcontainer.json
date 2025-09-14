@@ -17,10 +17,15 @@
 
   "postCreateCommand": "dotnet tool install --global dotnet-ef",
 
+  "containerEnv": {
+    "BotToken": "${localEnv:BOT_TOKEN}"
+  },
+
   "customizations": {
     "vscode": {
       "extensions": [
         "ms-dotnettools.csharp",
+        "ms-dotnettools.csdevkit",
         "ms-dotnettools.vscode-dotnet-runtime",
         "ms-vscode.vscode-json",
         "bradlc.vscode-tailwindcss",
