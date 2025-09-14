@@ -177,7 +177,45 @@ internal class SwnSystem : GameSystem
 
     public override string GetCharacterSummary(CharacterSheet sheet, CharacterType type)
     {
-        throw new NotImplementedException();
+        var characterSystem = GetCharacterSystem(type);
+        switch (type)
+        {
+            case CharacterType.PlayerCharacter:
+                var class1 = characterSystem.GetProperty<GameProperty>(sheet, "Class 1").GetValue(sheet);
+                var class2 = characterSystem.GetProperty<GameProperty>(sheet, "Class 2").GetValue(sheet);
+                var level = characterSystem.GetProperty<GameCounter>(sheet, Level).GetValue(sheet);
+
+                // Build class description - handle dual-class characters
+                string classDescription;
+                if (string.IsNullOrEmpty(class1) && string.IsNullOrEmpty(class2))
+                {
+                    classDescription = "Adventurer";
+                }
+                else if (class1 == class2 && !string.IsNullOrEmpty(class1))
+                {
+                    // Full class (e.g., "Expert/Expert" becomes "Expert")
+                    classDescription = class1;
+                }
+                else if (!string.IsNullOrEmpty(class1) && !string.IsNullOrEmpty(class2))
+                {
+                    // Dual class (e.g., "Expert/Warrior")
+                    classDescription = $"{class1}/{class2}";
+                }
+                else
+                {
+                    // Single partial class
+                    classDescription = $"Partial {class1 ?? class2}";
+                }
+
+                return $"Level {level} {classDescription}";
+
+            case CharacterType.Monster:
+                // TODO: Add monster type display once monster system is implemented
+                return "SWN Monster";
+
+            default:
+                throw new ArgumentException("Unrecognised character type", nameof(type));
+        }
     }
 
     protected override CombatantBase? EncounterNextRound(Encounter encounter, IRandomWrapper random)
