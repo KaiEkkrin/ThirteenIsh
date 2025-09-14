@@ -3,6 +3,7 @@ services:
     image: mcr.microsoft.com/devcontainers/base:ubuntu
     volumes:
       - ../:/workspace:cached
+      - npm-global:/usr/local/share/nvm
     command: sleep infinity
     depends_on:
       - postgres
@@ -23,3 +24,4 @@ services:
 
 volumes:
   postgres-data:
+  npm-global:
