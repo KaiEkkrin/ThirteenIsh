@@ -15,7 +15,7 @@ internal class AttributeBonusCounter(GameCounter attributeCounter)
 
     public override int? GetValue(ITrackedCharacter character)
     {
-        var score = attributeCounter.GetValue(character.Sheet);
+        var score = attributeCounter.GetValue(character);
         return GetBonusValue(score);
     }
 

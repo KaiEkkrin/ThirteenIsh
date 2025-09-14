@@ -26,9 +26,9 @@ internal class EffortCounter(
         return GetEffort(
             class1Property.GetValue(character.Sheet),
             class2Property.GetValue(character.Sheet),
-            constitutionBonusCounter.GetValue(character.Sheet),
-            wisdomBonusCounter.GetValue(character.Sheet),
-            psychicSkillCounters.Select(counter => counter.GetValue(character.Sheet)));
+            constitutionBonusCounter.GetValue(character),
+            wisdomBonusCounter.GetValue(character),
+            psychicSkillCounters.Select(counter => counter.GetValue(character)));
     }
 
     private static int? GetEffort(string class1, string class2, int? conBonus, int? wisBonus, IEnumerable<int?> psychicSkills)

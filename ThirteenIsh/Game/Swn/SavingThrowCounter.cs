@@ -13,7 +13,7 @@ internal class SavingThrowCounter(string name, params AttributeBonusCounter[] at
 
     public override int? GetValue(ITrackedCharacter character)
     {
-        return GetSavingThrow(attributeBonuses.Select(a => a.GetValue(character.Sheet)));
+        return GetSavingThrow(attributeBonuses.Select(a => a.GetValue(character)));
     }
 
     public override GameCounterRollResult Roll(

@@ -17,7 +17,7 @@ internal class AttackBonusCounter(GameProperty class1Property, GameProperty clas
     public override int? GetValue(ITrackedCharacter character)
     {
         return GetAttackBonus(
-            levelCounter.GetValue(character.Sheet),
+            levelCounter.GetValue(character),
             class1Property.GetValue(character.Sheet),
             class2Property.GetValue(character.Sheet));
     }
