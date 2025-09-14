@@ -135,7 +135,6 @@ ThirteenIsh includes support for the **Stars Without Number: Revised Edition** t
 **High Priority** (Core gameplay):
 1. Character backgrounds and starting packages
 2. Basic encounter/combat system implementation
-3. Character summary display
 
 **Medium Priority** (Enhanced features):
 1. Character foci system
