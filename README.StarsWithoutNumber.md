@@ -32,6 +32,10 @@ ThirteenIsh includes support for the **Stars Without Number: Revised Edition** t
 
 **Combat:**
 - [x] Attack rolls (1d20 + skill bonus + attribute bonus + attack bonus)
+- [x] Combat damage (via `combat damage` command with damage dice and counters)
+
+**Character Customization:**
+- [x] Custom counters (behave as custom skills with roll functionality)
 
 ### ❌ Missing Features
 
@@ -75,6 +79,7 @@ See TODO in ThirteenIsh.Game.Swn.SkillCounter.Roll)
 
 - [ ] **Combat Actions**
   - [x] Basic attack rolls (1d20 + skill + attribute + attack bonus)
+  - [x] Damage application (via `combat damage` command with dice and modifiers)
   - [ ] Action economy (Move, Main, Instant, On Turn actions)
   - [ ] Snap attacks (-4 penalty, consumes main action)
   - [ ] Execution attacks (skill check vs difficulty instead of to-hit)
@@ -82,7 +87,7 @@ See TODO in ThirteenIsh.Game.Swn.SkillCounter.Roll)
   - [ ] Ranged vs melee interaction rules
 
 - [ ] **Death & Dying**
-  - [ ] 0 HP = 6 rounds to live
+  - [ ] 0 HP = 6 rounds to live (damage application works, death rules TODO)
   - [ ] Stabilization mechanics (Int/Heal or Dex/Heal as Main Action)
   - [ ] Mortal wound system
 
@@ -124,7 +129,7 @@ See TODO in ThirteenIsh.Game.Swn.SkillCounter.Roll)
 - [x] `EncounterNextRound` (line 185) - ✅ **COMPLETED**
 
 **SwnCharacterSystem.cs:**
-- [ ] `BuildCustomCounter` (line 27)
+- [x] `BuildCustomCounter` (line 27) - ✅ **COMPLETED**
 
 ## Implementation Notes
 

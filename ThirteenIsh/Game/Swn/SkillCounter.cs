@@ -5,7 +5,7 @@ using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Game.Swn;
 
-internal class SkillCounter(string name, AttackBonusCounter attackBonusCounter) : GameCounter(name, defaultValue: -1, minValue: -1, maxValue: 4, options: GameCounterOptions.CanRoll)
+internal class SkillCounter(string name, AttackBonusCounter attackBonusCounter, int defaultValue = -1, GameCounterOptions options = GameCounterOptions.CanRoll) : GameCounter(name, defaultValue: defaultValue, minValue: -1, maxValue: 4, options: options)
 {
     public override GameCounterRollResult Roll(
         ITrackedCharacter character, ParseTreeBase? bonus, IRandomWrapper random, int rerolls, ref int? targetValue,

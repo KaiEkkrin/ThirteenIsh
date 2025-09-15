@@ -24,6 +24,8 @@ internal class SwnCharacterSystem(ImmutableList<GamePropertyGroup> propertyGroup
 
     protected override GameCounter BuildCustomCounter(CustomCounter cc)
     {
-        throw new NotImplementedException();
+        // Get the attack bonus counter by its well-known name
+        var attackBonusCounter = (AttackBonusCounter)GetProperty(SwnSystem.AttackBonus)!;
+        return new SwnCustomCounter(cc, attackBonusCounter);
     }
 }
