@@ -30,6 +30,9 @@ ThirteenIsh includes support for the **Stars Without Number: Revised Edition** t
 **Equipment:**
 - [x] Armor Value tracking (base 10, modifiable for different armor types)
 
+**Combat:**
+- [x] Attack rolls (1d20 + skill bonus + attribute bonus + attack bonus)
+
 ### ❌ Missing Features
 
 ## Core Character Creation
@@ -45,6 +48,10 @@ ThirteenIsh includes support for the **Stars Without Number: Revised Edition** t
   - [ ] Foci abilities and special rules
   - [ ] Examples: Star Pilot, Doctor, Martial Artist, Gunslinger, Diplomat
   - [ ] Skill bonuses and special abilities from foci
+
+(Note especially the Specialist focus, which adds dice to the die roll pool when rolling skill checks.
+**Workaround available**: Players can manually specify rerolls equal to their Specialist level for that skill.
+See TODO in ThirteenIsh.Game.Swn.SkillCounter.Roll)
 
 ## Character Advancement
 
@@ -67,6 +74,7 @@ ThirteenIsh includes support for the **Stars Without Number: Revised Edition** t
   - [ ] Initiative tracking in encounters
 
 - [ ] **Combat Actions**
+  - [x] Basic attack rolls (1d20 + skill + attribute + attack bonus)
   - [ ] Action economy (Move, Main, Instant, On Turn actions)
   - [ ] Snap attacks (-4 penalty, consumes main action)
   - [ ] Execution attacks (skill check vs difficulty instead of to-hit)

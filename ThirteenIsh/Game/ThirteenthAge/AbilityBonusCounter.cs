@@ -26,7 +26,8 @@ internal class AbilityBonusCounter(GameCounter levelCounter, GameCounter scoreCo
         IRandomWrapper random,
         int rerolls,
         ref int? targetValue,
-        GameCounter? secondCounter = null)
+        GameCounter? secondCounter = null,
+        GameCounterRollOptions flags = GameCounterRollOptions.None)
     {
         var value = GetValue(character);
         if (!value.HasValue) return new GameCounterRollResult { CounterName = Name, Error = GameCounterRollError.NoValue };

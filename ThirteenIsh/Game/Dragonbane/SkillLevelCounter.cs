@@ -55,7 +55,8 @@ internal class SkillLevelCounter(GameAbilityCounter attribute, GameCounter skill
         IRandomWrapper random,
         int rerolls,
         ref int? targetValue,
-        GameCounter? secondCounter = null)
+        GameCounter? secondCounter = null,
+        GameCounterRollOptions flags = GameCounterRollOptions.None)
     {
         ParseTreeBase parseTree = DiceRollParseTree.BuildWithRerolls(20, rerolls);
         if (bonus is not null)

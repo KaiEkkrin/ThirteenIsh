@@ -83,7 +83,7 @@ internal sealed class CombatAttackMessageHandler(SqlDataService dataService, Dis
                         continue;
                     }
 
-                    var result = counter.Roll(character, attackBonus, random, message.Rerolls, ref dc);
+                    var result = counter.Roll(character, attackBonus, random, message.Rerolls, ref dc, flags: GameCounterRollOptions.IsAttack);
                     if (result.Error != GameCounterRollError.Success)
                     {
                         stringBuilder.AppendLine(CultureInfo.CurrentCulture,

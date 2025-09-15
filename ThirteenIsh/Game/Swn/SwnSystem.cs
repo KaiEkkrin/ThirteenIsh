@@ -94,35 +94,38 @@ internal class SwnSystem : GameSystem
         var charisma = BuildAttribute(attributesBuilder, Charisma);
         var attributes = attributesBuilder.Build();
 
+        // Create attack bonus counter early so it can be passed to skill counters
+        AttackBonusCounter attackBonusCounter = new(class1Property, class2Property, levelCounter);
+
         GamePropertyGroupBuilder skillsBuilder = new(Skills);
-        BuildSkill(skillsBuilder, Administer);
-        BuildSkill(skillsBuilder, Connect);
-        BuildSkill(skillsBuilder, Exert);
-        BuildSkill(skillsBuilder, Fix);
-        BuildSkill(skillsBuilder, Heal);
-        BuildSkill(skillsBuilder, Know);
-        BuildSkill(skillsBuilder, Lead);
-        BuildSkill(skillsBuilder, Notice);
-        BuildSkill(skillsBuilder, Perform);
-        BuildSkill(skillsBuilder, Pilot);
-        BuildSkill(skillsBuilder, Program);
-        BuildSkill(skillsBuilder, Punch);
-        BuildSkill(skillsBuilder, Shoot);
-        BuildSkill(skillsBuilder, Sneak);
-        BuildSkill(skillsBuilder, Stab);
-        BuildSkill(skillsBuilder, Survive);
-        BuildSkill(skillsBuilder, Talk);
-        BuildSkill(skillsBuilder, Trade);
-        BuildSkill(skillsBuilder, Work);
+        BuildSkill(skillsBuilder, Administer, attackBonusCounter);
+        BuildSkill(skillsBuilder, Connect, attackBonusCounter);
+        BuildSkill(skillsBuilder, Exert, attackBonusCounter);
+        BuildSkill(skillsBuilder, Fix, attackBonusCounter);
+        BuildSkill(skillsBuilder, Heal, attackBonusCounter);
+        BuildSkill(skillsBuilder, Know, attackBonusCounter);
+        BuildSkill(skillsBuilder, Lead, attackBonusCounter);
+        BuildSkill(skillsBuilder, Notice, attackBonusCounter);
+        BuildSkill(skillsBuilder, Perform, attackBonusCounter);
+        BuildSkill(skillsBuilder, Pilot, attackBonusCounter);
+        BuildSkill(skillsBuilder, Program, attackBonusCounter);
+        BuildSkill(skillsBuilder, Punch, attackBonusCounter);
+        BuildSkill(skillsBuilder, Shoot, attackBonusCounter);
+        BuildSkill(skillsBuilder, Sneak, attackBonusCounter);
+        BuildSkill(skillsBuilder, Stab, attackBonusCounter);
+        BuildSkill(skillsBuilder, Survive, attackBonusCounter);
+        BuildSkill(skillsBuilder, Talk, attackBonusCounter);
+        BuildSkill(skillsBuilder, Trade, attackBonusCounter);
+        BuildSkill(skillsBuilder, Work, attackBonusCounter);
         var skills = skillsBuilder.Build();
 
         GamePropertyGroupBuilder psychicSkillsBuilder = new(PsychicSkills);
-        var biopsionics = BuildSkill(psychicSkillsBuilder, Biopsionics);
-        var metapsionics = BuildSkill(psychicSkillsBuilder, Metapsionics);
-        var precognition = BuildSkill(psychicSkillsBuilder, Precognition);
-        var telekinesis = BuildSkill(psychicSkillsBuilder, Telekinesis);
-        var telepathy = BuildSkill(psychicSkillsBuilder, Telepathy);
-        var teleportation = BuildSkill(psychicSkillsBuilder, Teleportation);
+        var biopsionics = BuildSkill(psychicSkillsBuilder, Biopsionics, attackBonusCounter);
+        var metapsionics = BuildSkill(psychicSkillsBuilder, Metapsionics, attackBonusCounter);
+        var precognition = BuildSkill(psychicSkillsBuilder, Precognition, attackBonusCounter);
+        var telekinesis = BuildSkill(psychicSkillsBuilder, Telekinesis, attackBonusCounter);
+        var telepathy = BuildSkill(psychicSkillsBuilder, Telepathy, attackBonusCounter);
+        var teleportation = BuildSkill(psychicSkillsBuilder, Teleportation, attackBonusCounter);
         var psychicSkills = psychicSkillsBuilder.Build();
 
         // Players can fix Armor Value to the base AC of their armor so that the actual AC counter
@@ -134,7 +137,6 @@ internal class SwnSystem : GameSystem
             .Build();
 
         ArmorClassCounter armorClassCounter = new(armorValueCounter, dexterity);
-        AttackBonusCounter attackBonusCounter = new(class1Property, class2Property, levelCounter);
         EffortCounter effortCounter = new(class1Property, class2Property, constitution, wisdom,
             biopsionics, metapsionics, precognition, telekinesis, telepathy, teleportation);
 
@@ -264,9 +266,9 @@ internal class SwnSystem : GameSystem
         return bonusCounter;
     }
 
-    public static GameCounter BuildSkill(GamePropertyGroupBuilder builder, string skillName)
+    public static GameCounter BuildSkill(GamePropertyGroupBuilder builder, string skillName, AttackBonusCounter attackBonusCounter)
     {
-        SkillCounter skillCounter = new(skillName);
+        SkillCounter skillCounter = new(skillName, attackBonusCounter);
         builder.AddProperty(skillCounter);
         return skillCounter;
     }

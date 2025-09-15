@@ -17,7 +17,8 @@ internal class ThirteenthAgeCustomCounter(CustomCounter customCounter)
         IRandomWrapper random,
         int rerolls,
         ref int? targetValue,
-        GameCounter? secondCounter = null)
+        GameCounter? secondCounter = null,
+        GameCounterRollOptions flags = GameCounterRollOptions.None)
     {
         // The 13th Age custom counter rolls by adding its value to a d20, with nothing else --
         // seems like the simplest thing to do. Like this it can be used e.g. to define monster attacks.

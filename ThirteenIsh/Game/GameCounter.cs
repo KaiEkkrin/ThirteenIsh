@@ -154,6 +154,7 @@ internal class GameCounter(string name, string? alias = null,
     /// game system implies one, the implied one will be filled in.</param>
     /// <param name="secondCounter">A second counter to use as part of this roll.
     /// Only relevant to SWN skill checks right now.</param>
+    /// <param name="flags">Flags that modify how the roll behaves.</param>
     /// <returns>The roll result.</returns>
     public virtual GameCounterRollResult Roll(
         ITrackedCharacter character,
@@ -161,7 +162,8 @@ internal class GameCounter(string name, string? alias = null,
         IRandomWrapper random,
         int rerolls,
         ref int? targetValue,
-        GameCounter? secondCounter = null)
+        GameCounter? secondCounter = null,
+        GameCounterRollOptions flags = GameCounterRollOptions.None)
     {
         return new GameCounterRollResult { CounterName = Name, Error = GameCounterRollError.NotRollable };
     }
