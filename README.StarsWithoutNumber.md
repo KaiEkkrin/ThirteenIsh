@@ -120,6 +120,21 @@ ThirteenIsh includes support for the **Stars Without Number: Revised Edition** t
   - [ ] Higher-level psychic techniques (levels 1-4)
   - [ ] Effort expenditure and recovery mechanics
 
+### Monster Support Details
+
+"Stars Without Number" leaves much of the details of monsters up to the Game Master, unlike more rules-heavy games like Starfinder. There are some key stats for "monsters" (hostile NPCs) on page 195 of the source book. Monsters need to have the following attributes, all of which must be directly settable by the GM rather than computed:
+
+- [ ] Hit Dice (HD)
+- [ ] Armor Class (AC)
+- [ ] Attack Bonus (AB)
+- [ ] Damage Bonus
+- [ ] Move
+- [ ] Morale (ML)
+- [ ] Skills -- the same skill set as for PCs
+- [ ] Saves -- the same set of saves as for PCs.
+
+**Morale** is an attribute that monsters have and PCs do not. When a monster faces "unusual peril" (as deemed by the GM) they must make a **Morale check**. For this they roll 2d6; if they roll less than or equal to their Morale score they continue fighting, if they roll greater than their Morale score, they attempt to escape the encounter. We can implement this quite easily with a custom MoraleCounter class with its own implementation of Roll.
+
 ## Currently Throwing NotImplementedException
 
 **SwnSystem.cs:**
