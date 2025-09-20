@@ -5,7 +5,7 @@ using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Game.Swn;
 
-internal class SkillCounter(string name, AttackBonusCounter attackBonusCounter, int defaultValue = -1, GameCounterOptions options = GameCounterOptions.CanRoll) : GameCounter(name, defaultValue: defaultValue, minValue: -1, maxValue: 4, options: options)
+internal class SkillCounter(string name, AttackBonusCounter? attackBonusCounter, int defaultValue = -1, GameCounterOptions options = GameCounterOptions.CanRoll) : GameCounter(name, defaultValue: defaultValue, minValue: -1, maxValue: 4, options: options)
 {
     public override GameCounterRollResult Roll(
         ITrackedCharacter character, ParseTreeBase? bonus, IRandomWrapper random, int rerolls, ref int? targetValue,
@@ -35,6 +35,16 @@ internal class SkillCounter(string name, AttackBonusCounter attackBonusCounter, 
         // Add attack bonus when this is an attack roll
         if (flags.HasFlag(GameCounterRollOptions.IsAttack))
         {
+            if (attackBonusCounter == null)
+            {
+                return new GameCounterRollResult
+                {
+                    CounterName = Name,
+                    Error = GameCounterRollError.NotRollable,
+                    Working = "Cannot make attack rolls without AttackBonusCounter"
+                };
+            }
+
             var attackBonus = attackBonusCounter.GetValue(character);
             if (!attackBonus.HasValue) return new GameCounterRollResult { CounterName = Name, Error = GameCounterRollError.NoValue };
 

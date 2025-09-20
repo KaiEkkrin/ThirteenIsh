@@ -16,6 +16,7 @@ internal class SwnSystem : GameSystem
     public const string General = "General";
     public const string SavingThrows = "Saving Throws";
     public const string Equipment = "Equipment";
+    public const string MonsterStats = "Monster Stats";
 
     public const string Expert = "Expert";
     public const string Psychic = "Psychic";
@@ -68,6 +69,12 @@ internal class SwnSystem : GameSystem
     public const string Evasion = "Evasion";
     public const string Mental = "Mental";
     public const string Physical = "Physical";
+
+    public const string HitDice = "Hit Dice";
+    public const string HitDiceAlias = "HD";
+    public const string Attack = "Attack";
+    public const string Skill = "Skill";
+    public const string Save = "Save";
 
     private SwnSystem(string name, IEnumerable<CharacterSystem> characterSystems) : base(name, characterSystems)
     {
@@ -140,7 +147,7 @@ internal class SwnSystem : GameSystem
         EffortCounter effortCounter = new(class1Property, class2Property, constitution, wisdom,
             biopsionics, metapsionics, precognition, telekinesis, telepathy, teleportation);
 
-        HitPointsCounter hitPointsCounter = new(class1Property, class2Property, levelCounter, constitution);
+        HitPointsCounter hitPointsCounter = new(levelCounter, class1Property, class2Property, constitution);
 
         var general = new GamePropertyGroupBuilder(General)
             .AddProperty(armorClassCounter)
@@ -156,15 +163,56 @@ internal class SwnSystem : GameSystem
             .AddProperties(evasion, mental, physical)
             .Build();
 
-        // TODO build a monster system as well (make sure I can make characters successfully first)
-        SwnCharacterSystem playerCharacterSystem = new([basics, attributes, skills, psychicSkills, general, savingThrows, equipment]);
-        return new SwnSystem(SystemName, [playerCharacterSystem]);
+        // Build monster system
+        GameCounter hitDiceCounter = new(HitDice, HitDiceAlias, defaultValue: 1, minValue: 1);
+        var monsterMorale = new MoraleCounter("Morale");
+        var monsterHitPointsCounter = new HitPointsCounter(hitDiceCounter);
+
+        var monsterStats = new GamePropertyGroupBuilder(MonsterStats)
+            .AddProperty(hitDiceCounter)
+            .AddProperty(new GameCounter(ArmorClass, ArmorClassAlias))
+            .AddProperty(new AttackCounter())
+            .AddProperty(monsterMorale)
+            .AddProperty(new MonsterSkillCounter(Skill))
+            .AddProperty(new MonsterSavingThrowCounter())
+            .AddProperty(monsterHitPointsCounter)
+            .Build();
+
+        SwnCharacterSystem playerCharacterSystem = new(CharacterType.PlayerCharacter, [basics, attributes, skills, psychicSkills, general, savingThrows, equipment]);
+        SwnCharacterSystem monsterCharacterSystem = new(CharacterType.Monster, [monsterStats]);
+        return new SwnSystem(SystemName, [playerCharacterSystem, monsterCharacterSystem]);
     }
 
     public override EncounterRollResult EncounterAdd(DataContext dataContext, Character character, Encounter encounter,
         NameAliasCollection nameAliasCollection, IRandomWrapper random, int rerolls, int swarmCount, ulong userId)
     {
-        throw new NotImplementedException();
+        if (character.CharacterType != CharacterType.Monster)
+            throw new ArgumentException("EncounterAdd requires a monster", nameof(character));
+
+        // Set up a new combatant for this monster
+        MonsterCombatant combatant = new()
+        {
+            Alias = nameAliasCollection.Add(character.Name, 5, true),
+            LastUpdated = DateTimeOffset.UtcNow,
+            Name = character.Name,
+            Sheet = character.Sheet,
+            SwarmCount = swarmCount,
+            UserId = userId
+        };
+
+        var characterSystem = GetCharacterSystem(CharacterType.Monster);
+        characterSystem.ResetVariables(combatant);
+
+        // In SWN, monsters use 1d8 initiative with no dexterity bonus
+        var initiative = RollMonsterInitiative(combatant, encounter, random, rerolls, userId);
+        if (initiative.Error != GameCounterRollError.Success)
+            return EncounterRollResult.BuildError(initiative);
+
+        // Add it to the encounter
+        combatant.Initiative = initiative.Roll;
+        combatant.InitiativeRollWorking = initiative.Working;
+        encounter.InsertCombatantIntoTurnOrder(combatant);
+        return EncounterRollResult.BuildSuccess(initiative, combatant.Alias);
     }
 
     public override void EncounterBegin(Encounter encounter)
@@ -244,8 +292,8 @@ internal class SwnSystem : GameSystem
                 return $"Level {level} {classDescription}";
 
             case CharacterType.Monster:
-                // TODO: Add monster type display once monster system is implemented
-                return "SWN Monster";
+                var hitDice = characterSystem.GetProperty<GameCounter>(sheet, HitDice).GetValue(sheet);
+                return $"{hitDice} HD Monster";
 
             default:
                 throw new ArgumentException("Unrecognised character type", nameof(type));
@@ -271,5 +319,31 @@ internal class SwnSystem : GameSystem
         SkillCounter skillCounter = new(skillName, attackBonusCounter);
         builder.AddProperty(skillCounter);
         return skillCounter;
+    }
+
+    private static GameCounterRollResult RollMonsterInitiative(MonsterCombatant combatant,
+        Encounter encounter, IRandomWrapper random, int rerolls, ulong userId)
+    {
+        var matchingMonster = encounter.Combatants.OfType<MonsterCombatant>()
+            .FirstOrDefault(c => c.Name == combatant.Name && c.UserId == userId);
+
+        if (matchingMonster is { Initiative: { } roll, InitiativeRollWorking: { } working })
+        {
+            // We have already rolled for this monster type -- re-use the same one.
+            return new GameCounterRollResult
+            { CounterName = "Initiative", Error = GameCounterRollError.Success, Roll = roll, Working = working };
+        }
+
+        // In SWN, monsters roll 1d8 for initiative (no dexterity bonus)
+        ParseTreeBase parseTree = DiceRollParseTree.BuildWithRerolls(8, rerolls, 1);
+        var initiative = parseTree.Evaluate(random, out working);
+
+        return new GameCounterRollResult
+        {
+            CounterName = "Initiative",
+            Error = GameCounterRollError.Success,
+            Roll = initiative,
+            Working = working
+        };
     }
 }
