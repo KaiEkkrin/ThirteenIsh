@@ -50,16 +50,14 @@ internal class SwnCharacterSystem(CharacterType characterType, ImmutableList<Gam
 
     protected override GameCounter BuildCustomCounter(CustomCounter cc)
     {
+        AttackBonusCounter? attackBonusCounter = null;
         if (CharacterType == CharacterType.PlayerCharacter)
         {
-            // Get the attack bonus counter by its well-known name
-            var attackBonusCounter = (AttackBonusCounter)GetProperty(SwnSystem.AttackBonus)!;
-            return new SwnCustomCounter(cc, attackBonusCounter);
+            // Get the attack bonus counter by its well-known name for PCs
+            attackBonusCounter = (AttackBonusCounter)GetProperty(SwnSystem.AttackBonus)!;
         }
-        else
-        {
-            // Monsters use a simpler custom counter without AttackBonusCounter
-            return new SkillCounter(cc.Name, null, cc.DefaultValue, cc.Options);
-        }
+        // For monsters, attackBonusCounter remains null
+
+        return new SwnCustomCounter(cc, attackBonusCounter);
     }
 }

@@ -2,8 +2,12 @@
 
 namespace ThirteenIsh.Game.Swn;
 
-internal class SwnCustomCounter(CustomCounter customCounter, AttackBonusCounter attackBonusCounter)
-    : SkillCounter(customCounter.Name, attackBonusCounter, customCounter.DefaultValue, customCounter.Options)
+internal class SwnCustomCounter(CustomCounter customCounter, AttackBonusCounter? attackBonusCounter) : SkillCounter(customCounter.Name,
+           attackBonusCounter,
+           defaultValue: customCounter.DefaultValue,
+           minValue: Math.Min(0, customCounter.DefaultValue),
+           maxValue: Math.Max(4, customCounter.DefaultValue),
+           options: customCounter.Options)
 {
     public override int? GetValue(ICounterSheet sheet)
     {
