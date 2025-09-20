@@ -105,6 +105,11 @@ internal sealed partial class DiscordService : IAsyncDisposable, IDisposable
         return channel as IMessageChannel; // so you can send messages to it
     }
 
+    public SocketGuild? GetGuild(ulong guildId)
+    {
+        return _client.GetGuild(guildId);
+    }
+
     public Task<IGuildUser> GetGuildUserAsync(ulong guildId, ulong userId)
     {
         var guild = _client.GetGuild(guildId);

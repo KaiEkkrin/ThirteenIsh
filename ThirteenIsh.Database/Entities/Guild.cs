@@ -23,6 +23,12 @@ public class Guild : EntityBase
     /// </summary>
     public string CurrentAdventureName { get; set; } = string.Empty;
 
+    /// <summary>
+    /// The Discord ID of the role that should have GM permissions in this guild.
+    /// If null, falls back to requiring the ManageGuild permission.
+    /// </summary>
+    public ulong? GmRoleId { get; set; }
+
     public virtual ICollection<Adventure> Adventures { get; set; } = [];
 
     public virtual ICollection<Encounter> Encounters { get; set; } = [];

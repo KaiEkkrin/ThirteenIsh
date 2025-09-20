@@ -486,6 +486,11 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
             .AsAsyncEnumerable();
     }
 
+    public Task SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        return _context.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task UpdateGuildCommandVersionAsync(Guild guild, int commandVersion,
         CancellationToken cancellationToken = default)
     {

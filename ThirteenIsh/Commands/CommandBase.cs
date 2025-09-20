@@ -16,7 +16,7 @@ internal abstract class CommandBase(string name, string description, params Comm
     /// this -- this will cause us to re-register commands with guilds. Otherwise, we won't
     /// (it's time consuming and I suspect Discord would eventually throttle us.)
     /// </summary>
-    public const int Version = 64;
+    public const int Version = 65;
 
     public virtual bool IsGlobal => false;
 
@@ -37,6 +37,20 @@ internal abstract class CommandBase(string name, string description, params Comm
     }
 
     /// <summary>
+    /// Checks if the user has permission to execute this command.
+    /// The base implementation allows all users.
+    /// </summary>
+    /// <param name="command">The command.</param>
+    /// <param name="serviceProvider">A scoped service provider to get services from.</param>
+    /// <param name="cancellationToken">A cancellation token.</param>
+    /// <returns>True if the user has permission, false otherwise. If false, the command should respond with an error.</returns>
+    protected virtual Task<bool> CheckPermissionsAsync(SocketSlashCommand command, IServiceProvider serviceProvider,
+        CancellationToken cancellationToken)
+    {
+        return Task.FromResult(true);
+    }
+
+    /// <summary>
     /// Handles a slash command. The default implementation tries to delegate to the
     /// selected sub-command group, or if none does nothing.
     /// </summary>
@@ -47,6 +61,12 @@ internal abstract class CommandBase(string name, string description, params Comm
     public virtual async Task HandleAsync(SocketSlashCommand command, IServiceProvider serviceProvider,
         CancellationToken cancellationToken)
     {
+        // Check permissions before processing the command
+        if (!await CheckPermissionsAsync(command, serviceProvider, cancellationToken))
+        {
+            return;
+        }
+
         var option = command.Data.Options.FirstOrDefault();
         if (option is null) return;
 
