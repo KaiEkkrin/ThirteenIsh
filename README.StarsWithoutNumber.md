@@ -4,6 +4,8 @@
 
 ThirteenIsh includes support for the **Stars Without Number: Revised Edition** tabletop RPG system. This is a sci-fi OSR game that combines classic D&D-style mechanics with modern design elements for space adventure campaigns.
 
+**Design Philosophy**: ThirteenIsh focuses on enabling gameplay with pre-created characters rather than character creation. Players are expected to create characters using external tools and import/manually configure them in ThirteenIsh for rolling and encounter tracking.
+
 ## Current Implementation Status
 
 ### ✅ Implemented Features
@@ -39,43 +41,46 @@ ThirteenIsh includes support for the **Stars Without Number: Revised Edition** t
 
 ### ❌ Missing Features
 
-## Core Character Creation
+## NPC/Monster Support (HIGH PRIORITY)
 
-- [ ] **Character Backgrounds**
-  - [ ] Background selection system
-  - [ ] Starting skill packages per background
-  - [ ] Background-specific character hooks and descriptions
-  - [ ] Examples: Noble, Criminal, Spacer, Soldier, etc.
+- [ ] **Monster System** (Rulebook p195+)
+  - [ ] `EncounterAdd` implementation for adding monsters to encounters
+  - [ ] Monster character system and stat blocks
+  - [ ] Monster-specific encounter rules and behavior
 
-- [ ] **Character Foci**
-  - [ ] Foci selection system (at levels 2, 5, 7, 10)
-  - [ ] Foci abilities and special rules
-  - [ ] Examples: Star Pilot, Doctor, Martial Artist, Gunslinger, Diplomat
-  - [ ] Skill bonuses and special abilities from foci
+- [ ] **Creature Types**
+  - [ ] **Humanoid Monsters** (p195)
+    - [ ] Basic humanoid stat blocks
+    - [ ] Equipment and skill variations
+    - [ ] Social/faction mechanics
+  - [ ] **VI (Artificial Intelligence) Monsters** (p195+)
+    - [ ] Virtual Intelligence stat blocks
+    - [ ] Digital combat mechanics
+    - [ ] Network and system interaction rules
+  - [ ] **Beast Monsters** (p195+)
+    - [ ] Animal and alien creature stat blocks
+    - [ ] Natural weapons and abilities
+    - [ ] Environmental and territorial behavior
 
-(Note especially the Specialist focus, which adds dice to the die roll pool when rolling skill checks.
-**Workaround available**: Players can manually specify rerolls equal to their Specialist level for that skill.
-See TODO in ThirteenIsh.Game.Swn.SkillCounter.Roll)
+- [ ] **Vehicle Combat**
+  - [ ] **Vehicles in Combat**
+    - [ ] Vehicle stat blocks and properties
+    - [ ] Vehicle-to-vehicle combat mechanics
+    - [ ] Crew positions and actions
+    - [ ] Damage and repair systems
+  - [ ] **Starships**
+    - [ ] Starship combat system
+    - [ ] Ship modules and components
+    - [ ] Space combat positioning and movement
+    - [ ] Boarding actions and ship-to-ship combat
 
-## Character Advancement
+- [ ] **Mech Combat**
+  - [ ] Mech stat blocks and customization
+  - [ ] Mech combat mechanics and special rules
+  - [ ] Pilot integration and ejection systems
+  - [ ] Mech equipment and weapon systems
 
-- [ ] **Experience Points System**
-  - [ ] XP tracking and storage
-  - [ ] Level advancement triggers
-  - [ ] Session-based XP awards
-
-- [ ] **Level-Up Benefits**
-  - [ ] Hit point re-rolling (take new roll or old+1, whichever is higher)
-  - [ ] Automatic saving throw improvements (+1 each level)
-  - [ ] Skill point allocation (3 points per level, +1 for Experts)
-  - [ ] Foci selection at appropriate levels
-
-## Combat & Encounter Systems
-
-- [ ] **Initiative System**
-  - [ ] 1d8 + Dex modifier initiative
-  - [ ] Persistent initiative order (no re-rolling)
-  - [ ] Initiative tracking in encounters
+## Enhanced Combat Systems (MEDIUM PRIORITY)
 
 - [ ] **Combat Actions**
   - [x] Basic attack rolls (1d20 + skill + attribute + attack bonus)
@@ -91,33 +96,29 @@ See TODO in ThirteenIsh.Game.Swn.SkillCounter.Roll)
   - [ ] Stabilization mechanics (Int/Heal or Dex/Heal as Main Action)
   - [ ] Mortal wound system
 
-## Advanced Character Features
+## Character Creation & Advancement (LOW PRIORITY - External Tools Preferred)
+
+**Note**: These features are deprioritized as players should use external character builders and manually configure characters in ThirteenIsh.
+
+- [ ] **Character Foci**
+  - [ ] Foci abilities and special rules (especially Specialist focus)
+  - [ ] Skill bonuses and special abilities from foci
+
+  **Current Workaround**: Players can manually specify rerolls equal to their Specialist level for that skill.
+  See TODO in ThirteenIsh.Game.Swn.SkillCounter.Roll
+
+- [ ] **Character Backgrounds**
+  - [ ] Background-specific starting packages and descriptions
+
+- [ ] **Character Advancement**
+  - [ ] Experience points and level-up mechanics
+  - [ ] Automatic saving throw improvements
+  - [ ] Skill point allocation
 
 - [ ] **Psychic Techniques**
   - [ ] Level-0 abilities for each psychic discipline
   - [ ] Higher-level psychic techniques (levels 1-4)
   - [ ] Effort expenditure and recovery mechanics
-  - [ ] Psychic technique activation and targeting
-
-- [ ] **Custom Counters**
-  - [ ] Equipment tracking counters
-  - [ ] Condition/status effect counters
-  - [ ] Campaign-specific custom properties
-
-## Character Display
-
-- [x] **Character Summary**
-  - [x] Basic character summary display (level and class info)
-  - [ ] Class and background information (backgrounds not implemented yet)
-  - [ ] Skills and foci summary (foci not implemented yet)
-  - [ ] Equipment and statistics overview
-
-## NPC/Monster Support
-
-- [ ] **Monster System**
-  - [ ] NPC stat blocks and properties
-  - [ ] Monster-specific encounter rules
-  - [ ] Different creature types (robots, aliens, etc.)
 
 ## Currently Throwing NotImplementedException
 
@@ -145,15 +146,18 @@ See TODO in ThirteenIsh.Game.Swn.SkillCounter.Roll)
 
 ## Development Priority
 
-**High Priority** (Core gameplay):
-1. Character backgrounds and starting packages
+**High Priority** (Core gameplay with pre-created characters):
+1. **Monster System** - `EncounterAdd` implementation and monster stat blocks
+2. **Creature Types** - Humanoid, VI, and Beast monsters (Rulebook p195+)
+3. **Vehicle Combat** - Basic vehicle and starship combat mechanics
 
-**Medium Priority** (Enhanced features):
-1. Character foci system
-2. Experience points and advancement
-3. Psychic techniques
+**Medium Priority** (Enhanced combat):
+1. **Mech Combat** - Mech stat blocks and combat rules
+2. **Advanced Combat Actions** - Action economy, snap attacks, execution attacks
+3. **Death & Dying** - Stabilization and mortal wound mechanics
 
-**Low Priority** (Advanced features):
-1. Custom counters
-2. Monster system
-3. Advanced combat mechanics
+**Low Priority** (Character creation - use external tools):
+1. Character foci system (Specialist focus workaround available)
+2. Character backgrounds and starting packages
+3. Experience points and advancement
+4. Psychic techniques
