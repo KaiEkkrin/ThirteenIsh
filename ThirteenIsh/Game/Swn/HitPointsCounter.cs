@@ -18,11 +18,13 @@ internal class HitPointsCounter(GameCounter levelCounter, GameProperty? class1Pr
 
     public override int? GetValue(ITrackedCharacter character)
     {
-        return GetHitPoints(
+        var baseValue = GetHitPoints(
             levelCounter.GetValue(character),
             class1Property?.GetValue(character.Sheet),
             class2Property?.GetValue(character.Sheet),
             constitutionBonusCounter?.GetValue(character));
+
+        return AddFix(baseValue, character);
     }
 
     private static int? GetHitPoints(int? level, string? class1, string? class2, int? conBonus)

@@ -13,6 +13,7 @@ internal class ArmorClassCounter(GameCounter armorValueCounter, AttributeBonusCo
 
     public override int? GetValue(ITrackedCharacter character)
     {
-        return armorValueCounter.GetValue(character) + dexterity.GetValue(character);
+        var baseValue = armorValueCounter.GetValue(character) + dexterity.GetValue(character);
+        return AddFix(baseValue, character);
     }
 }

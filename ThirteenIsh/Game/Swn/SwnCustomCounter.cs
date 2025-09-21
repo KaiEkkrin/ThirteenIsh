@@ -13,4 +13,9 @@ internal class SwnCustomCounter(CustomCounter customCounter, AttackBonusCounter?
     {
         return base.GetValue(sheet) ?? DefaultValue;
     }
+
+    public override int? GetValue(ITrackedCharacter character)
+    {
+        return base.GetValue(character) ?? DefaultValue;
+    }
 }

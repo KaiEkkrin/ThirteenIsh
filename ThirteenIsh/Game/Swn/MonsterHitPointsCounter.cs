@@ -14,7 +14,8 @@ internal class MonsterHitPointsCounter(GameCounter hitDiceCounter)
     public override int? GetValue(ITrackedCharacter character)
     {
         var hitDice = hitDiceCounter.GetValue(character);
-        return GetMonsterHitPoints(hitDice);
+        var baseValue = GetMonsterHitPoints(hitDice);
+        return AddFix(baseValue, character);
     }
 
     public override int? GetMaxVariableValue(ITrackedCharacter character)
