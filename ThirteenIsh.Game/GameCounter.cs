@@ -12,7 +12,7 @@ namespace ThirteenIsh.Game;
 /// with an adventurer variable.
 /// The corresponding entities are a CharacterCounter and an AdventurerVariable.
 /// </summary>
-internal class GameCounter(string name, string? alias = null,
+public class GameCounter(string name, string? alias = null,
     int defaultValue = 0, int minValue = 0, int? maxValue = null, GameCounterOptions options = GameCounterOptions.None)
     : GamePropertyBase(name, alias, options.HasFlag(GameCounterOptions.IsHidden))
 {

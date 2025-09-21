@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ThirteenIsh.Database\ThirteenIsh.Database.csproj" />
+    <ProjectReference Include="..\ThirteenIsh.Game\ThirteenIsh.Game.csproj" />
     <ProjectReference Include="..\ThirteenIsh.Parsing\ThirteenIsh.Parsing.csproj" />
   </ItemGroup>
 </Project>

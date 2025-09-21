@@ -6,7 +6,7 @@ namespace ThirteenIsh.Game;
 /// <summary>
 /// Game properties are logically grouped together for structured display.
 /// </summary>
-internal class GamePropertyGroup<TProperty>(string groupName, ImmutableList<TProperty> properties)
+public class GamePropertyGroup<TProperty>(string groupName, ImmutableList<TProperty> properties)
     where TProperty : GamePropertyBase
 {
     public string GroupName => groupName;
@@ -70,7 +70,7 @@ internal class GamePropertyGroup<TProperty>(string groupName, ImmutableList<TPro
     }
 }
 
-internal class GamePropertyGroup(string groupName, ImmutableList<GamePropertyBase> properties)
+public class GamePropertyGroup(string groupName, ImmutableList<GamePropertyBase> properties)
     : GamePropertyGroup<GamePropertyBase>(groupName, properties)
 {
 }

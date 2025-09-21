@@ -1,5 +1,6 @@
 ﻿using Discord;
 using ThirteenIsh.ChannelMessages.Character;
+using ThirteenIsh.Game;
 using ThirteenIsh.Commands;
 using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;

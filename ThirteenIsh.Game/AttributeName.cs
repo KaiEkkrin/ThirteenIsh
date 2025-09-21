@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace ThirteenIsh.Game;
 
-internal static partial class AttributeName
+public static partial class AttributeName
 {
     [GeneratedRegex(@"(\p{L})(\p{L}*)", RegexOptions.Compiled)]
     private static partial Regex NamePartRegex();

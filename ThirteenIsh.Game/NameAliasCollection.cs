@@ -8,12 +8,12 @@ namespace ThirteenIsh.Game;
 /// Enables us to generate uniquely identifying, short aliases for character and
 /// monster names.
 /// </summary>
-internal sealed partial class NameAliasCollection
+public sealed partial class NameAliasCollection
 {
     private const int DefaultPrefixTryCount = 16;
 
     [GeneratedRegex(@"^(\p{L}+)([0-9]*)$", RegexOptions.Compiled)]
-    internal static partial Regex AliasRegex();
+    public static partial Regex AliasRegex();
 
     [GeneratedRegex(@"\p{Lu}\p{Ll}*", RegexOptions.Compiled)]
     private static partial Regex AliasPartRegex();
@@ -90,7 +90,7 @@ internal sealed partial class NameAliasCollection
     /// <param name="alias">The alias.</param>
     /// <returns>The number of different tracked names it could map to, or 0 if this alias is
     /// not tracked.</returns>
-    internal int CheckAmbiguity(string alias)
+    public int CheckAmbiguity(string alias)
     {
         var match = AliasRegex().Match(alias);
         if (!match.Success) throw new ArgumentException("Not a valid alias", nameof(alias));
@@ -100,7 +100,7 @@ internal sealed partial class NameAliasCollection
     /// <summary>
     /// For unit tests only.
     /// </summary>
-    internal static bool CouldBeAliasFor(string alias, string name)
+    public static bool CouldBeAliasFor(string alias, string name)
     {
         name = AttributeName.TryCanonicalizeMultiPart(name, out var canonicalizedName)
             ? canonicalizedName

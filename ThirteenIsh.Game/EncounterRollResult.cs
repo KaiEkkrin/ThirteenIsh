@@ -1,6 +1,6 @@
 ﻿namespace ThirteenIsh.Game;
 
-internal record EncounterRollResult : GameCounterRollResult
+public record EncounterRollResult : GameCounterRollResult
 {
     public string Alias { get; init; } = string.Empty;
 

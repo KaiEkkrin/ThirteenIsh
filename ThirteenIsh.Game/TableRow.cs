@@ -2,7 +2,7 @@
 
 namespace ThirteenIsh.Game;
 
-internal readonly record struct TableCell(string Text, bool RightJustify = false)
+public readonly record struct TableCell(string Text, bool RightJustify = false)
 {
     public static readonly TableCell Empty = new(string.Empty);
 
@@ -12,7 +12,7 @@ internal readonly record struct TableCell(string Text, bool RightJustify = false
 /// <summary>
 /// A standard table row with multiple columns.
 /// </summary>
-internal sealed class TableRow(params TableCell[] cells)
+public sealed class TableRow(params TableCell[] cells)
 {
     public int CellCount => cells.Length;
 

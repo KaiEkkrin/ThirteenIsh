@@ -1,13 +1,13 @@
 ﻿namespace ThirteenIsh.Game;
 
-internal enum GameCounterRollError
+public enum GameCounterRollError
 {
     Success,
     NotRollable,
     NoValue
 }
 
-internal record GameCounterRollResult
+public record GameCounterRollResult
 {
     /// <summary>
     /// The counter name.

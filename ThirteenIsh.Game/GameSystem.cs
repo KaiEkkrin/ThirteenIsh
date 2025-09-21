@@ -5,14 +5,13 @@ using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Database.Entities.Combatants;
 using ThirteenIsh.Game.Swn;
 using ThirteenIsh.Parsing;
-using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Game;
 
 /// <summary>
 /// Describes a game system, providing game-specific ways of interacting with it.
 /// </summary>
-internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> characterSystems)
+public abstract class GameSystem(string name, IEnumerable<CharacterSystem> characterSystems)
 {
     private readonly FrozenDictionary<CharacterType, CharacterSystem> _characterSystems =
         characterSystems.ToFrozenDictionary(o => o.CharacterType);
@@ -37,12 +36,12 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
     /// <summary>
     /// Writes an encounter summary table suitable for being part of a pinned message.
     /// </summary>
-    public async Task<string> BuildEncounterTableAsync(SqlDataService dataService,
+    public async Task<string> BuildEncounterTableAsync(ICharacterDataService characterDataService,
         Encounter encounter, CancellationToken cancellationToken = default)
     {
         StringBuilder builder = new();
         BuildEncounterHeadingTable(builder, encounter);
-        await BuildEncounterInitiativeTableAsync(dataService, builder, encounter, cancellationToken);
+        await BuildEncounterInitiativeTableAsync(characterDataService, builder, encounter, cancellationToken);
         return builder.ToString();
     }
 
@@ -145,7 +144,7 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
     }
 
     public async Task BuildEncounterInitiativeTableAsync(
-        SqlDataService dataService,
+        ICharacterDataService characterDataService,
         StringBuilder stringBuilder,
         Encounter encounter,
         CancellationToken cancellationToken = default)
@@ -160,7 +159,7 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
         foreach (var combatant in encounter.CombatantsInTurnOrder)
         {
             var characterSystem = GetCharacterSystem(combatant.CharacterType);
-            var character = await dataService.GetCharacterAsync(combatant, encounter, cancellationToken)
+            var character = await characterDataService.GetCharacterAsync(combatant, encounter, cancellationToken)
                 ?? throw new InvalidOperationException($"Character not found for {combatant.Alias}");
 
             StringBuilder combatantAliasBuilder = new(combatant.Alias.Length + 5);

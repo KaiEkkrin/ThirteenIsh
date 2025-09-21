@@ -7,6 +7,7 @@ using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Database.Entities.Combatants;
 using ThirteenIsh.Database.Entities.Messages;
+using ThirteenIsh.Game;
 using ThirteenIsh.Results;
 
 namespace ThirteenIsh.Services;
@@ -17,7 +18,7 @@ namespace ThirteenIsh.Services;
 [SuppressMessage("Performance",
     "CA1862:Use the 'StringComparison' method overloads to perform case-insensitive string comparisons",
     Justification = "Required by EF Core Linq translator")]
-public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataService> logger)
+public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataService> logger) : ICharacterDataService
 {
     [LoggerMessage(Level = LogLevel.Information, EventId = 1, Message = "Deleted {Count} old messages in {Elapsed}")]
     private partial void DeletedOldMessages(int count, TimeSpan elapsed);

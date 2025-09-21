@@ -10,7 +10,7 @@ namespace ThirteenIsh.Game;
 /// <summary>
 /// Describes a game system's idea of a particular type of characters.
 /// </summary>
-internal abstract class CharacterSystem
+public abstract class CharacterSystem
 {
     private readonly string _gameSystemName;
 
