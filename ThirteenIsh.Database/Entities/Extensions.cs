@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using ThirteenIsh.Database.Entities;
 
-namespace ThirteenIsh.Database;
+namespace ThirteenIsh.Database.Entities;
 
 public static class Extensions
 {

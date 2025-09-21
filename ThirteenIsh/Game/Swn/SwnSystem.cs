@@ -1,5 +1,4 @@
-﻿using ThirteenIsh.Database;
-using ThirteenIsh.Database.Entities;
+﻿using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Database.Entities.Combatants;
 using ThirteenIsh.Parsing;
 
@@ -183,7 +182,7 @@ internal class SwnSystem : GameSystem
         return new SwnSystem(SystemName, [playerCharacterSystem, monsterCharacterSystem]);
     }
 
-    public override EncounterRollResult EncounterAdd(DataContext dataContext, Character character, Encounter encounter,
+    public override EncounterRollResult EncounterAdd(Character character, Encounter encounter,
         NameAliasCollection nameAliasCollection, IRandomWrapper random, int rerolls, int swarmCount, ulong userId)
     {
         if (character.CharacterType != CharacterType.Monster)
@@ -220,7 +219,7 @@ internal class SwnSystem : GameSystem
         // No special setup needed at the start of an encounter
     }
 
-    public override EncounterRollResult EncounterJoin(DataContext dataContext, Adventurer adventurer, Encounter encounter,
+    public override EncounterRollResult EncounterJoin(Adventurer adventurer, Encounter encounter,
         NameAliasCollection nameAliasCollection, IRandomWrapper random, int rerolls, ulong userId)
     {
         // In Stars Without Number, the initiative roll is 1d8 + Dexterity bonus.

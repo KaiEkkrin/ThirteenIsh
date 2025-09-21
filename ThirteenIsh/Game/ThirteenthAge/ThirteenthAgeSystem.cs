@@ -1,5 +1,4 @@
-﻿using ThirteenIsh.Database;
-using ThirteenIsh.Database.Entities;
+﻿using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Database.Entities.Combatants;
 
 namespace ThirteenIsh.Game.ThirteenthAge;
@@ -129,7 +128,6 @@ internal sealed class ThirteenthAgeSystem : GameSystem
     }
 
     public override EncounterRollResult EncounterAdd(
-        DataContext dataContext,
         Character character,
         Encounter encounter,
         NameAliasCollection nameAliasCollection,
@@ -173,7 +171,6 @@ internal sealed class ThirteenthAgeSystem : GameSystem
     }
 
     public override EncounterRollResult EncounterJoin(
-        DataContext dataContext,
         Adventurer adventurer,
         Encounter encounter,
         NameAliasCollection nameAliasCollection,

@@ -1,7 +1,6 @@
 ﻿using Discord;
 using System.Collections.Frozen;
 using System.Text;
-using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Database.Entities.Combatants;
 using ThirteenIsh.Game.Swn;
@@ -68,7 +67,6 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
     /// If this monster cannot join the encounter, returns an error roll result.
     /// </summary>
     public abstract EncounterRollResult EncounterAdd(
-        DataContext dataContext,
         Character character,
         Encounter encounter,
         NameAliasCollection nameAliasCollection,
@@ -88,7 +86,6 @@ internal abstract class GameSystem(string name, IEnumerable<CharacterSystem> cha
     /// If this adventurer cannot join the encounter, returns an error roll result.
     /// </summary>
     public abstract EncounterRollResult EncounterJoin(
-        DataContext dataContext,
         Adventurer adventurer,
         Encounter encounter,
         NameAliasCollection nameAliasCollection,

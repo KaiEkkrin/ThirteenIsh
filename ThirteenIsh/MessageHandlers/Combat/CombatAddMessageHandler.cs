@@ -66,7 +66,7 @@ internal sealed class CombatAddMessageHandler(SqlDataService dataService, Discor
 
             var gameSystem = GameSystem.Get(adventure.GameSystem);
             NameAliasCollection nameAliasCollection = new(encounter);
-            var result = gameSystem.EncounterAdd(context, character, encounter, nameAliasCollection,
+            var result = gameSystem.EncounterAdd(character, encounter, nameAliasCollection,
                 random, rerolls, swarmCount, userId);
 
             if (result.Error != GameCounterRollError.Success)

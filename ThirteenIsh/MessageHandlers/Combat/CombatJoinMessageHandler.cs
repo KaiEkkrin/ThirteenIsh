@@ -63,7 +63,7 @@ internal sealed class CombatJoinMessageHandler(SqlDataService dataService, Disco
             var gameSystem = GameSystem.Get(adventure.GameSystem);
             NameAliasCollection nameAliasCollection = new(encounter);
 
-            var result = gameSystem.EncounterJoin(context, adventurer, encounter, nameAliasCollection,
+            var result = gameSystem.EncounterJoin(adventurer, encounter, nameAliasCollection,
                 random, rerolls, userId);
 
             if (result.Error != GameCounterRollError.Success)
