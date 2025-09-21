@@ -45,11 +45,4 @@ public class MonsterCombatant : CombatantBase, ITrackedCharacter
         return Variables;
     }
 
-    public override Task<ITrackedCharacter?> GetCharacterAsync(
-        DataContext dataContext,
-        Encounter encounter,
-        CancellationToken cancellationToken = default)
-    {
-        return Task.FromResult((ITrackedCharacter?)this);
-    }
 }

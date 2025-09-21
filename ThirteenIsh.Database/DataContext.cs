@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using ThirteenIsh.Database.Entities;
+using ThirteenIsh.Database.Entities.Combatants;
 using ThirteenIsh.Database.Entities.Messages;
 
 namespace ThirteenIsh.Database;
@@ -101,5 +102,25 @@ public class DataContext : DbContext
                 lastEditedEntity.LastEdited = DateTimeOffset.UtcNow;
             }
         }
+    }
+
+    /// <summary>
+    /// Gets the character associated with a combatant.
+    /// </summary>
+    public async Task<ITrackedCharacter?> GetCharacterAsync(
+        CombatantBase combatant,
+        Encounter encounter,
+        CancellationToken cancellationToken = default)
+    {
+        return combatant switch
+        {
+            AdventurerCombatant adventurerCombatant => await Adventurers.SingleOrDefaultAsync(
+                a => a.Adventure.GuildId == encounter.GuildId &&
+                     a.Adventure.Name == encounter.AdventureName &&
+                     a.Name == adventurerCombatant.Name,
+                cancellationToken),
+            MonsterCombatant monsterCombatant => monsterCombatant,
+            _ => throw new ArgumentException($"Unknown combatant type: {combatant.GetType().Name}", nameof(combatant))
+        };
     }
 }

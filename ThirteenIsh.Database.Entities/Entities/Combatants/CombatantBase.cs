@@ -40,10 +40,6 @@ public abstract class CombatantBase
     /// </summary>
     public required ulong UserId { get; set; }
 
-    public abstract Task<ITrackedCharacter?> GetCharacterAsync(
-        DataContext dataContext,
-        Encounter encounter,
-        CancellationToken cancellationToken = default);
 }
 
 /// <summary>

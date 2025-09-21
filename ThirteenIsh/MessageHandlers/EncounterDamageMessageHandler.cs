@@ -117,7 +117,7 @@ internal sealed class EncounterDamageMessageHandler(SqlDataService dataService, 
         {
             var (adventure, encounter, combatant, message, controlId) = param;
 
-            var character = await param.Combatant.GetCharacterAsync(context, encounter, cancellationToken);
+            var character = await context.GetCharacterAsync(param.Combatant, encounter, cancellationToken);
             if (character is null) return CreateError($"No character sheet found for combatant '{combatant.Alias}.");
 
             var gameSystem = GameSystem.Get(adventure.GameSystem);

@@ -3,7 +3,7 @@
 /// <summary>
 /// Any of my entities that has a LastEdited that I want to update when it changes
 /// </summary>
-internal interface IHasLastEdited
+public interface IHasLastEdited
 {
     DateTimeOffset LastEdited { get; set; }
 }

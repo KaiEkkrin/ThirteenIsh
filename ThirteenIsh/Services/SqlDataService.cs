@@ -394,7 +394,7 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
     public Task<ITrackedCharacter?> GetCharacterAsync(CombatantBase combatant, Encounter encounter,
         CancellationToken cancellationToken = default)
     {
-        return combatant.GetCharacterAsync(_context, encounter, cancellationToken);
+        return _context.GetCharacterAsync(combatant, encounter, cancellationToken);
     }
 
     public Task<List<Character>> GetCharactersPageAsync(ulong userId, CharacterType characterType,

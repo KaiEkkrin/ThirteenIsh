@@ -17,6 +17,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ThirteenIsh.Database", "Thi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThirteenIsh.Parsing", "ThirteenIsh.Parsing\ThirteenIsh.Parsing.csproj", "{670253E1-9F8B-49C9-A058-63A55E2131F3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThirteenIsh.Database.Entities", "ThirteenIsh.Database.Entities\ThirteenIsh.Database.Entities.csproj", "{D5BE16E0-FBAE-4D7A-92B2-4F0579585317}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{670253E1-9F8B-49C9-A058-63A55E2131F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{670253E1-9F8B-49C9-A058-63A55E2131F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{670253E1-9F8B-49C9-A058-63A55E2131F3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5BE16E0-FBAE-4D7A-92B2-4F0579585317}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5BE16E0-FBAE-4D7A-92B2-4F0579585317}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5BE16E0-FBAE-4D7A-92B2-4F0579585317}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5BE16E0-FBAE-4D7A-92B2-4F0579585317}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
