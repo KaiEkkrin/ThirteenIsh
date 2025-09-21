@@ -1,9 +1,7 @@
-﻿using System.Diagnostics;
-
-namespace ThirteenIsh.Parsing;
+﻿namespace ThirteenIsh.Parsing;
 
 [DebuggerDisplay("{LiteralValue}")]
-internal sealed class IntegerParseTree(int offset, int value, string? name = null) : ParseTreeBase(offset)
+public sealed class IntegerParseTree(int offset, int value, string? name = null) : ParseTreeBase(offset)
 {
     public override int LiteralValue => value;
     

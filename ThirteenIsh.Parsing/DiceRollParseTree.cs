@@ -1,11 +1,7 @@
-﻿using System.Diagnostics;
-using System.Globalization;
-using System.Text;
-
-namespace ThirteenIsh.Parsing;
+﻿namespace ThirteenIsh.Parsing;
 
 [DebuggerDisplay("{AsString}")]
-internal sealed class DiceRollParseTree(int offset, int diceCount, int diceSign, int diceSize,
+public sealed class DiceRollParseTree(int offset, int diceCount, int diceSign, int diceSize,
     int? keepHighest = null, int? keepLowest = null)
     : ParseTreeBase(offset)
 {

@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-
-namespace ThirteenIsh.Parsing;
+﻿namespace ThirteenIsh.Parsing;
 
 /// <summary>
 /// This might seem trivial but is in fact necessary to stop InsertBinaryOperation

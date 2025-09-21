@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-
-namespace ThirteenIsh.Parsing;
+﻿namespace ThirteenIsh.Parsing;
 
 /// <summary>
 /// Doesn't evaluate anything -- needed only as an intermediate step to parse

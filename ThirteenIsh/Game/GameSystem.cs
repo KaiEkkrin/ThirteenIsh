@@ -4,6 +4,7 @@ using System.Text;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Database.Entities.Combatants;
 using ThirteenIsh.Game.Swn;
+using ThirteenIsh.Parsing;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Game;

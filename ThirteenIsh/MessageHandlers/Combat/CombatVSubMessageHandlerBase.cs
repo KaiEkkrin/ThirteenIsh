@@ -2,6 +2,7 @@
 using ThirteenIsh.ChannelMessages.Combat;
 using ThirteenIsh.Commands;
 using ThirteenIsh.EditOperations;
+using ThirteenIsh.Parsing;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.MessageHandlers.Combat;

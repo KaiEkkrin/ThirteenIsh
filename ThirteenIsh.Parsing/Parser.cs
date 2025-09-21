@@ -3,7 +3,7 @@
 /// <summary>
 /// This wrapper exists to provide the correct entry point to the parser subsystem
 /// </summary>
-internal static class Parser
+public static class Parser
 {
     public static ParseTreeBase Parse(string input)
     {

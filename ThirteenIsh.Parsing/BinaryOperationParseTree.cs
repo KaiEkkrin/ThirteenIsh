@@ -1,9 +1,7 @@
-﻿using System.Diagnostics;
-
-namespace ThirteenIsh.Parsing;
+﻿namespace ThirteenIsh.Parsing;
 
 [DebuggerDisplay("({Lhs} {Op} {Rhs})")]
-internal sealed class BinaryOperationParseTree(int offset, ParseTreeBase lhs, ParseTreeBase rhs,
+public sealed class BinaryOperationParseTree(int offset, ParseTreeBase lhs, ParseTreeBase rhs,
     char op) : ParseTreeBase(offset)
 {
     public ParseTreeBase Lhs => lhs;

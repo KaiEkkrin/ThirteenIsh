@@ -3,7 +3,7 @@
 /// <summary>
 /// The basis of our parse trees.
 /// </summary>
-internal abstract class ParseTreeBase(int offset)
+public abstract class ParseTreeBase(int offset)
 {
     /// <summary>
     /// If there is a parse error, returns it. Otherwise null.

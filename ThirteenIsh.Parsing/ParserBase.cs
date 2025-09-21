@@ -1,6 +1,6 @@
 ﻿namespace ThirteenIsh.Parsing;
 
-internal abstract class ParserBase
+public abstract class ParserBase
 {
     public const int MaxDepth = 200;
 
