@@ -1,5 +1,4 @@
 ﻿using Discord;
-using ThirteenIsh.Database.Entities;
 
 namespace ThirteenIsh.Game;
 

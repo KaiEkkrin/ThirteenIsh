@@ -1,9 +1,5 @@
 ﻿using Discord;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Text;
-using ThirteenIsh.Database.Entities;
-using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Game;
 

@@ -1,5 +1,3 @@
-using ThirteenIsh.Database.Entities;
-using ThirteenIsh.Database.Entities.Combatants;
 
 namespace ThirteenIsh.Game;
 

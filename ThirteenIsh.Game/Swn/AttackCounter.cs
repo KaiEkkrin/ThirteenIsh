@@ -1,5 +1,3 @@
-using ThirteenIsh.Database.Entities;
-using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Game.Swn;
 

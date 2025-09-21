@@ -1,10 +1,6 @@
 ﻿using Discord;
 using System.Collections.Frozen;
-using System.Text;
-using ThirteenIsh.Database.Entities;
-using ThirteenIsh.Database.Entities.Combatants;
 using ThirteenIsh.Game.Swn;
-using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Game;
 

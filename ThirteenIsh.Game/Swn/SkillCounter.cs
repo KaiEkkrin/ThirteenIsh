@@ -1,7 +1,4 @@
 ﻿using System.Globalization;
-using System.Text;
-using ThirteenIsh.Database.Entities;
-using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Game.Swn;
 

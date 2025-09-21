@@ -1,6 +1,4 @@
 ﻿using Discord;
-using System.Diagnostics.CodeAnalysis;
-using ThirteenIsh.Database.Entities;
 
 namespace ThirteenIsh.Game;
 

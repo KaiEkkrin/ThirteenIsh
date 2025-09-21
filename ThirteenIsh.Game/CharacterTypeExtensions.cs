@@ -1,5 +1,4 @@
 ﻿using System.Globalization;
-using System.Text;
 using CharacterType = ThirteenIsh.Database.Entities.CharacterType;
 
 namespace ThirteenIsh.Game;
