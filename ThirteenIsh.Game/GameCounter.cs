@@ -179,7 +179,7 @@ public class GameCounter(string name, string? alias = null,
     public void SetVariableClamped(int newValue, ITrackedCharacter character)
     {
         if (!options.HasFlag(GameCounterOptions.HasVariable))
-            throw new InvalidOperationException(
+            throw new GamePropertyException(
                 $"Cannot set the variable value of {Name}, this counter does not have a variable.");
 
         var maxValue = GetMaxVariableValue(character);
@@ -227,7 +227,7 @@ public class GameCounter(string name, string? alias = null,
     public bool TrySetVariable(int newValue, ITrackedCharacter character, [MaybeNullWhen(true)] out string errorMessage)
     {
         if (!options.HasFlag(GameCounterOptions.HasVariable))
-            throw new InvalidOperationException(
+            throw new GamePropertyException(
                 $"Cannot set the variable value of {Name}, this counter does not have a variable.");
 
         var maxValue = GetMaxVariableValue(character);

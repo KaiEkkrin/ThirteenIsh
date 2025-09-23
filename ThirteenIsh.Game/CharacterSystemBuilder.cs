@@ -26,10 +26,10 @@ internal abstract class CharacterSystemBuilder
             foreach (var property in group.Properties)
             {
                 if (!names.Add(property.Name))
-                    throw new InvalidOperationException($"{name}: Found two properties named {property.Name}");
+                    throw new GamePropertyException($"{name}: Found two properties named {property.Name}");
 
                 if (property.Alias is not null && !aliases.Add(property.Alias))
-                    throw new InvalidOperationException($"{name}: Found two properties aliased {property.Alias}");
+                    throw new GamePropertyException($"{name}: Found two properties aliased {property.Alias}");
             }
         }
 

@@ -156,7 +156,7 @@ public abstract class GameSystem(string name, IEnumerable<CharacterSystem> chara
         {
             var characterSystem = GetCharacterSystem(combatant.CharacterType);
             var character = await characterDataService.GetCharacterAsync(combatant, encounter, cancellationToken)
-                ?? throw new InvalidOperationException($"Character not found for {combatant.Alias}");
+                ?? throw new GamePropertyException($"Character not found for {combatant.Alias}");
 
             StringBuilder combatantAliasBuilder = new(combatant.Alias.Length + 5);
             if (combatant.Alias == encounter.TurnAlias) combatantAliasBuilder.Append('+');

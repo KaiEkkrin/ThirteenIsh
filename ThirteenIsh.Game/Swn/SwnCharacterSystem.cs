@@ -11,40 +11,25 @@ internal class SwnCharacterSystem(CharacterType characterType, ImmutableList<Gam
         {
             // Character level begins at 1
             var level = GetProperty<GameCounter>(character.Sheet, SwnSystem.Level);
-            if (!level.TryEditCharacterProperty("1", character.Sheet, out var errorMessage))
-            {
-                throw new InvalidOperationException($"Failed to set character level to 1 : {errorMessage}");
-            }
+            level.EditCharacterProperty("1", character.Sheet);
 
             // Armor value begins at 10
             var armorValue = GetProperty<GameCounter>(character.Sheet, SwnSystem.ArmorValue);
-            if (!armorValue.TryEditCharacterProperty("10", character.Sheet, out errorMessage))
-            {
-                throw new InvalidOperationException($"Failed to set armor value to 10 : {errorMessage}");
-            }
+            armorValue.EditCharacterProperty("10", character.Sheet);
         }
         else if (CharacterType == CharacterType.Monster)
         {
             // Hit Dice begins at 1 for monsters
             var hitDice = GetProperty<GameCounter>(character.Sheet, SwnSystem.HitDice);
-            if (!hitDice.TryEditCharacterProperty("1", character.Sheet, out var errorMessage))
-            {
-                throw new InvalidOperationException($"Failed to set hit dice to 1 : {errorMessage}");
-            }
+            hitDice.EditCharacterProperty("1", character.Sheet);
 
             // Monster AC begins at 10
             var armorClass = GetProperty<GameCounter>(character.Sheet, SwnSystem.ArmorClass);
-            if (!armorClass.TryEditCharacterProperty("10", character.Sheet, out errorMessage))
-            {
-                throw new InvalidOperationException($"Failed to set armor class to 10 : {errorMessage}");
-            }
+            armorClass.EditCharacterProperty("10", character.Sheet);
 
             // Morale begins at 7 (typical value)
             var morale = GetProperty<GameCounter>(character.Sheet, "Morale");
-            if (!morale.TryEditCharacterProperty("7", character.Sheet, out errorMessage))
-            {
-                throw new InvalidOperationException($"Failed to set morale to 7 : {errorMessage}");
-            }
+            morale.EditCharacterProperty("7", character.Sheet);
         }
     }
 

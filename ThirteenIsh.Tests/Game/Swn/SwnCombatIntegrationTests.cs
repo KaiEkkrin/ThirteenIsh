@@ -366,7 +366,7 @@ public class SwnCombatIntegrationTests
     }
 
     [Fact]
-    public void Combat_CharacterDataService_MockWorksCorrectly()
+    public async Task Combat_CharacterDataService_MockWorksCorrectly()
     {
         // Arrange
         var player = SwnTestHelpers.CreatePlayerCharacter();
@@ -382,29 +382,29 @@ public class SwnCombatIntegrationTests
         var mockService = SwnTestHelpers.CreateMockCharacterDataService(adventurer, monsterCombatant);
 
         // Act & Assert - Test that the mock service returns correct characters
-        var retrievedAdventurer = mockService.GetCharacterAsync(
-            new AdventurerCombatant { Name = adventurer.Name, Alias = adventurer.Name, UserId = 12345 }, encounter).Result;
-        var retrievedMonster = mockService.GetCharacterAsync(
+        var retrievedAdventurer = await mockService.GetCharacterAsync(
+            new AdventurerCombatant { Name = adventurer.Name, Alias = adventurer.Name, UserId = 12345 }, encounter);
+        var retrievedMonster = await mockService.GetCharacterAsync(
             new MonsterCombatant {
                 Name = monsterCombatant.Name,
                 Alias = monsterCombatant.Name,
                 UserId = 12345,
                 LastUpdated = DateTimeOffset.UtcNow,
                 Sheet = new CharacterSheet()
-            }, encounter).Result;
+            }, encounter);
 
         retrievedAdventurer.ShouldBe(adventurer);
         retrievedMonster.ShouldBe(monsterCombatant);
 
         // Test null case for unknown character
-        var unknownCharacter = mockService.GetCharacterAsync(
+        var unknownCharacter = await mockService.GetCharacterAsync(
             new MonsterCombatant {
                 Name = "Unknown",
                 Alias = "Unknown",
                 UserId = 12345,
                 LastUpdated = DateTimeOffset.UtcNow,
                 Sheet = new CharacterSheet()
-            }, encounter).Result;
+            }, encounter);
         unknownCharacter.ShouldBeNull();
     }
 }
