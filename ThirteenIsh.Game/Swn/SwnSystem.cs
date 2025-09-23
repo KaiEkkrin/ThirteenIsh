@@ -283,7 +283,8 @@ internal class SwnSystem : GameSystem
                 else
                 {
                     // Single partial class
-                    classDescription = $"Partial {class1 ?? class2}";
+                    var singleClass = !string.IsNullOrEmpty(class1) ? class1 : class2;
+                    classDescription = $"Partial {singleClass}";
                 }
 
                 return $"Level {level} {classDescription}";

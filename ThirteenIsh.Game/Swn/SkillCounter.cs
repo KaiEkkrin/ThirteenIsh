@@ -20,7 +20,17 @@ internal class SkillCounter(string name, AttackBonusCounter? attackBonusCounter,
         // It's up to the GM to decide whether or not the skill check is valid, if the character has
         // no skill bonus
         var skillBonus = GetValue(character) ?? DefaultValue;
-        parseTree = new BinaryOperationParseTree(0, parseTree, new IntegerParseTree(0, skillBonus, Name), '+');
+
+        // Apply the -2 weapon unfamiliarity penalty for attack rolls when using a weapon type with no expertise
+        // As per SWN rules: "If a PC doesn't even have level-0 expertise in the type of weapon they're using,
+        // they suffer a -2 penalty on hit rolls for unfamiliarity with it."
+        var finalSkillBonus = skillBonus;
+        if (flags.HasFlag(GameCounterRollOptions.IsAttack) && skillBonus < 0)
+        {
+            finalSkillBonus = skillBonus - 2; // Additional -2 penalty for weapon unfamiliarity
+        }
+
+        parseTree = new BinaryOperationParseTree(0, parseTree, new IntegerParseTree(0, finalSkillBonus, Name), '+');
 
         if (secondCounter is AttributeBonusCounter attributeBonusCounter)
         {
@@ -65,7 +75,14 @@ internal class SkillCounter(string name, AttackBonusCounter? attackBonusCounter,
             rollNameBuilder.Append(CultureInfo.CurrentCulture, $" ({secondCounter.Name[..3].ToUpper(CultureInfo.CurrentCulture)})");
         }
 
-        if (skillBonus < 0) rollNameBuilder.Append(" unskilled");
+        if (skillBonus < 0)
+        {
+            rollNameBuilder.Append(" unskilled");
+            if (flags.HasFlag(GameCounterRollOptions.IsAttack))
+            {
+                rollNameBuilder.Append(" unfamiliar");
+            }
+        }
 
         var rolledValue = parseTree.Evaluate(random, out var working);
         return new GameCounterRollResult

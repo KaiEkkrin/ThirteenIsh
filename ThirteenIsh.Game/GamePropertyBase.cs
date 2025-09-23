@@ -36,4 +36,19 @@ public abstract class GamePropertyBase(string name, string? alias = null, bool i
 
     public abstract bool TryEditCharacterProperty(string newValue, CharacterSheet sheet,
         [MaybeNullWhen(true)] out string errorMessage);
+
+    /// <summary>
+    /// Edits a character property, throwing an exception if the edit fails.
+    /// This method is intended for test usage; ThirteenIsh itself should call TryEditCharacterProperty instead.
+    /// </summary>
+    /// <param name="newValue">The new value to set</param>
+    /// <param name="sheet">The character sheet to modify</param>
+    /// <exception cref="EditCharacterPropertyException">Thrown when the edit fails</exception>
+    public void EditCharacterProperty(string newValue, CharacterSheet sheet)
+    {
+        if (!TryEditCharacterProperty(newValue, sheet, out var errorMessage))
+        {
+            throw new EditCharacterPropertyException(errorMessage);
+        }
+    }
 }

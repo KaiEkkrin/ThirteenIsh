@@ -30,13 +30,17 @@ internal class AttackBonusCounter(GameProperty class1Property, GameProperty clas
         var attackBonus = (level, class1, class2) switch
         {
             (_, SwnSystem.Warrior, SwnSystem.Warrior) => level,
-            ( < 5, SwnSystem.Warrior, _) => 1 + level / 2,
-            ( < 5, _, SwnSystem.Warrior) => 1 + level / 2,
-            (_, SwnSystem.Warrior, _) => 2 + level / 2,
-            (_, _, SwnSystem.Warrior) => 2 + level / 2,
+            (_, SwnSystem.Warrior, _) => level / 2 + GetWarriorBonus(level.Value),
+            (_, _, SwnSystem.Warrior) => level / 2 + GetWarriorBonus(level.Value),
             _ => level / 2
         };
 
         return attackBonus;
+    }
+
+    private static int GetWarriorBonus(int level)
+    {
+        // Gain +1 to attack bonus at first and fifth levels
+        return level >= 5 ? 2 : 1;
     }
 }
