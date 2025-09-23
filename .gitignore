@@ -362,6 +362,9 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
+# Test coverage
+CoverageReport/
+
 # Local configuration
 .claude
 *.docker.env
