@@ -7,7 +7,7 @@
 [DebuggerDisplay("{Operator}")]
 internal sealed class SingleCharacterParseTree(int offset, char ch) : ParseTreeBase(offset)
 {
-    public override char Operator => ch;
+    public override char OpChar => ch;
 
     public override string ToString() => $"{ch}";
 }

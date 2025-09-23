@@ -240,7 +240,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
     protected override void AddEncounterHeadingRow(List<TableRow> data, Encounter encounter)
     {
         base.AddEncounterHeadingRow(data, encounter);
-        data.Add(new TableRow(new TableCell("Escalation Die"), TableCell.Integer(
+        data.Add(new TableRow(new TableCell("Escalation Die"), TableCell.FromNumber(
             encounter.State.Counters.TryGetValue(EscalationDie, out var escalationDieValue) ? escalationDieValue : 0)));
     }
 

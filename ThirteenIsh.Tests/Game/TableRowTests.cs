@@ -36,9 +36,9 @@ public class TableRowTests
     [InlineData(42, "42")]
     [InlineData(-15, "-15")]
     [InlineData(999, "999")]
-    public void TableCell_Integer_CreatesRightJustifiedCell(int value, string expectedText)
+    public void TableCell_FromNumber_CreatesRightJustifiedCell(int value, string expectedText)
     {
-        var cell = TableCell.Integer(value);
+        var cell = TableCell.FromNumber(value);
 
         cell.Text.ShouldBe(expectedText);
         cell.RightJustify.ShouldBeTrue();

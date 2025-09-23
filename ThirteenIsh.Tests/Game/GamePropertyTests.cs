@@ -176,7 +176,7 @@ public class GamePropertyTests
         };
     }
 
-    private class TestTrackedCharacter : ITrackedCharacter
+    private sealed class TestTrackedCharacter : ITrackedCharacter
     {
         public string Name { get; set; } = "";
         public DateTimeOffset LastUpdated { get; set; }

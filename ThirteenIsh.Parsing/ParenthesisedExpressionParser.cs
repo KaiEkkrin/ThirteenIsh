@@ -16,15 +16,15 @@ internal sealed class ParenthesisedExpressionParser : ParserBase
 
         // Parse the (
         var ob = OpenBracketsParser.Parse(input, offset, depth);
-        if (!string.IsNullOrEmpty(ob.Error)) return ob;
+        if (!string.IsNullOrEmpty(ob.ParseError)) return ob;
 
         // Parse the inner expression
         var inner = MultiCaseParser.AddSubMulDivDiceRollOrIntegerParser.Parse(input, ob.Offset, depth);
-        if (!string.IsNullOrEmpty(inner.Error)) return inner;
+        if (!string.IsNullOrEmpty(inner.ParseError)) return inner;
 
         // Parse the )
         var cb = CloseBracketsParser.Parse(input, inner.Offset, depth);
-        if (!string.IsNullOrEmpty(cb.Error)) return cb;
+        if (!string.IsNullOrEmpty(cb.ParseError)) return cb;
 
         return new ParenthesisedExpressionParseTree(cb.Offset, inner);
     }

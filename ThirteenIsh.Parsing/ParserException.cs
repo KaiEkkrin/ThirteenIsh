@@ -4,7 +4,7 @@
 /// Use this (sparingly) for a hard error during parsing, that should be a fail regardless
 /// of whether any other branches succeeded
 /// </summary>
-internal class ParserException : Exception
+internal sealed class ParserException : Exception
 {
     public ParserException()
     {

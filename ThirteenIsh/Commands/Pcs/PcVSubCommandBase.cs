@@ -53,9 +53,9 @@ internal abstract class PcVSubCommandBase(bool asGm, string name, string descrip
         }
 
         var parseTree = Parser.Parse(diceString);
-        if (!string.IsNullOrEmpty(parseTree.Error))
+        if (!string.IsNullOrEmpty(parseTree.ParseError))
         {
-            await command.RespondAsync(parseTree.Error, ephemeral: true);
+            await command.RespondAsync(parseTree.ParseError, ephemeral: true);
             return;
         }
 

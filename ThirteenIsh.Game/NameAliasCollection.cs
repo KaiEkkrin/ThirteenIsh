@@ -1,4 +1,5 @@
 
+using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
 namespace ThirteenIsh.Game;
@@ -7,6 +8,7 @@ namespace ThirteenIsh.Game;
 /// Enables us to generate uniquely identifying, short aliases for character and
 /// monster names.
 /// </summary>
+[SuppressMessage("Naming", "CA1711:Identifiers should not end in Collection", Justification = "This class manages a collection of name aliases and the Collection suffix is appropriate")]
 public sealed partial class NameAliasCollection
 {
     private const int DefaultPrefixTryCount = 16;

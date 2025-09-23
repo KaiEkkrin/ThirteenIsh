@@ -19,11 +19,11 @@ internal sealed class DiceRollParser : ParserBase
 
         // Parse the dice count and "d"
         var d = ParseDiceCount(input, offset, depth, out var diceCount, out var diceSign);
-        if (!string.IsNullOrEmpty(d.Error)) return d;
+        if (!string.IsNullOrEmpty(d.ParseError)) return d;
 
         // Parse the dice size
         var diceSize = IntegerParser.Instance.Parse(input, d.Offset, depth);
-        if (!string.IsNullOrEmpty(diceSize.Error))
+        if (!string.IsNullOrEmpty(diceSize.ParseError))
             return diceSize;
 
         if (diceSize.LiteralValue < 1 || diceSize.LiteralValue > MaxDiceSize)
@@ -34,10 +34,10 @@ internal sealed class DiceRollParser : ParserBase
         var keep = KeepParser.Parse(input, diceSize.Offset, depth);
         var lastOffset = diceSize.Offset;
         int? keepHighest = null, keepLowest = null;
-        if (string.IsNullOrEmpty(keep.Error))
+        if (string.IsNullOrEmpty(keep.ParseError))
         {
             keepValue = IntegerParser.Instance.Parse(input, keep.Offset, depth);
-            if (!string.IsNullOrEmpty(keepValue.Error))
+            if (!string.IsNullOrEmpty(keepValue.ParseError))
                 return keepValue;
 
             if (keepValue.LiteralValue < 1 || keepValue.LiteralValue > diceCount)
@@ -45,7 +45,7 @@ internal sealed class DiceRollParser : ParserBase
                     $"Invalid keep count {keepValue.LiteralValue} for dice count {diceCount}");
 
             lastOffset = keepValue.Offset;
-            switch (keep.Operator)
+            switch (keep.OpChar)
             {
                 case 'k' or 'K':
                     keepHighest = keepValue.LiteralValue;
@@ -66,7 +66,7 @@ internal sealed class DiceRollParser : ParserBase
         // The "d" may or may not be preceded by a count.
         // If it isn't, assume the count is 1.
         var d = DParser.Parse(input, offset, depth);
-        if (string.IsNullOrEmpty(d.Error))
+        if (string.IsNullOrEmpty(d.ParseError))
         {
             diceCount = diceSign = 1;
             return d;
@@ -74,7 +74,7 @@ internal sealed class DiceRollParser : ParserBase
 
         // Parse the dice count
         var rawDiceCount = IntegerParser.Instance.Parse(input, offset, depth);
-        if (!string.IsNullOrEmpty(rawDiceCount.Error))
+        if (!string.IsNullOrEmpty(rawDiceCount.ParseError))
         {
             diceCount = diceSign = 0;
             return rawDiceCount;

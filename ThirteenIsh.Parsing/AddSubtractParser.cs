@@ -15,16 +15,16 @@ internal sealed class AddSubtractParser : ParserBase
 
         // Parse the left operand
         var lhs = MultiCaseParser.MulDivDiceRollOrIntegerParser.Parse(input, offset, depth);
-        if (!string.IsNullOrEmpty(lhs.Error)) return lhs;
+        if (!string.IsNullOrEmpty(lhs.ParseError)) return lhs;
 
         // Parse the '+' or '-'
         var op = OpParser.Parse(input, lhs.Offset, depth);
-        if (!string.IsNullOrEmpty(op.Error)) return op;
+        if (!string.IsNullOrEmpty(op.ParseError)) return op;
 
         // Parse the right operand
         var rhs = MultiCaseParser.AddSubMulDivDiceRollOrIntegerParser.Parse(input, op.Offset, depth);
-        if (!string.IsNullOrEmpty(rhs.Error)) return rhs;
+        if (!string.IsNullOrEmpty(rhs.ParseError)) return rhs;
 
-        return rhs.InsertBinaryOperation(lhs, op.Operator);
+        return rhs.InsertBinaryOperation(lhs, op.OpChar);
     }
 }

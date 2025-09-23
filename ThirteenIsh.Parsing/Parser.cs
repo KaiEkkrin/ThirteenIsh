@@ -15,7 +15,7 @@ public static class Parser
             // Make sure we've managed to consume the whole input, or this is a fail :)
             return parseTree switch
             {
-                { Error.Length: 0 } => parseTree,
+                { ParseError.Length: 0 } => parseTree,
                 _ when parseTree.Offset == input.Length => parseTree,
                 _ when parseTree.Offset > input.Length => throw new InvalidOperationException(
                     $"Somehow parsed beyond the end of the input. Offset = {parseTree.Offset}, input = '{input}'"),

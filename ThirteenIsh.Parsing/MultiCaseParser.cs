@@ -24,7 +24,7 @@ internal sealed class MultiCaseParser(params ParserBase[] parsers) : ParserBase
         foreach (var parser in parsers)
         {
             var parseTree = parser.Parse(input, offset, depth);
-            if (string.IsNullOrEmpty(parseTree.Error)) return parseTree;
+            if (string.IsNullOrEmpty(parseTree.ParseError)) return parseTree;
 
             errors.Add(parseTree);
         }

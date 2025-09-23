@@ -39,14 +39,14 @@ public class ParsingTests
         MockRandomWrapper random = new();
 
         var parseTree = Parser.Parse(expression);
-        parseTree.Error.ShouldBeNullOrEmpty(expression);
+        parseTree.ParseError.ShouldBeNullOrEmpty(expression);
         var result = parseTree.Evaluate(random, out var working);
         result.ShouldBe(expectedResult);
 
         // The working should also be a valid expression with the same result:
         // (This only holds for expressions without dice or named integers)
         var workingParseTree = Parser.Parse(working);
-        workingParseTree.Error.ShouldBeNullOrEmpty(working);
+        workingParseTree.ParseError.ShouldBeNullOrEmpty(working);
         var workingResult = workingParseTree.Evaluate(random, out _);
         workingResult.ShouldBe(expectedResult);
     }
@@ -56,7 +56,7 @@ public class ParsingTests
     public void OverLargeExpressionIsRejected(string expression)
     {
         var parseTree = Parser.Parse(expression);
-        parseTree.Error.ShouldNotBeNullOrEmpty(expression);
+        parseTree.ParseError.ShouldNotBeNullOrEmpty(expression);
     }
 
     [Theory]
@@ -126,7 +126,7 @@ public class ParsingTests
         MockRandomWrapper random = new(randomExpectations);
 
         var parseTree = Parser.Parse(expression);
-        parseTree.Error.ShouldBeNullOrEmpty(expression);
+        parseTree.ParseError.ShouldBeNullOrEmpty(expression);
         var result = parseTree.Evaluate(random, out _);
         result.ShouldBe(expectedResult);
 
@@ -141,7 +141,7 @@ public class ParsingTests
         MockRandomWrapper random = new(EnumerateRandomExpectations().ToArray());
 
         var parseTree = Parser.Parse(expression);
-        parseTree.Error.ShouldBeNullOrEmpty(expression);
+        parseTree.ParseError.ShouldBeNullOrEmpty(expression);
 
         var result = parseTree.Evaluate(random, out _);
         result.ShouldBe(Enumerable.Range(2, 99).Select(i => i * 17).Sum());
@@ -171,10 +171,10 @@ public class ParsingTests
     public void OverLargeDiceRollsDoNotParseSuccessfully(string expression)
     {
         var parseTree = Parser.Parse(expression);
-        parseTree.Error.ShouldNotBeNullOrEmpty();
+        parseTree.ParseError.ShouldNotBeNullOrEmpty();
 
         // check with a valid prefix and suffix too :)
         var parseTree2 = Parser.Parse($"10 + {expression} + 4d8");
-        parseTree2.Error.ShouldNotBeNullOrEmpty();
+        parseTree2.ParseError.ShouldNotBeNullOrEmpty();
     }
 }

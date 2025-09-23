@@ -26,8 +26,8 @@ internal sealed class RollCommand : CommandBase
             diceString = string.Empty;
 
         var parseTree = Parser.Parse(diceString);
-        if (!string.IsNullOrEmpty(parseTree.Error))
-            return command.RespondAsync(parseTree.Error, ephemeral: true);
+        if (!string.IsNullOrEmpty(parseTree.ParseError))
+            return command.RespondAsync(parseTree.ParseError, ephemeral: true);
 
         var random = serviceProvider.GetRequiredService<IRandomWrapper>();
         var value = parseTree.Evaluate(random, out var working);

@@ -42,9 +42,9 @@ internal abstract class CombatVSubCommandBase(bool asGm, string name, string des
         }
 
         var parseTree = Parser.Parse(diceString);
-        if (!string.IsNullOrEmpty(parseTree.Error))
+        if (!string.IsNullOrEmpty(parseTree.ParseError))
         {
-            await command.RespondAsync(parseTree.Error, ephemeral: true);
+            await command.RespondAsync(parseTree.ParseError, ephemeral: true);
             return;
         }
 

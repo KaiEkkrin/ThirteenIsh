@@ -34,9 +34,9 @@ internal sealed class CombatRollSubCommand() : SubCommandBase("roll", "Rolls aga
         }
 
         var bonus = CommandUtil.GetBonus(option);
-        if (!string.IsNullOrEmpty(bonus?.Error))
+        if (!string.IsNullOrEmpty(bonus?.ParseError))
         {
-            await command.RespondAsync(bonus.Error, ephemeral: true);
+            await command.RespondAsync(bonus.ParseError, ephemeral: true);
             return;
         }
 

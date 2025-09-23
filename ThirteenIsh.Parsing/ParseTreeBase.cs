@@ -8,7 +8,7 @@ public abstract class ParseTreeBase(int offset)
     /// <summary>
     /// If there is a parse error, returns it. Otherwise null.
     /// </summary>
-    public virtual string? Error => null;
+    public virtual string? ParseError => null;
 
     /// <summary>
     /// The literal integer value that was parsed (only for IntegerParseTree.)
@@ -23,7 +23,7 @@ public abstract class ParseTreeBase(int offset)
     /// <summary>
     /// The parsed operator character (only for SingleCharacterParseTree.)
     /// </summary>
-    public virtual char Operator => throw new NotSupportedException();
+    public virtual char OpChar => throw new NotSupportedException();
 
     /// <summary>
     /// Evaluates the parse tree and returns the result. Fills the out parameter with
@@ -31,7 +31,7 @@ public abstract class ParseTreeBase(int offset)
     /// </summary>
     public virtual int Evaluate(IRandomWrapper random, out string working)
     {
-        throw new InvalidOperationException($"Cannot evaluate: {Error}");
+        throw new InvalidOperationException($"Cannot evaluate: {ParseError}");
     }
 
     /// <summary>

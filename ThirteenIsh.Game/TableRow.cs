@@ -6,7 +6,7 @@ public readonly record struct TableCell(string Text, bool RightJustify = false)
 {
     public static readonly TableCell Empty = new(string.Empty);
 
-    public static TableCell Integer(int value) => new($"{value}", true);
+    public static TableCell FromNumber(int value) => new($"{value}", true);
 }
 
 /// <summary>

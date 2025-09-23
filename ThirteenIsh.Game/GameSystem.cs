@@ -129,7 +129,7 @@ public abstract class GameSystem(string name, IEnumerable<CharacterSystem> chara
 
     protected virtual void AddEncounterHeadingRow(List<TableRow> data, Encounter encounter)
     {
-        data.Add(new TableRow(new TableCell("Round"), TableCell.Integer(encounter.Round)));
+        data.Add(new TableRow(new TableCell("Round"), TableCell.FromNumber(encounter.Round)));
     }
 
     private void BuildEncounterHeadingTable(StringBuilder builder, Encounter encounter)
@@ -165,7 +165,7 @@ public abstract class GameSystem(string name, IEnumerable<CharacterSystem> chara
 
             List<TableCell> cells = [
                 new TableCell(combatantAliasBuilder.ToString()),
-                TableCell.Integer(combatant.Initiative)
+                TableCell.FromNumber(combatant.Initiative)
                 ];
 
             foreach (var counter in characterSystem.GetEncounterTableCounters(character.Sheet))
