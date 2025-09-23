@@ -163,7 +163,7 @@ internal class SwnSystem : GameSystem
         // Build monster system
         GameCounter hitDiceCounter = new(HitDice, HitDiceAlias, defaultValue: 1, minValue: 1);
         var monsterMorale = new MoraleCounter("Morale");
-        var monsterHitPointsCounter = new HitPointsCounter(hitDiceCounter);
+        var monsterHitPointsCounter = new MonsterHitPointsCounter(hitDiceCounter);
 
         var monsterStats = new GamePropertyGroupBuilder(MonsterStats)
             .AddProperty(hitDiceCounter)

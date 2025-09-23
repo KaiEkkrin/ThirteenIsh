@@ -14,19 +14,10 @@ internal class MonsterHitPointsCounter(GameCounter hitDiceCounter)
     {
         var hitDice = hitDiceCounter.GetValue(character);
         var baseValue = GetMonsterHitPoints(hitDice);
-        return AddFix(baseValue, character);
-    }
 
-    public override int? GetMaxVariableValue(ITrackedCharacter character)
-    {
         // A swarm's maximum number of hit points is multiplied by the swarm count
-        return base.GetMaxVariableValue(character) * Math.Max(1, character.SwarmCount);
-    }
-
-    public override int? GetStartingValue(ITrackedCharacter character)
-    {
-        // A swarm's starting number of hit points is multiplied by the swarm count
-        return base.GetStartingValue(character) * Math.Max(1, character.SwarmCount);
+        var swarmValue = baseValue * Math.Max(1, character.SwarmCount);
+        return AddFix(swarmValue, character);
     }
 
     private static int? GetMonsterHitPoints(int? hitDice)

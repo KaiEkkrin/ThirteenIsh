@@ -366,6 +366,69 @@ public class SwnCombatIntegrationTests
     }
 
     [Fact]
+    public void Combat_MonsterSwarm_Has3xHitPoints()
+    {
+        // Arrange
+        var monster = SwnTestHelpers.CreateMonster("SwarmMonster");
+        _monsterSystem.SetNewCharacterStartingValues(monster);
+        SwnTestHelpers.SetupFullMonster(monster, _monsterSystem);
+
+        // Create a swarm with 3 monsters
+        var swarmCombatant = SwnTestHelpers.CreateMonsterCombatant("SwarmMonster", monster.Sheet);
+        swarmCombatant.SwarmCount = 3;
+
+        // Get the hit points counter
+        var hitPointsCounter = _monsterSystem.GetProperty<GameCounter>(swarmCombatant.Sheet, SwnSystem.HitPoints);
+
+        // Act - Get the hit point values
+        var singleMonsterHP = hitPointsCounter.GetValue(monster.Sheet); // Base monster HP
+        var swarmStartingHP = hitPointsCounter.GetStartingValue(swarmCombatant); // Swarm starting HP
+        var swarmMaxHP = hitPointsCounter.GetMaxVariableValue(swarmCombatant); // Swarm max HP
+        var swarmCurrentHP = hitPointsCounter.GetValue(swarmCombatant); // Current HP (should equal starting)
+
+        // Assert - Swarm should have 3x the hit points of a single monster
+        singleMonsterHP.ShouldBe(18); // Expected from monster setup (4 HD * 4.5 = 18)
+        swarmStartingHP.ShouldBe(54); // 18 * 3 = 54
+        swarmMaxHP.ShouldBe(54); // Same as starting for monsters
+        swarmCurrentHP.ShouldBe(54); // Current should equal starting initially
+
+        // Test that the swarm behaves like a single monster otherwise
+        swarmCombatant.CharacterType.ShouldBe(CharacterType.Monster);
+        swarmCombatant.Sheet.ShouldBe(monster.Sheet); // Same base stats
+    }
+
+    [Fact]
+    public void Combat_MonsterSwarm_DamageTaken_ReducesFrom3xHitPoints()
+    {
+        // Arrange
+        var monster = SwnTestHelpers.CreateMonster("SwarmMonster");
+        _monsterSystem.SetNewCharacterStartingValues(monster);
+        SwnTestHelpers.SetupFullMonster(monster, _monsterSystem);
+
+        // Create a swarm with 3 monsters
+        var swarmCombatant = SwnTestHelpers.CreateMonsterCombatant("SwarmMonster", monster.Sheet);
+        swarmCombatant.SwarmCount = 3;
+
+        var hitPointsCounter = _monsterSystem.GetProperty<GameCounter>(swarmCombatant.Sheet, SwnSystem.HitPoints);
+
+        // Get initial hit points (should be 3x normal)
+        var initialHP = hitPointsCounter.GetVariableValue(swarmCombatant);
+        initialHP.ShouldBe(54); // 18 * 3
+
+        // Act - Apply damage to the swarm (20 points of damage)
+        var currentHP = hitPointsCounter.GetValue(swarmCombatant)!.Value;
+        hitPointsCounter.SetVariableClamped(currentHP - 20, swarmCombatant);
+
+        // Assert - Check remaining hit points
+        var remainingHP = hitPointsCounter.GetVariableValue(swarmCombatant);
+        remainingHP.ShouldBe(34); // 54 - 20 = 34
+
+        // Verify the max HP is still 3x normal
+        var maxHP = hitPointsCounter.GetMaxVariableValue(swarmCombatant);
+        maxHP.ShouldBe(54);
+    }
+
+    [Fact]
     public async Task Combat_CharacterDataService_MockWorksCorrectly()
     {
         // Arrange
