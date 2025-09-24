@@ -3,7 +3,6 @@ using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Database.Entities.Combatants;
 using ThirteenIsh.Game;
 using ThirteenIsh.Game.Swn;
-using ThirteenIsh.Tests.Mocks;
 
 namespace ThirteenIsh.Tests.Game.Swn;
 

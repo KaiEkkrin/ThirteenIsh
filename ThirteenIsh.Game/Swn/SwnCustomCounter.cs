@@ -6,7 +6,7 @@ internal class SwnCustomCounter(CustomCounter customCounter, AttackBonusCounter?
            attackBonusCounter,
            defaultValue: customCounter.DefaultValue,
            minValue: Math.Min(0, customCounter.DefaultValue),
-           maxValue: Math.Max(4, customCounter.DefaultValue),
+           maxValue: Math.Max(0, customCounter.DefaultValue),
            options: customCounter.Options)
 {
     public override int? GetValue(ICounterSheet sheet)
