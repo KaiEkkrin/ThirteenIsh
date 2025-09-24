@@ -11,11 +11,13 @@ internal static partial class DiceRollHelper
     private static partial Regex D20Regex();
 
     /// <summary>
-    /// Extracts the natural d20 roll value from a working string.
+    /// Extracts the natural d20 roll value from a working string, expecting it to be the first
+    /// roll in the string.
     /// Handles basic rolls, rolls with bonuses, and reroll scenarios.
     /// </summary>
     /// <param name="working">The working string from a dice roll evaluation</param>
-    /// <returns>The natural d20 roll value (1-20), or null if parsing fails</returns>
+    /// <returns>The natural d20 roll value (1-20)</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="working"/> is not valid</exception>
     public static int ExtractNaturalD20Roll(string working)
     {
         ArgumentNullException.ThrowIfNull(working);

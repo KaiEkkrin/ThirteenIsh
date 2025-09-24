@@ -26,16 +26,7 @@ internal class MoraleCounter(string name, int defaultValue = 7, int minValue = 2
             targetValue = moraleValue.Value;
         }
 
-        // Add second counter (typically attribute bonus) if provided
-        if (secondCounter != null)
-        {
-            var secondCounterValue = secondCounter.GetValue(character);
-            if (!secondCounterValue.HasValue)
-                return new GameCounterRollResult { CounterName = Name, Error = GameCounterRollError.NoValue };
-
-            parseTree = new BinaryOperationParseTree(0, parseTree,
-                new IntegerParseTree(0, secondCounterValue.Value, secondCounter.Name), '+');
-        }
+        // Second counter is ignored (not supported here)
 
         // Add any additional bonus
         if (bonus != null)
@@ -43,17 +34,10 @@ internal class MoraleCounter(string name, int defaultValue = 7, int minValue = 2
             parseTree = new BinaryOperationParseTree(0, parseTree, bonus, '+');
         }
 
-        StringBuilder rollNameBuilder = new($"{Name}");
-        if (secondCounter != null)
-        {
-            rollNameBuilder.Append(CultureInfo.CurrentCulture,
-                $" ({secondCounter.Name[..3].ToUpper(CultureInfo.CurrentCulture)})");
-        }
-
         var rolledValue = parseTree.Evaluate(random, out var working);
         return new GameCounterRollResult
         {
-            CounterName = rollNameBuilder.ToString(),
+            CounterName = Name,
             Error = GameCounterRollError.Success,
             Roll = rolledValue,
             Working = working,
