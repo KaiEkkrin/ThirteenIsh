@@ -1,8 +1,8 @@
-using System.Globalization;
 using Shouldly;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Game;
 using ThirteenIsh.Game.Swn;
+using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Tests.Game.Swn;
 

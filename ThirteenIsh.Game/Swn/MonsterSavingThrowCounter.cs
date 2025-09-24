@@ -18,8 +18,22 @@ internal class MonsterSavingThrowCounter() : GameCounter("Save", options: GameCo
 
         var rolledValue = parseTree.Evaluate(random, out var working);
 
-        // Use the monster's save value as the target if no target was specified
+        // Extract the natural d20 roll for critical success/failure detection
+        var naturalRoll = DiceRollHelper.ExtractNaturalD20Roll(working);
+
         targetValue ??= GetValue(character);
+
+        // Determine success: natural 20 always succeeds, natural 1 always fails
+        bool? success = null;
+        if (targetValue.HasValue)
+        {
+            if (naturalRoll == 20)
+                success = true;
+            else if (naturalRoll == 1)
+                success = false;
+            else
+                success = rolledValue >= targetValue;
+        }
 
         return new GameCounterRollResult
         {
@@ -27,7 +41,7 @@ internal class MonsterSavingThrowCounter() : GameCounter("Save", options: GameCo
             Error = GameCounterRollError.Success,
             Roll = rolledValue,
             Working = working,
-            Success = targetValue.HasValue ? rolledValue >= targetValue : null
+            Success = success
         };
     }
 }
