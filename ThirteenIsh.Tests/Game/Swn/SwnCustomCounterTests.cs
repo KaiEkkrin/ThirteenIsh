@@ -385,4 +385,268 @@ public class SwnCustomCounterTests
         swnCustomCounter.MinValue.ShouldBe(0); // Custom counters should have min of 0
         swnCustomCounter.MaxValue.ShouldBe(Math.Max(0, 5)); // Should be Math.Max(0, defaultValue)
     }
+
+    [Fact]
+    public void CustomCounter_RollableWithFix_AddsFixToCounterValue()
+    {
+        // Arrange
+        var player = SwnTestHelpers.CreatePlayerCharacter();
+        _playerSystem.SetNewCharacterStartingValues(player);
+        var sheet = player.Sheet;
+
+        // Add custom counter with rollable option, set to level 1
+        var customCounter = new CustomCounter("TestSkill", 1, GameCounterOptions.CanRoll);
+        sheet.CustomCounters = [customCounter];
+        var skillCounter = _playerSystem.GetProperty<GameCounter>(sheet, "TestSkill");
+        skillCounter.EditCharacterProperty("1", sheet);
+
+        var adventurer = SwnTestHelpers.CreateAdventurer();
+        adventurer.Sheet = sheet;
+
+        // Add a fix of +2 to the custom counter
+        adventurer.GetFixes().Counters.Add(new PropertyValue<int>("TestSkill", 2));
+
+        // Act - Get value (should include fix)
+        var valueWithFix = skillCounter.GetValue(adventurer);
+
+        // Assert - Should be base value (1) + fix (2) = 3
+        valueWithFix.ShouldBe(3);
+    }
+
+    [Fact]
+    public void CustomCounter_RollableWithFixUsesDefaultValue_AddsFixToDefaultValue()
+    {
+        // Arrange
+        var player = SwnTestHelpers.CreatePlayerCharacter();
+        _playerSystem.SetNewCharacterStartingValues(player);
+        var sheet = player.Sheet;
+
+        // Add custom counter with rollable option, default value 2, but don't set explicit value
+        var customCounter = new CustomCounter("TestSkill", 2, GameCounterOptions.CanRoll);
+        sheet.CustomCounters = [customCounter];
+        var skillCounter = _playerSystem.GetProperty<GameCounter>(sheet, "TestSkill");
+
+        var adventurer = SwnTestHelpers.CreateAdventurer();
+        adventurer.Sheet = sheet;
+
+        // Add a fix of +1 to the custom counter
+        adventurer.GetFixes().Counters.Add(new PropertyValue<int>("TestSkill", 1));
+
+        // Act - Get value (should use default value + fix)
+        var valueWithFix = skillCounter.GetValue(adventurer);
+
+        // Assert - Should be default value (2) + fix (1) = 3
+        valueWithFix.ShouldBe(3);
+    }
+
+    [Fact]
+    public void CustomCounter_RollableWithFix_UsesFixInSkillChecks()
+    {
+        // Arrange
+        var player = SwnTestHelpers.CreatePlayerCharacter();
+        _playerSystem.SetNewCharacterStartingValues(player);
+        var sheet = player.Sheet;
+
+        // Add custom counter with rollable option, set to level 1
+        var customCounter = new CustomCounter("TestSkill", 1, GameCounterOptions.CanRoll);
+        sheet.CustomCounters = [customCounter];
+        var skillCounter = _playerSystem.GetProperty<GameCounter>(sheet, "TestSkill");
+        skillCounter.EditCharacterProperty("1", sheet);
+
+        // Set Dexterity for attribute bonus
+        _playerSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Dexterity).EditCharacterProperty("14", sheet);
+
+        var adventurer = SwnTestHelpers.CreateAdventurer();
+        adventurer.Sheet = sheet;
+
+        // Add a fix of +1 to the custom counter
+        adventurer.GetFixes().Counters.Add(new PropertyValue<int>("TestSkill", 1));
+
+        // Set up predictable dice rolls for 2d6 skill check
+        var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 3, 6, 4);
+
+        // Act - Skill check with fix applied
+        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(sheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
+        int? skillTarget = 10;
+        var result = skillCounter.Roll(adventurer, null, mockRandom, 0, ref skillTarget, dexBonusCounter, GameCounterRollOptions.None);
+
+        // Assert
+        result.Error.ShouldBe(GameCounterRollError.Success);
+        // Expected: 3 + 4 (2d6) + (1 base + 1 fix) + 1 (dex bonus) = 10
+        result.Roll.ShouldBe(10);
+        result.Success.ShouldBe(true); // 10 >= 10
+        result.CounterName.ShouldBe("TestSkill (DEX)");
+    }
+
+    [Fact]
+    public void CustomCounter_VariableWithFix_FixAffectsMaxAndStartingValue()
+    {
+        // Arrange
+        var player = SwnTestHelpers.CreatePlayerCharacter();
+        _playerSystem.SetNewCharacterStartingValues(player);
+        var sheet = player.Sheet;
+
+        // Add custom counter with variable option, default value 5
+        var customCounter = new CustomCounter("TestResource", 5, GameCounterOptions.HasVariable);
+        sheet.CustomCounters = [customCounter];
+        var resourceCounter = _playerSystem.GetProperty<GameCounter>(sheet, "TestResource");
+
+        var adventurer = SwnTestHelpers.CreateAdventurer();
+        adventurer.Sheet = sheet;
+
+        // Add a fix of +2 to the custom counter
+        adventurer.GetFixes().Counters.Add(new PropertyValue<int>("TestResource", 2));
+
+        // Act & Assert - Check max and starting values with fix
+        var maxValue = resourceCounter.GetMaxVariableValue(adventurer);
+        var startingValue = resourceCounter.GetStartingValue(adventurer);
+        var currentValue = resourceCounter.GetVariableValue(adventurer);
+
+        maxValue.ShouldBe(7); // 5 (default) + 2 (fix) = 7
+        startingValue.ShouldBe(7); // 5 (default) + 2 (fix) = 7
+        currentValue.ShouldBe(7); // Should start at starting value
+    }
+
+    [Fact]
+    public void CustomCounter_VariableWithFix_FixDoesNotAffectSetVariableValue()
+    {
+        // Arrange
+        var player = SwnTestHelpers.CreatePlayerCharacter();
+        _playerSystem.SetNewCharacterStartingValues(player);
+        var sheet = player.Sheet;
+
+        // Add custom counter with variable option, default value 5
+        var customCounter = new CustomCounter("TestResource", 5, GameCounterOptions.HasVariable);
+        sheet.CustomCounters = [customCounter];
+        var resourceCounter = _playerSystem.GetProperty<GameCounter>(sheet, "TestResource");
+
+        var adventurer = SwnTestHelpers.CreateAdventurer();
+        adventurer.Sheet = sheet;
+
+        // First set variable value to 3
+        resourceCounter.SetVariableClamped(3, adventurer);
+        var valueBeforeFix = resourceCounter.GetVariableValue(adventurer);
+        valueBeforeFix.ShouldBe(3);
+
+        // Then add a fix of +2 to the custom counter
+        adventurer.GetFixes().Counters.Add(new PropertyValue<int>("TestResource", 2));
+
+        // Act & Assert - Variable value should be unchanged, but max should be affected
+        var currentValue = resourceCounter.GetVariableValue(adventurer);
+        var maxValue = resourceCounter.GetMaxVariableValue(adventurer);
+
+        currentValue.ShouldBe(3); // Should remain unchanged
+        maxValue.ShouldBe(7); // 5 (default) + 2 (fix) = 7
+    }
+
+    [Fact]
+    public void CustomCounter_VariableWithFix_ResetUsesFixedStartingValue()
+    {
+        // Arrange
+        var player = SwnTestHelpers.CreatePlayerCharacter();
+        _playerSystem.SetNewCharacterStartingValues(player);
+        var sheet = player.Sheet;
+
+        // Add custom counter with variable option, default value 4
+        var customCounter = new CustomCounter("TestResource", 4, GameCounterOptions.HasVariable);
+        sheet.CustomCounters = [customCounter];
+        var resourceCounter = _playerSystem.GetProperty<GameCounter>(sheet, "TestResource");
+
+        var adventurer = SwnTestHelpers.CreateAdventurer();
+        adventurer.Sheet = sheet;
+
+        // Add a fix of +3 to the custom counter
+        adventurer.GetFixes().Counters.Add(new PropertyValue<int>("TestResource", 3));
+
+        // Set variable to a low value
+        resourceCounter.SetVariableClamped(2, adventurer);
+        var lowValue = resourceCounter.GetVariableValue(adventurer);
+        lowValue.ShouldBe(2);
+
+        // Act - Reset variable (by setting to starting value)
+        var startingValue = resourceCounter.GetStartingValue(adventurer);
+        resourceCounter.SetVariableClamped(startingValue!.Value, adventurer);
+
+        // Assert - Should reset to fixed starting value
+        var resetValue = resourceCounter.GetVariableValue(adventurer);
+        resetValue.ShouldBe(7); // 4 (default) + 3 (fix) = 7
+    }
+
+    [Fact]
+    public void CustomCounter_BothOptionsWithFix_WorksForBothRollableAndVariable()
+    {
+        // Arrange
+        var player = SwnTestHelpers.CreatePlayerCharacter();
+        _playerSystem.SetNewCharacterStartingValues(player);
+        SwnTestHelpers.SetupFullPlayerCharacter(player, _playerSystem);
+        var sheet = player.Sheet;
+
+        // Add custom counter with both options, default value 3
+        var customCounter = new CustomCounter("TestAmmo", 3, GameCounterOptions.CanRoll | GameCounterOptions.HasVariable);
+        sheet.CustomCounters = [customCounter];
+        var ammoCounter = _playerSystem.GetProperty<GameCounter>(sheet, "TestAmmo");
+        ammoCounter.EditCharacterProperty("2", sheet); // Set skill level to 2
+
+        var adventurer = SwnTestHelpers.CreateAdventurer();
+        adventurer.Sheet = sheet;
+
+        // Add a fix of +1 to the custom counter
+        adventurer.GetFixes().Counters.Add(new PropertyValue<int>("TestAmmo", 1));
+
+        // Test variable functionality with fix
+        var maxValue = ammoCounter.GetMaxVariableValue(adventurer);
+        var startingValue = ammoCounter.GetStartingValue(adventurer);
+        var currentValue = ammoCounter.GetVariableValue(adventurer);
+
+        // For rollable+variable counters, max is the skill level + fix
+        maxValue.ShouldBe(3); // skill level (2) + fix (1) = 3
+        startingValue.ShouldBe(3); // skill level (2) + fix (1) = 3
+        currentValue.ShouldBe(3); // Should start at starting value
+
+        // Test rollable functionality with fix
+        var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 2, 6, 3);
+        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(sheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
+
+        int? skillTarget = 8;
+        var rollResult = ammoCounter.Roll(adventurer, null, mockRandom, 0, ref skillTarget, dexBonusCounter, GameCounterRollOptions.None);
+
+        // Assert roll functionality includes fix
+        rollResult.Error.ShouldBe(GameCounterRollError.Success);
+        // Expected: 2 + 3 (2d6) + (2 skill + 1 fix) + 1 (dex bonus) = 9
+        rollResult.Roll.ShouldBe(9);
+        rollResult.Success.ShouldBe(true); // 9 >= 8
+        rollResult.CounterName.ShouldBe("TestAmmo (DEX)");
+    }
+
+    [Fact]
+    public void CustomCounter_NegativeFix_ReducesCounterValues()
+    {
+        // Arrange
+        var player = SwnTestHelpers.CreatePlayerCharacter();
+        _playerSystem.SetNewCharacterStartingValues(player);
+        var sheet = player.Sheet;
+
+        // Add custom counter with both options, default value 4
+        var customCounter = new CustomCounter("TestSkill", 4, GameCounterOptions.CanRoll | GameCounterOptions.HasVariable);
+        sheet.CustomCounters = [customCounter];
+        var skillCounter = _playerSystem.GetProperty<GameCounter>(sheet, "TestSkill");
+        skillCounter.EditCharacterProperty("3", sheet); // Set skill level to 3
+
+        var adventurer = SwnTestHelpers.CreateAdventurer();
+        adventurer.Sheet = sheet;
+
+        // Add a negative fix of -1 to the custom counter
+        adventurer.GetFixes().Counters.Add(new PropertyValue<int>("TestSkill", -1));
+
+        // Act & Assert - Test rollable value with negative fix
+        var skillValue = skillCounter.GetValue(adventurer);
+        skillValue.ShouldBe(2); // 3 (skill level) + (-1 fix) = 2
+
+        // Test variable values with negative fix
+        var maxValue = skillCounter.GetMaxVariableValue(adventurer);
+        var startingValue = skillCounter.GetStartingValue(adventurer);
+
+        maxValue.ShouldBe(2); // 3 (skill level) + (-1 fix) = 2
+        startingValue.ShouldBe(2); // 3 (skill level) + (-1 fix) = 2
+    }
 }

@@ -16,6 +16,6 @@ internal class SwnCustomCounter(CustomCounter customCounter, AttackBonusCounter?
 
     public override int? GetValue(ITrackedCharacter character)
     {
-        return base.GetValue(character) ?? DefaultValue;
+        return base.GetValue(character) ?? AddFix(DefaultValue, character);
     }
 }
