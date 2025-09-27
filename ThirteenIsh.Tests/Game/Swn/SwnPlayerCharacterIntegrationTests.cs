@@ -249,4 +249,242 @@ public class SwnPlayerCharacterIntegrationTests
         // Assert
         summary.ShouldBe(expectedSummary);
     }
+
+    [Fact]
+    public void PlayerCharacter_NonPsychicCharacter_HasNoEffortValue()
+    {
+        // Arrange
+        var character = SwnTestHelpers.CreatePlayerCharacter();
+        _characterSystem.SetNewCharacterStartingValues(character);
+        var sheet = character.Sheet;
+
+        // Set up a non-psychic character (Expert/Warrior with no psychic skills)
+        _characterSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(SwnSystem.Expert, sheet);
+        _characterSystem.GetProperty<GameProperty>(sheet, "Class 2").EditCharacterProperty(SwnSystem.Warrior, sheet);
+        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Constitution).EditCharacterProperty("16", sheet); // +1 bonus
+        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Wisdom).EditCharacterProperty("14", sheet); // +1 bonus
+
+        // Don't set any psychic skills (they default to -1, which means no psychic training)
+
+        // Act & Assert - Effort should be null for non-psychic characters
+        var effortCounter = _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Effort);
+        effortCounter.GetValue(sheet).ShouldBeNull();
+
+        // Test with an adventurer too
+        var adventurer = SwnTestHelpers.CreateAdventurer();
+        adventurer.Sheet = sheet;
+        effortCounter.GetValue(adventurer).ShouldBeNull();
+    }
+
+    [Fact]
+    public void PlayerCharacter_PartialPsychicCharacter_HasBasicEffortCalculation()
+    {
+        // Arrange
+        var character = SwnTestHelpers.CreatePlayerCharacter();
+        _characterSystem.SetNewCharacterStartingValues(character);
+        var sheet = character.Sheet;
+
+        // Set up a non-psychic character with some psychic training (Expert/Warrior with psychic skills)
+        _characterSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(SwnSystem.Expert, sheet);
+        _characterSystem.GetProperty<GameProperty>(sheet, "Class 2").EditCharacterProperty(SwnSystem.Warrior, sheet);
+        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Constitution).EditCharacterProperty("16", sheet); // +1 bonus
+        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Wisdom).EditCharacterProperty("14", sheet); // +1 bonus
+
+        // Set psychic skills (non-psychic class gets no attribute bonus)
+        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Telepathy).EditCharacterProperty("1", sheet);
+        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Telekinesis).EditCharacterProperty("0", sheet);
+
+        // Act & Assert - Effort = 1 (base) + 0 (no class bonus) + 1 (highest psychic skill) = 2
+        var effortCounter = _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Effort);
+        effortCounter.GetValue(sheet).ShouldBe(2);
+
+        // Test with an adventurer too
+        var adventurer = SwnTestHelpers.CreateAdventurer();
+        adventurer.Sheet = sheet;
+        effortCounter.GetValue(adventurer).ShouldBe(2);
+    }
+
+    [Fact]
+    public void PlayerCharacter_FullPsychicCharacter_HasAttributeBonusInEffortCalculation()
+    {
+        // Arrange
+        var character = SwnTestHelpers.CreatePlayerCharacter();
+        _characterSystem.SetNewCharacterStartingValues(character);
+        var sheet = character.Sheet;
+
+        // Set up a full psychic character
+        _characterSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(SwnSystem.Psychic, sheet);
+        _characterSystem.GetProperty<GameProperty>(sheet, "Class 2").EditCharacterProperty(SwnSystem.Psychic, sheet);
+        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Constitution).EditCharacterProperty("16", sheet); // +1 bonus
+        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Wisdom).EditCharacterProperty("18", sheet); // +2 bonus (higher)
+
+        // Set psychic skills
+        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Telepathy).EditCharacterProperty("2", sheet);
+        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Metapsionics).EditCharacterProperty("1", sheet);
+
+        // Act & Assert - Effort = 1 (base) + 2 (max of Con/Wis bonus for psychic class) + 2 (highest psychic skill) = 5
+        var effortCounter = _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Effort);
+        effortCounter.GetValue(sheet).ShouldBe(5);
+    }
+
+    [Fact]
+    public void PlayerCharacter_PartialPsychicClass_HasAttributeBonusInEffortCalculation()
+    {
+        // Arrange
+        var character = SwnTestHelpers.CreatePlayerCharacter();
+        _characterSystem.SetNewCharacterStartingValues(character);
+        var sheet = character.Sheet;
+
+        // Set up a partial psychic character (Expert/Psychic)
+        _characterSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(SwnSystem.Expert, sheet);
+        _characterSystem.GetProperty<GameProperty>(sheet, "Class 2").EditCharacterProperty(SwnSystem.Psychic, sheet);
+        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Constitution).EditCharacterProperty("14", sheet); // +1 bonus
+        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Wisdom).EditCharacterProperty("16", sheet); // +1 bonus
+
+        // Set psychic skills
+        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Biopsionics).EditCharacterProperty("1", sheet);
+
+        // Act & Assert - Effort = 1 (base) + 1 (max of Con/Wis bonus for partial psychic) + 1 (highest psychic skill) = 3
+        var effortCounter = _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Effort);
+        effortCounter.GetValue(sheet).ShouldBe(3);
+    }
+
+    [Fact]
+    public void PlayerCharacter_EffortVariable_StartingValueEqualsMaxValue()
+    {
+        // Arrange
+        var character = SwnTestHelpers.CreatePlayerCharacter();
+        _characterSystem.SetNewCharacterStartingValues(character);
+        var sheet = character.Sheet;
+
+        // Set up a psychic character with known Effort value
+        _characterSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(SwnSystem.Psychic, sheet);
+        _characterSystem.GetProperty<GameProperty>(sheet, "Class 2").EditCharacterProperty(SwnSystem.Expert, sheet);
+        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Constitution).EditCharacterProperty("14", sheet); // +1 bonus
+        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Wisdom).EditCharacterProperty("16", sheet); // +1 bonus
+        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Telepathy).EditCharacterProperty("2", sheet);
+
+        var adventurer = SwnTestHelpers.CreateAdventurer();
+        adventurer.Sheet = sheet;
+
+        // Act & Assert - Effort = 1 (base) + 1 (max attribute bonus) + 2 (highest psychic skill) = 4
+        var effortCounter = _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Effort);
+        var maxEffort = effortCounter.GetMaxVariableValue(adventurer);
+        var startingEffort = effortCounter.GetStartingValue(adventurer);
+        var currentEffort = effortCounter.GetVariableValue(adventurer);
+
+        maxEffort.ShouldBe(4);
+        startingEffort.ShouldBe(4);
+        currentEffort.ShouldBe(4); // Should start at max
+    }
+
+    [Fact]
+    public void PlayerCharacter_EffortVariable_CanSetAndModifyValue()
+    {
+        // Arrange
+        var character = SwnTestHelpers.CreatePlayerCharacter();
+        _characterSystem.SetNewCharacterStartingValues(character);
+        var sheet = character.Sheet;
+
+        // Set up a psychic character with Effort = 3
+        _characterSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(SwnSystem.Expert, sheet);
+        _characterSystem.GetProperty<GameProperty>(sheet, "Class 2").EditCharacterProperty(SwnSystem.Psychic, sheet);
+        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Constitution).EditCharacterProperty("12", sheet); // +0 bonus
+        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Wisdom).EditCharacterProperty("14", sheet); // +1 bonus
+        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Telekinesis).EditCharacterProperty("1", sheet);
+
+        var adventurer = SwnTestHelpers.CreateAdventurer();
+        adventurer.Sheet = sheet;
+
+        var effortCounter = _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Effort);
+
+        // Verify initial state: Effort = 1 (base) + 1 (max attribute bonus) + 1 (psychic skill) = 3
+        effortCounter.GetMaxVariableValue(adventurer).ShouldBe(3);
+        effortCounter.GetVariableValue(adventurer).ShouldBe(3);
+
+        // Act - Set current Effort to 1 (spending 2 effort)
+        effortCounter.SetVariableClamped(1, adventurer);
+
+        // Assert
+        effortCounter.GetVariableValue(adventurer).ShouldBe(1);
+        effortCounter.GetMaxVariableValue(adventurer).ShouldBe(3); // Max should remain unchanged
+
+        // Act - Set current Effort to 0 (spending all effort)
+        effortCounter.SetVariableClamped(0, adventurer);
+
+        // Assert
+        effortCounter.GetVariableValue(adventurer).ShouldBe(0);
+        effortCounter.GetMaxVariableValue(adventurer).ShouldBe(3); // Max should remain unchanged
+    }
+
+    [Fact]
+    public void PlayerCharacter_EffortVariable_ClampsToValidRange()
+    {
+        // Arrange
+        var character = SwnTestHelpers.CreatePlayerCharacter();
+        _characterSystem.SetNewCharacterStartingValues(character);
+        var sheet = character.Sheet;
+
+        // Set up a psychic character with Effort = 2
+        _characterSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(SwnSystem.Expert, sheet);
+        _characterSystem.GetProperty<GameProperty>(sheet, "Class 2").EditCharacterProperty(SwnSystem.Psychic, sheet);
+        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Constitution).EditCharacterProperty("10", sheet); // +0 bonus
+        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Wisdom).EditCharacterProperty("10", sheet); // +0 bonus
+        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Biopsionics).EditCharacterProperty("1", sheet);
+
+        var adventurer = SwnTestHelpers.CreateAdventurer();
+        adventurer.Sheet = sheet;
+
+        var effortCounter = _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Effort);
+
+        // Verify Effort = 1 (base) + 0 (no attribute bonus) + 1 (psychic skill) = 2
+        effortCounter.GetMaxVariableValue(adventurer).ShouldBe(2);
+
+        // Act - Try to set below minimum (negative values should clamp to 0)
+        effortCounter.SetVariableClamped(-5, adventurer);
+        var clampedLow = effortCounter.GetVariableValue(adventurer);
+
+        // Act - Try to set above maximum
+        effortCounter.SetVariableClamped(10, adventurer);
+        var clampedHigh = effortCounter.GetVariableValue(adventurer);
+
+        // Assert
+        clampedLow.ShouldBe(0); // Clamped to minimum (0)
+        clampedHigh.ShouldBe(2); // Clamped to maximum (2)
+    }
+
+    [Fact]
+    public void PlayerCharacter_EffortVariable_WithFixes_AffectsMaxAndStartingValue()
+    {
+        // Arrange
+        var character = SwnTestHelpers.CreatePlayerCharacter();
+        _characterSystem.SetNewCharacterStartingValues(character);
+        var sheet = character.Sheet;
+
+        // Set up a psychic character with base Effort = 2
+        _characterSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(SwnSystem.Expert, sheet);
+        _characterSystem.GetProperty<GameProperty>(sheet, "Class 2").EditCharacterProperty(SwnSystem.Psychic, sheet);
+        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Constitution).EditCharacterProperty("10", sheet); // +0 bonus
+        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Wisdom).EditCharacterProperty("10", sheet); // +0 bonus
+        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Precognition).EditCharacterProperty("1", sheet);
+
+        var adventurer = SwnTestHelpers.CreateAdventurer();
+        adventurer.Sheet = sheet;
+
+        // Add a fix of +2 to Effort
+        adventurer.GetFixes().Counters.Add(new PropertyValue<int>(SwnSystem.Effort, 2));
+
+        var effortCounter = _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Effort);
+
+        // Act & Assert - Check max and starting values with fix
+        var maxValue = effortCounter.GetMaxVariableValue(adventurer);
+        var startingValue = effortCounter.GetStartingValue(adventurer);
+        var currentValue = effortCounter.GetVariableValue(adventurer);
+
+        // Base Effort = 1 (base) + 0 (no attribute bonus) + 1 (psychic skill) = 2
+        // With fix: 2 + 2 = 4
+        maxValue.ShouldBe(4);
+        startingValue.ShouldBe(4);
+        currentValue.ShouldBe(4); // Should start at starting value
+    }
 }

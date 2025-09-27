@@ -3,6 +3,7 @@ using Shouldly;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Game;
 using ThirteenIsh.Game.Swn;
+using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Tests.Game.Swn;
 
@@ -608,5 +609,130 @@ public class SwnMonsterIntegrationTests
 
         swarmHP.ShouldBe(singleMonsterHP * 3); // Swarm has 3x HP
         // But skill check mechanics remain the same
+    }
+
+    [Fact]
+    public void Monster_SkillCheck_WithAdHocBonus()
+    {
+        // Arrange
+        var monster = SwnTestHelpers.CreateMonster();
+        _monsterSystem.SetNewCharacterStartingValues(monster);
+        var sheet = monster.Sheet;
+
+        // Set monster skill to +1
+        _monsterSystem.GetProperty<GameCounter>(sheet, "Skill").EditCharacterProperty("1", sheet);
+
+        var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
+        monsterCombatant.Sheet = sheet;
+
+        // Set up predictable dice rolls for 2d6: 4 + 2 = 6
+        var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 4, 6, 2);
+
+        // Create an ad hoc bonus of +3
+        var bonus = new IntegerParseTree(0, 3);
+
+        // Act - Monster skill check with ad hoc bonus: 2d6 + skill + bonus
+        var skillCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Skill");
+        int? skillTarget = 10;
+        var result = skillCounter.Roll(monsterCombatant, bonus, mockRandom, 0, ref skillTarget);
+
+        // Assert
+        result.Error.ShouldBe(GameCounterRollError.Success);
+        // Expected: 4 + 2 (2d6) + 1 (skill bonus) + 3 (ad hoc bonus) = 10
+        result.Roll.ShouldBe(10);
+        result.Success.ShouldBe(true); // 10 >= 10 (target)
+        result.CounterName.ShouldBe("Skill");
+        result.Working.ShouldContain("4"); // Should show first d6 roll
+        result.Working.ShouldContain("2"); // Should show second d6 roll
+        result.Working.ShouldContain("3"); // Should show the ad hoc bonus
+    }
+
+    [Fact]
+    public void Monster_SkillCheck_WithNegativeAdHocBonus()
+    {
+        // Arrange
+        var monster = SwnTestHelpers.CreateMonster();
+        _monsterSystem.SetNewCharacterStartingValues(monster);
+        var sheet = monster.Sheet;
+
+        // Set monster skill to +2
+        _monsterSystem.GetProperty<GameCounter>(sheet, "Skill").EditCharacterProperty("2", sheet);
+
+        var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
+        monsterCombatant.Sheet = sheet;
+
+        // Set up predictable dice rolls for 2d6: 5 + 3 = 8
+        var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 5, 6, 3);
+
+        // Create an ad hoc penalty of -2
+        var penalty = new IntegerParseTree(0, -2);
+
+        // Act - Monster skill check with ad hoc penalty: 2d6 + skill + penalty
+        var skillCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Skill");
+        int? skillTarget = 8;
+        var result = skillCounter.Roll(monsterCombatant, penalty, mockRandom, 0, ref skillTarget);
+
+        // Assert
+        result.Error.ShouldBe(GameCounterRollError.Success);
+        // Expected: 5 + 3 (2d6) + 2 (skill bonus) + (-2) (ad hoc penalty) = 8
+        result.Roll.ShouldBe(8);
+        result.Success.ShouldBe(true); // 8 >= 8 (target)
+        result.CounterName.ShouldBe("Skill");
+        result.Working.ShouldContain("5"); // Should show first d6 roll
+        result.Working.ShouldContain("3"); // Should show second d6 roll
+        result.Working.ShouldContain("-2"); // Should show the ad hoc penalty
+    }
+
+    [Fact]
+    public void Monster_EffortCounter_DoesNotExistForMonsters()
+    {
+        // Arrange
+        var monster = SwnTestHelpers.CreateMonster();
+        _monsterSystem.SetNewCharacterStartingValues(monster);
+        var sheet = monster.Sheet;
+
+        // Act & Assert - Monsters should not have an Effort counter at all
+        // The monster system property groups should not include Effort
+        var propertyGroups = _monsterSystem.GetPropertyGroups();
+        var allProperties = propertyGroups.SelectMany(g => g.Properties).Select(p => p.Name).ToList();
+
+        allProperties.ShouldNotContain(SwnSystem.Effort);
+
+        // Attempting to get an Effort property should throw since it doesn't exist
+        Should.Throw<ArgumentOutOfRangeException>(() =>
+            _monsterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Effort));
+    }
+
+    [Fact]
+    public void Monster_NoEffortProperty_ConfirmsMonsterSystemDesign()
+    {
+        // Arrange & Act
+        var propertyGroups = _monsterSystem.GetPropertyGroups();
+
+        // Assert - Verify monsters only have the Monster Stats group and no psychic-related properties
+        propertyGroups.Count().ShouldBe(1);
+
+        var monsterStatsGroup = propertyGroups.Single();
+        monsterStatsGroup.GroupName.ShouldBe(SwnSystem.MonsterStats);
+
+        var propertyNames = monsterStatsGroup.Properties.Select(p => p.Name).ToList();
+
+        // Should have standard monster properties
+        propertyNames.ShouldContain(SwnSystem.HitDice);
+        propertyNames.ShouldContain(SwnSystem.ArmorClass);
+        propertyNames.ShouldContain("Attack");
+        propertyNames.ShouldContain("Morale");
+        propertyNames.ShouldContain("Skill");
+        propertyNames.ShouldContain("Save");
+        propertyNames.ShouldContain(SwnSystem.HitPoints);
+
+        // Should NOT have psychic-related properties
+        propertyNames.ShouldNotContain(SwnSystem.Effort);
+        propertyNames.ShouldNotContain(SwnSystem.Telepathy);
+        propertyNames.ShouldNotContain(SwnSystem.Telekinesis);
+        propertyNames.ShouldNotContain(SwnSystem.Biopsionics);
+        propertyNames.ShouldNotContain(SwnSystem.Metapsionics);
+        propertyNames.ShouldNotContain(SwnSystem.Precognition);
+        propertyNames.ShouldNotContain(SwnSystem.Teleportation);
     }
 }

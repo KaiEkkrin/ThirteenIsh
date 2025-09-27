@@ -3,6 +3,7 @@ using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Database.Entities.Combatants;
 using ThirteenIsh.Game;
 using ThirteenIsh.Game.Swn;
+using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Tests.Game.Swn;
 
@@ -425,6 +426,88 @@ public class SwnCombatIntegrationTests
         // Verify the max HP is still 3x normal
         var maxHP = hitPointsCounter.GetMaxVariableValue(swarmCombatant);
         maxHP.ShouldBe(54);
+    }
+
+    [Fact]
+    public void Combat_PlayerAttack_WithAdHocBonus()
+    {
+        // Arrange
+        var player = SwnTestHelpers.CreatePlayerCharacter();
+        _playerSystem.SetNewCharacterStartingValues(player);
+        var sheet = player.Sheet;
+
+        // Set up character with good attack stats
+        _playerSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Dexterity).EditCharacterProperty("16", sheet); // +1 bonus
+        _playerSystem.GetProperty<GameCounter>(sheet, SwnSystem.Level).EditCharacterProperty("3", sheet);
+        _playerSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(SwnSystem.Expert, sheet);
+        _playerSystem.GetProperty<GameProperty>(sheet, "Class 2").EditCharacterProperty(SwnSystem.Warrior, sheet);
+        _playerSystem.GetProperty<GameCounter>(sheet, SwnSystem.Shoot).EditCharacterProperty("2", sheet); // Skilled marksman
+
+        var adventurer = SwnTestHelpers.CreateAdventurer();
+        adventurer.Sheet = sheet;
+
+        // Set up predictable d20 roll
+        var mockRandom = SwnTestHelpers.CreatePredictableRandom(20, 12);
+
+        // Create an ad hoc bonus of +3 (e.g., tactical advantage, magic weapon, etc.)
+        var bonus = new IntegerParseTree(0, 3);
+
+        // Act - Attack roll with ad hoc bonus: 1d20 + skill + attribute bonus + attack bonus + ad hoc bonus
+        var shootCounter = _playerSystem.GetProperty<GameCounter>(sheet, SwnSystem.Shoot);
+        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(sheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
+
+        int? targetAC = 18; // High AC target
+        var result = shootCounter.Roll(adventurer, bonus, mockRandom, 0, ref targetAC, dexBonusCounter, GameCounterRollOptions.IsAttack);
+
+        // Assert
+        result.Error.ShouldBe(GameCounterRollError.Success);
+        // Expected: 12 (d20) + 2 (Shoot skill) + 1 (Dex bonus) + 2 (attack bonus from Expert/Warrior L3) + 3 (ad hoc bonus) = 20
+        result.Roll.ShouldBe(20);
+        result.Success.ShouldBe(true); // 20 >= 18 (target AC)
+        result.CounterName.ShouldBe("Shoot attack (DEX)");
+        result.Working.ShouldContain("12"); // Should show the d20 roll
+        result.Working.ShouldContain("3"); // Should show the ad hoc bonus
+    }
+
+    [Fact]
+    public void Combat_PlayerAttack_WithNegativeAdHocBonus()
+    {
+        // Arrange
+        var player = SwnTestHelpers.CreatePlayerCharacter();
+        _playerSystem.SetNewCharacterStartingValues(player);
+        var sheet = player.Sheet;
+
+        // Set up character with good attack stats
+        _playerSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Dexterity).EditCharacterProperty("14", sheet); // +1 bonus
+        _playerSystem.GetProperty<GameCounter>(sheet, SwnSystem.Level).EditCharacterProperty("2", sheet);
+        _playerSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(SwnSystem.Warrior, sheet);
+        _playerSystem.GetProperty<GameProperty>(sheet, "Class 2").EditCharacterProperty(SwnSystem.Warrior, sheet);
+        _playerSystem.GetProperty<GameCounter>(sheet, SwnSystem.Shoot).EditCharacterProperty("1", sheet); // Decent marksman
+
+        var adventurer = SwnTestHelpers.CreateAdventurer();
+        adventurer.Sheet = sheet;
+
+        // Set up predictable d20 roll
+        var mockRandom = SwnTestHelpers.CreatePredictableRandom(20, 16);
+
+        // Create an ad hoc penalty of -3 (e.g., difficult conditions, cover, etc.)
+        var penalty = new IntegerParseTree(0, -3);
+
+        // Act - Attack roll with ad hoc penalty: 1d20 + skill + attribute bonus + attack bonus + ad hoc penalty
+        var shootCounter = _playerSystem.GetProperty<GameCounter>(sheet, SwnSystem.Shoot);
+        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(sheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
+
+        int? targetAC = 15;
+        var result = shootCounter.Roll(adventurer, penalty, mockRandom, 0, ref targetAC, dexBonusCounter, GameCounterRollOptions.IsAttack);
+
+        // Assert
+        result.Error.ShouldBe(GameCounterRollError.Success);
+        // Expected: 16 (d20) + 1 (Shoot skill) + 1 (Dex bonus) + 2 (attack bonus from Warrior L2) + (-3) (ad hoc penalty) = 17
+        result.Roll.ShouldBe(17);
+        result.Success.ShouldBe(true); // 17 >= 15 (target AC)
+        result.CounterName.ShouldBe("Shoot attack (DEX)");
+        result.Working.ShouldContain("16"); // Should show the d20 roll
+        result.Working.ShouldContain("-3"); // Should show the ad hoc penalty
     }
 
     [Fact]
