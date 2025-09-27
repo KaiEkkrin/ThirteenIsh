@@ -63,7 +63,6 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
     public async Task<EditResult<EncounterResult>> AddEncounterAsync(
         ulong guildId, ulong channelId, CancellationToken cancellationToken = default)
     {
-        // TODO find out what error to handle when the encounter already exists due to conflict...
         var guild = await GetGuildAsync(guildId, cancellationToken);
         var encounter = await GetEncounterAsync(guild, channelId, cancellationToken);
         if (encounter is not null) return new EditResult<EncounterResult>(

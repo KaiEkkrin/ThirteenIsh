@@ -41,11 +41,13 @@ internal sealed class CombatDamageMessageHandler(SqlDataService dataService, Dis
                 }
 
                 // If there is a counter it must have a value
-                int? counterValue = counter is null
-                    ? null
-                    : counter.GetValue(character) is { } realCounterValue
-                        ? realCounterValue
-                        : throw new GamePropertyException(counter.Name);
+                int? counterValue = counter?.GetValue(character);
+                if (counter is not null && counterValue is null)
+                {
+                    await interaction.ModifyOriginalResponseAsync(properties =>
+                        properties.Content = $"Counter '{counter.Name}' exists but has no value set.");
+                    return;
+                }
 
                 List<CombatantBase> targetCombatants = [];
                 if (!CommandUtil.TryFindCombatants(message.Targets, encounter, targetCombatants, out errorMessage))
