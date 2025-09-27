@@ -130,22 +130,36 @@ public class SwnCombatIntegrationTests
         var initialPlayerHP = playerHPCounter.GetValue(adventurer);
         var initialMonsterHP = monsterHPCounter.GetValue(monsterCombatant);
 
-        initialPlayerHP.ShouldBe(19); // Expected from setup
-        initialMonsterHP.ShouldBe(18); // Expected from setup
+        initialPlayerHP.ShouldBe(19); // Expected from setup (max HP)
+        initialMonsterHP.ShouldBe(18); // Expected from setup (max HP)
 
-        // Act - Apply damage to both characters
-        // Player takes 5 damage
-        adventurer.GetFixes().Counters.Add(new PropertyValue<int>(SwnSystem.HitPoints, -5));
+        // Verify initial variable values equal max HP
+        var initialPlayerCurrentHP = playerHPCounter.GetVariableValue(adventurer);
+        var initialMonsterCurrentHP = monsterHPCounter.GetVariableValue(monsterCombatant);
 
-        // Monster takes 8 damage
-        monsterCombatant.GetFixes().Counters.Add(new PropertyValue<int>(SwnSystem.HitPoints, -8));
+        initialPlayerCurrentHP.ShouldBe(19); // Current HP should start at max
+        initialMonsterCurrentHP.ShouldBe(18); // Current HP should start at max
 
-        // Assert - Check remaining hit points
-        var remainingPlayerHP = playerHPCounter.GetValue(adventurer);
-        var remainingMonsterHP = monsterHPCounter.GetValue(monsterCombatant);
+        // Act - Apply damage to both characters using SetVariableClamped (like real damage handler)
+        // Player takes 5 damage: 19 - 5 = 14
+        playerHPCounter.SetVariableClamped(initialPlayerCurrentHP!.Value - 5, adventurer);
 
-        remainingPlayerHP.ShouldBe(14); // 19 - 5 = 14
-        remainingMonsterHP.ShouldBe(10); // 18 - 8 = 10
+        // Monster takes 8 damage: 18 - 8 = 10
+        monsterHPCounter.SetVariableClamped(initialMonsterCurrentHP!.Value - 8, monsterCombatant);
+
+        // Assert - Check that max HP values remain unchanged (representing maximum hit points)
+        var maxPlayerHP = playerHPCounter.GetValue(adventurer);
+        var maxMonsterHP = monsterHPCounter.GetValue(monsterCombatant);
+
+        maxPlayerHP.ShouldBe(19); // Max HP should not change
+        maxMonsterHP.ShouldBe(18); // Max HP should not change
+
+        // Assert - Check that current HP (variable values) have been reduced by damage
+        var currentPlayerHP = playerHPCounter.GetVariableValue(adventurer);
+        var currentMonsterHP = monsterHPCounter.GetVariableValue(monsterCombatant);
+
+        currentPlayerHP.ShouldBe(14); // 19 - 5 = 14
+        currentMonsterHP.ShouldBe(10); // 18 - 8 = 10
     }
 
     [Fact]
