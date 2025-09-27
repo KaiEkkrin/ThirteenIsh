@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using System.Diagnostics;
@@ -32,10 +33,9 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
     // Retry policy
     private static readonly IEnumerable<TimeSpan> Delays = Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromMilliseconds(5), 4);
 
-    public async Task<AdventureResult> AddAdventureAsync(ulong guildId, string name, string description,
+    public async Task<AdventureResult?> AddAdventureAsync(ulong guildId, string name, string description,
         string gameSystem, CancellationToken cancellationToken = default)
     {
-        // TODO find out what error to handle when the adventure already exists.
         var guild = await GetGuildAsync(guildId, cancellationToken);
         guild.CurrentAdventureName = name;
         Adventure adventure = new()
@@ -47,8 +47,17 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
         };
 
         _context.Adventures.Add(adventure);
-        await _context.SaveChangesAsync(cancellationToken);
-        return new AdventureResult(guild, adventure);
+
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            return new AdventureResult(guild, adventure);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
+        {
+            // Unique constraint violation - adventure name already exists in this guild
+            return null;
+        }
     }
 
     public async Task<EditResult<EncounterResult>> AddEncounterAsync(
@@ -72,8 +81,18 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
             Round = 1
         };
         _context.Encounters.Add(encounter);
-        await _context.SaveChangesAsync(cancellationToken);
-        return new EditResult<EncounterResult>(new EncounterResult(adventure, encounter));
+
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            return new EditResult<EncounterResult>(new EncounterResult(adventure, encounter));
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
+        {
+            // Unique constraint violation - encounter already exists (race condition)
+            return new EditResult<EncounterResult>(
+                null, "There is already an active encounter in this channel.");
+        }
     }
 
     public async Task AddMessageAsync(MessageBase message, CancellationToken cancellationToken = default)
@@ -85,8 +104,6 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
     public async Task<Character?> CreateCharacterAsync(string name, CharacterType characterType,
         string gameSystem, ulong userId, Action<Character>? initialiseCharacter = null, CancellationToken cancellationToken = default)
     {
-        // TODO what error happens when the character already exists / their name overlaps
-        // another one?
         Character character = new()
         {
             Name = name,
@@ -97,8 +114,17 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
 
         initialiseCharacter?.Invoke(character);
         _context.Characters.Add(character);
-        await _context.SaveChangesAsync(cancellationToken);
-        return character;
+
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            return character;
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is Npgsql.PostgresException pgEx && pgEx.SqlState == "23505")
+        {
+            // Unique constraint violation - character name already exists for this user and character type
+            return null;
+        }
     }
 
     public async Task<Adventure?> DeleteAdventureAsync(ulong guildId, string name,
@@ -292,13 +318,22 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
 
     public async Task<Guild> EnsureGuildAsync(ulong guildId, CancellationToken cancellationToken = default)
     {
-        // TODO Find a sensible way to deal with optimistic concurrency using the retry policy.
         var guild = await _context.Guilds.SingleOrDefaultAsync(g => g.GuildId == guildId, cancellationToken);
         if (guild is null)
         {
             guild = new Guild { GuildId = guildId };
             _context.Guilds.Add(guild);
-            await _context.SaveChangesAsync(cancellationToken);
+
+            try
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
+            {
+                // Unique constraint violation - guild already exists (race condition)
+                // Reload the existing guild from the database
+                guild = await _context.Guilds.SingleAsync(g => g.GuildId == guildId, cancellationToken);
+            }
         }
 
         return guild;
