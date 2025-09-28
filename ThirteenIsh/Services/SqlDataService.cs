@@ -24,6 +24,9 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
     [LoggerMessage(Level = LogLevel.Information, EventId = 1, Message = "Deleted {Count} old messages in {Elapsed}")]
     private partial void DeletedOldMessages(int count, TimeSpan elapsed);
 
+    [LoggerMessage(Level = LogLevel.Debug, EventId = 3, Message = "Deleted no old messages in {Elapsed}")]
+    private partial void DeletedNoOldMessages(TimeSpan elapsed);
+
     [LoggerMessage(Level = LogLevel.Warning, EventId = 2, Message = "Error deleting old messages: {Message}")]
     private partial void ErrorDeletingOldMessages(string message, Exception exception);
 
@@ -194,7 +197,14 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
             var count = await _context.Messages.Where(m => m.Timestamp < expiredTime).ExecuteDeleteAsync(cancellationToken);
 
             stopwatch.Stop();
-            DeletedOldMessages(count, stopwatch.Elapsed);
+            if (count > 0)
+            {
+                DeletedOldMessages(count, stopwatch.Elapsed);
+            }
+            else
+            {
+                DeletedNoOldMessages(stopwatch.Elapsed);
+            }
         }
         catch (Exception ex)
         {

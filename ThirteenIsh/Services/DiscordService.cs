@@ -36,9 +36,6 @@ internal sealed partial class DiscordService : IAsyncDisposable, IDisposable
     [LoggerMessage(Level = LogLevel.Warning, EventId = 6, Message = "[Discord]: {Message}")]
     private partial void DiscordWarningMessage(string message, Exception? exception);
 
-    [LoggerMessage(Level = LogLevel.Information, EventId = 7, Message = "[Discord]: {Message}")]
-    private partial void DiscordInformationMessage(string message, Exception? exception);
-
     [LoggerMessage(Level = LogLevel.Debug, EventId = 8, Message = "[Discord]: {Message}")]
     private partial void DiscordDebugMessage(string message, Exception? exception);
 
@@ -149,10 +146,6 @@ internal sealed partial class DiscordService : IAsyncDisposable, IDisposable
 
             case LogSeverity.Warning:
                 DiscordWarningMessage(message.Message, message.Exception);
-                break;
-
-            case LogSeverity.Info:
-                DiscordInformationMessage(message.Message, message.Exception);
                 break;
 
             default:

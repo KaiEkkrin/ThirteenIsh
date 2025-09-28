@@ -12,7 +12,7 @@ internal sealed partial class Worker(
 {
     private static readonly TimeSpan TimerInterval = TimeSpan.FromMinutes(5);
 
-    [LoggerMessage(Level = LogLevel.Information, EventId = 1, Message = "Worker running at: {Time}")]
+    [LoggerMessage(Level = LogLevel.Debug, EventId = 1, Message = "Worker running at: {Time}")]
     private partial void WorkerRunningMessage(DateTimeOffset time);
 
     [LoggerMessage(Level = LogLevel.Error, EventId = 2, Message = "Error running worker: {Message}")]
