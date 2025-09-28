@@ -6,10 +6,9 @@ internal class RecoveryDieCounter(GameProperty classProperty) : GameCounter("Rec
 {
     public override bool CanStore => false;
 
-    public override int? GetValue(ICounterSheet sheet)
+    protected override int? GetValueInternal(ICharacterBase character)
     {
-        if (sheet is not CharacterSheet characterSheet) return null;
-        return classProperty.GetValue(characterSheet) switch
+        return classProperty.GetValue(character) switch
         {
             ThirteenthAgeSystem.Barbarian => 10,
             ThirteenthAgeSystem.Bard => 8,

@@ -215,11 +215,12 @@ internal sealed class DragonbaneSystem : GameSystem
         };
     }
 
-    public override string GetCharacterSummary(CharacterSheet sheet, CharacterType type)
+    public override string GetCharacterSummary(ICharacterBase character)
     {
-        var characterSystem = GetCharacterSystem(type, null);
-        var kin = characterSystem.GetProperty<GameProperty>(sheet, Kin).GetValue(sheet);
-        var profession = characterSystem.GetProperty<GameProperty>(sheet, Profession).GetValue(sheet);
+        var characterSystem = GetCharacterSystem(character.Type, character.CharacterSystemName);
+        var kin = characterSystem.GetProperty<GameProperty>(character, Kin).GetValue(character);
+        var profession = characterSystem.GetProperty<GameProperty>(character, Profession)
+            .GetValue(character);
         return $"{kin} {profession}";
     }
 

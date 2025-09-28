@@ -5,9 +5,9 @@ namespace ThirteenIsh.Game.ThirteenthAge;
 internal class ThirteenthAgeCustomCounter(CustomCounter customCounter)
     : GameCounter(customCounter.Name, defaultValue: customCounter.DefaultValue, options: customCounter.Options)
 {
-    public override int? GetValue(ICounterSheet sheet)
+    protected override int? GetValueInternal(ICharacterBase character)
     {
-        return base.GetValue(sheet) ?? DefaultValue;
+        return character.Sheet.Counters.TryGetValue(Name, out var value) ? value : DefaultValue;
     }
 
     public override GameCounterRollResult Roll(

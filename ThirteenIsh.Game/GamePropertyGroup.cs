@@ -30,14 +30,14 @@ public class GamePropertyGroup<TProperty>(string groupName, ImmutableList<TPrope
             .WithValue(table);
     }
 
-    public EmbedFieldBuilder? BuildEmbedField(CharacterSheet sheet,
+    public EmbedFieldBuilder? BuildEmbedField(ICharacterBase character,
         IReadOnlyCollection<string>? onlyTheseProperties)
     {
         var rows = properties
             .Where(property => !property.IsHidden &&
                     (onlyTheseProperties is null || onlyTheseProperties.Contains(property.Name)))
             .Select(property => new TableRow(
-                new TableCell(property.Name), new TableCell(property.GetDisplayValue(sheet), true)))
+                new TableCell(property.Name), new TableCell(property.GetDisplayValue(character), true)))
             .ToList();
 
         if (rows.Count == 0) return null;

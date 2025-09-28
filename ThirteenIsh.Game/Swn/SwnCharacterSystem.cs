@@ -11,26 +11,26 @@ internal class SwnCharacterSystem(string name, CharacterTypeCompatibility compat
         if (character.CharacterType == CharacterType.PlayerCharacter)
         {
             // Character level begins at 1
-            var level = GetProperty<GameCounter>(character.Sheet, SwnSystem.Level);
-            level.EditCharacterProperty("1", character.Sheet);
+            var level = GetProperty<GameCounter>(character, SwnSystem.Level);
+            level.EditCharacterProperty("1", character);
 
             // Armor value begins at 10
-            var armorValue = GetProperty<GameCounter>(character.Sheet, SwnSystem.ArmorValue);
-            armorValue.EditCharacterProperty("10", character.Sheet);
+            var armorValue = GetProperty<GameCounter>(character, SwnSystem.ArmorValue);
+            armorValue.EditCharacterProperty("10", character);
         }
         else if (character.CharacterType == CharacterType.Monster)
         {
             // Hit Dice begins at 1 for monsters
-            var hitDice = GetProperty<GameCounter>(character.Sheet, SwnSystem.HitDice);
-            hitDice.EditCharacterProperty("1", character.Sheet);
+            var hitDice = GetProperty<GameCounter>(character, SwnSystem.HitDice);
+            hitDice.EditCharacterProperty("1", character);
 
             // Monster AC begins at 10
-            var armorClass = GetProperty<GameCounter>(character.Sheet, SwnSystem.ArmorClass);
-            armorClass.EditCharacterProperty("10", character.Sheet);
+            var armorClass = GetProperty<GameCounter>(character, SwnSystem.ArmorClass);
+            armorClass.EditCharacterProperty("10", character);
 
             // Morale begins at 7 (typical value)
-            var morale = GetProperty<GameCounter>(character.Sheet, "Morale");
-            morale.EditCharacterProperty("7", character.Sheet);
+            var morale = GetProperty<GameCounter>(character, "Morale");
+            morale.EditCharacterProperty("7", character);
         }
     }
 

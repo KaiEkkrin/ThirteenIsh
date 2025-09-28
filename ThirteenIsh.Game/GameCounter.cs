@@ -32,63 +32,24 @@ public class GameCounter(string name, string? alias = null,
     /// </summary>
     public GameCounterOptions Options => options;
 
-    public override void AddPropertyValueChoiceOptions(SelectMenuBuilder builder, CharacterSheet sheet)
+    public override void AddPropertyValueChoiceOptions(SelectMenuBuilder builder, ICharacterBase character)
     {
         if (!maxValue.HasValue || maxValue.Value - minValue > 25)
             throw new NotSupportedException(
                 $"Cannot build property value choice options for {Name} (min = {minValue}, max = {maxValue})");
 
-        var currentValue = GetValue(sheet);
+        var currentValue = GetValue(character);
         for (var i = minValue; i <= maxValue.Value; ++i)
         {
             builder.AddOption($"{i}", $"{i}", isDefault: i == currentValue);
         }
     }
 
-    public override string GetDisplayValue(ITrackedCharacter character)
+    public override string GetDisplayValue(ICharacterBase character)
     {
-        StringBuilder builder = new();
-        if (options.HasFlag(GameCounterOptions.HasVariable))
-        {
-            switch (GetMaxVariableValue(character), GetVariableValue(character))
-            {
-                case ({ } maxValue, { } varValue):
-                    builder.Append(CultureInfo.CurrentCulture, $"{varValue}/{maxValue}");
-                    break;
-
-                case ({ } maxValue, null):
-                    builder.Append(CultureInfo.CurrentCulture, $"{maxValue}");
-                    break;
-
-                default:
-                    return Unset;
-            }
-        }
-        else if (GetValue(character) is { } value)
-        {
-            builder.Append(CultureInfo.CurrentCulture, $"{value}");
-        }
-        else
-        {
-            return Unset;
-        }
-
-        var fixValue = character.GetFixes().Counters.FirstOrDefault(c => c.Name == Name)?.Value;
-        if (fixValue is > 0)
-        {
-            builder.Append(CultureInfo.CurrentCulture, $" [+{fixValue}]");
-        }
-        else if (fixValue is < 0)
-        {
-            builder.Append(CultureInfo.CurrentCulture, $" [{fixValue}]");
-        }
-
-        return builder.ToString();
-    }
-
-    public override string GetDisplayValue(CharacterSheet sheet)
-    {
-        return GetValue(sheet) is { } value ? $"{value}" : Unset;
+        return character is ITrackedCharacter trackedCharacter
+            ? GetDisplayValueForTracked(trackedCharacter)
+            : GetValue(character) is { } value ? $"{value}" : Unset;
     }
 
     /// <summary>
@@ -112,19 +73,12 @@ public class GameCounter(string name, string? alias = null,
     }
 
     /// <summary>
-    /// Gets this counter's value from the sheet.
+    /// Gets this counter's value for the character.
+    /// Automatically applies fixes if the character is tracked.
     /// </summary>
-    public virtual int? GetValue(ICounterSheet sheet)
+    public int? GetValue(ICharacterBase character)
     {
-        return sheet.Counters.TryGetValue(Name, out var value) ? value : null;
-    }
-
-    /// <summary>
-    /// Gets this counter's value for the character, including any fix that applies.
-    /// </summary>
-    public virtual int? GetValue(ITrackedCharacter character)
-    {
-        var baseValue = GetValue(character.Sheet);
+        var baseValue = GetValueInternal(character);
         return AddFix(baseValue, character);
     }
 
@@ -193,7 +147,7 @@ public class GameCounter(string name, string? alias = null,
         variables.Counters.SetValue(Name, newValue);
     }
 
-    public override bool TryEditCharacterProperty(string newValue, CharacterSheet sheet,
+    public override bool TryEditCharacterProperty(string newValue, ICharacterBase character,
         [MaybeNullWhen(true)] out string errorMessage)
     {
         if (!int.TryParse(newValue, out var newValueInt))
@@ -219,7 +173,7 @@ public class GameCounter(string name, string? alias = null,
             }
         }
 
-        sheet.Counters.SetValue(Name, newValueInt);
+        character.Sheet.Counters.SetValue(Name, newValueInt);
         errorMessage = null;
         return true;
     }
@@ -243,10 +197,68 @@ public class GameCounter(string name, string? alias = null,
         return true;
     }
 
-    protected int? AddFix(int? baseValue, ITrackedCharacter character)
+    /// <summary>
+    /// Gets this counter's value for the character. Override to customise how the counter
+    /// value is retrieved or calculated.
+    /// Does NOT apply fixes -- that's done by GetValue, which calls this method.
+    /// </summary>
+    protected virtual int? GetValueInternal(ICharacterBase character)
     {
-        return character.GetFixes().Counters.TryGetValue(Name, out var fixValue)
-            ? baseValue + fixValue
-            : baseValue;
+        return character.Sheet.Counters.TryGetValue(Name, out var value) ? value : null;
+    }
+
+    private int? AddFix(int? baseValue, ICharacterBase character)
+    {
+        if (!character.TryGetFix(Name, out var fixValue) || fixValue == 0)
+            return baseValue;
+
+        // Ignore fixes if the counter is hidden. These would be unusable (because they wouldn't
+        // appear on the character sheet). The Discord-side code should prevent users from setting
+        // such fixes.
+        if (options.HasFlag(GameCounterOptions.IsHidden))
+            return baseValue;
+
+        return baseValue + fixValue;
+    }
+
+    private string GetDisplayValueForTracked(ITrackedCharacter character)
+    {
+        StringBuilder builder = new();
+        if (options.HasFlag(GameCounterOptions.HasVariable))
+        {
+            switch (GetMaxVariableValue(character), GetVariableValue(character))
+            {
+                case ({ } maxValue, { } varValue):
+                    builder.Append(CultureInfo.CurrentCulture, $"{varValue}/{maxValue}");
+                    break;
+
+                case ({ } maxValue, null):
+                    builder.Append(CultureInfo.CurrentCulture, $"{maxValue}");
+                    break;
+
+                default:
+                    return Unset;
+            }
+        }
+        else if (GetValue(character) is { } value)
+        {
+            builder.Append(CultureInfo.CurrentCulture, $"{value}");
+        }
+        else
+        {
+            return Unset;
+        }
+
+        var fixValue = character.GetFixes().Counters.FirstOrDefault(c => c.Name == Name)?.Value;
+        if (fixValue is > 0)
+        {
+            builder.Append(CultureInfo.CurrentCulture, $" [+{fixValue}]");
+        }
+        else if (fixValue is < 0)
+        {
+            builder.Append(CultureInfo.CurrentCulture, $" [{fixValue}]");
+        }
+
+        return builder.ToString();
     }
 }

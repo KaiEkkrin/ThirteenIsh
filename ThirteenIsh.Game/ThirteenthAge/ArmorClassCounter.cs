@@ -8,7 +8,7 @@ internal class ArmorClassCounter(
     AbilityBonusCounter wisdomBonusCounter)
     : ClassBasedCounter(ThirteenthAgeSystem.ArmorClass, ThirteenthAgeSystem.ArmorClassAlias, classProperty)
 {
-    protected override int? GetValueInternal(string? classValue, Func<GameCounter, int?> getCounterValue)
+    protected override int? GetCounterValueInternal(string? classValue, Func<GameCounter, int?> getCounterValue)
     {
         int? baseAC = classValue switch
         {

@@ -5,23 +5,12 @@ namespace ThirteenIsh.Game.Swn;
 internal class AttackBonusCounter(GameProperty class1Property, GameProperty class2Property, GameCounter levelCounter)
     : GameCounter(SwnSystem.AttackBonus, options: GameCounterOptions.CanRoll)
 {
-    public override int? GetValue(ICounterSheet sheet)
+    protected override int? GetValueInternal(ICharacterBase character)
     {
-        if (sheet is not CharacterSheet characterSheet) return null;
         return GetAttackBonus(
-            levelCounter.GetValue(sheet),
-            class1Property.GetValue(characterSheet),
-            class2Property.GetValue(characterSheet));
-    }
-
-    public override int? GetValue(ITrackedCharacter character)
-    {
-        var baseValue = GetAttackBonus(
             levelCounter.GetValue(character),
-            class1Property.GetValue(character.Sheet),
-            class2Property.GetValue(character.Sheet));
-
-        return AddFix(baseValue, character);
+            class1Property.GetValue(character),
+            class2Property.GetValue(character));
     }
 
     private static int? GetAttackBonus(int? level, string class1, string class2)

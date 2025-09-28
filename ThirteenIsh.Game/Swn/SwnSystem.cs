@@ -224,7 +224,7 @@ internal class SwnSystem : GameSystem
     {
         // In Stars Without Number, the initiative roll is 1d8 + Dexterity bonus.
         var dexterityBonusCounter = GetCharacterSystem(CharacterType.PlayerCharacter, null)
-            .GetProperty<GameCounter>(adventurer.Sheet, AttributeBonusCounter.GetBonusCounterName(Dexterity));
+            .GetProperty<GameCounter>(adventurer, AttributeBonusCounter.GetBonusCounterName(Dexterity));
 
         ParseTreeBase parseTree = DiceRollParseTree.BuildWithRerolls(8, 0, 1);
         var dexterityBonus = dexterityBonusCounter.GetValue(adventurer);
@@ -256,15 +256,15 @@ internal class SwnSystem : GameSystem
         return EncounterRollResult.BuildSuccess(initiativeRollResult, combatant.Alias);
     }
 
-    public override string GetCharacterSummary(CharacterSheet sheet, CharacterType type)
+    public override string GetCharacterSummary(ICharacterBase character)
     {
-        var characterSystem = GetCharacterSystem(type, null);
-        switch (type)
+        var characterSystem = GetCharacterSystem(character.Type, null);
+        switch (character.Type)
         {
             case CharacterType.PlayerCharacter:
-                var class1 = characterSystem.GetProperty<GameProperty>(sheet, "Class 1").GetValue(sheet);
-                var class2 = characterSystem.GetProperty<GameProperty>(sheet, "Class 2").GetValue(sheet);
-                var level = characterSystem.GetProperty<GameCounter>(sheet, Level).GetValue(sheet);
+                var class1 = characterSystem.GetProperty<GameProperty>(character, "Class 1").GetValue(character);
+                var class2 = characterSystem.GetProperty<GameProperty>(character, "Class 2").GetValue(character);
+                var level = characterSystem.GetProperty<GameCounter>(character, Level).GetValue(character);
 
                 // Build class description - handle dual-class characters
                 string classDescription;
@@ -292,11 +292,11 @@ internal class SwnSystem : GameSystem
                 return $"Level {level} {classDescription}";
 
             case CharacterType.Monster:
-                var hitDice = characterSystem.GetProperty<GameCounter>(sheet, HitDice).GetValue(sheet);
+                var hitDice = characterSystem.GetProperty<GameCounter>(character, HitDice).GetValue(character);
                 return $"{hitDice} HD Monster";
 
             default:
-                throw new ArgumentException("Unrecognised character type", nameof(type));
+                throw new ArgumentException("Unrecognised character type", nameof(character));
         }
     }
 

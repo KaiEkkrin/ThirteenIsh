@@ -47,8 +47,8 @@ public class SwnCombatIntegrationTests
 
         // Act & Assert - Test player Shoot skill attack (1d20 + skill + dex bonus + attack bonus)
         // Shoot skill = 2, Dex bonus = +1, Attack bonus = 3, d20 = 15
-        var shootCounter = _playerSystem.GetProperty<GameCounter>(adventurer.Sheet, SwnSystem.Shoot);
-        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(adventurer.Sheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
+        var shootCounter = _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Shoot);
+        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(player, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
 
         int? targetAC = 15; // Monster's AC
         var attackResult = shootCounter.Roll(adventurer, null, mockRandom, 0, ref targetAC, dexBonusCounter, GameCounterRollOptions.IsAttack);
@@ -87,7 +87,7 @@ public class SwnCombatIntegrationTests
         monsterCombatant.Sheet = monster.Sheet;
 
         // Set monster attack value - need to parse the "+6" format
-        var attackCounter = _monsterSystem.GetProperty<GameCounter>(monsterCombatant.Sheet, "Attack");
+        var attackCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Attack");
 
         // Set up predictable dice rolls: d20 roll = 12
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(20, 12);
@@ -124,8 +124,8 @@ public class SwnCombatIntegrationTests
         monsterCombatant.Sheet = monster.Sheet;
 
         // Get initial hit points
-        var playerHPCounter = _playerSystem.GetProperty<GameCounter>(adventurer.Sheet, SwnSystem.HitPoints);
-        var monsterHPCounter = _monsterSystem.GetProperty<GameCounter>(monsterCombatant.Sheet, SwnSystem.HitPoints);
+        var playerHPCounter = _playerSystem.GetProperty<GameCounter>(player, SwnSystem.HitPoints);
+        var monsterHPCounter = _monsterSystem.GetProperty<GameCounter>(monster, SwnSystem.HitPoints);
 
         var initialPlayerHP = playerHPCounter.GetValue(adventurer);
         var initialMonsterHP = monsterHPCounter.GetValue(monsterCombatant);
@@ -220,8 +220,8 @@ public class SwnCombatIntegrationTests
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(20, 5); // Low d20 roll
 
         // Act - Attack against high AC (will miss)
-        var shootCounter = _playerSystem.GetProperty<GameCounter>(adventurer.Sheet, SwnSystem.Shoot);
-        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(adventurer.Sheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
+        var shootCounter = _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Shoot);
+        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(player, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
 
         int? targetAC = 20; // Very high AC
         var attackResult = shootCounter.Roll(adventurer, null, mockRandom, 0, ref targetAC, dexBonusCounter, GameCounterRollOptions.IsAttack);
@@ -242,8 +242,8 @@ public class SwnCombatIntegrationTests
         _playerSystem.SetNewCharacterStartingValues(player);
         // Set basic attributes but don't set up skills, so character will be unskilled (-1 default)
         var sheet = player.Sheet;
-        _playerSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Dexterity).EditCharacterProperty("10", sheet);
-        _playerSystem.GetProperty<GameCounter>(sheet, SwnSystem.Level).EditCharacterProperty("1", sheet);
+        _playerSystem.GetProperty<GameAbilityCounter>(player, SwnSystem.Dexterity).EditCharacterProperty("10", player);
+        _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Level).EditCharacterProperty("1", player);
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = player.Sheet;
@@ -252,8 +252,8 @@ public class SwnCombatIntegrationTests
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(20, 15);
 
         // Act - Unskilled Shoot attack
-        var shootCounter = _playerSystem.GetProperty<GameCounter>(adventurer.Sheet, SwnSystem.Shoot);
-        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(adventurer.Sheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
+        var shootCounter = _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Shoot);
+        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(player, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
 
         int? targetAC = 15;
         var attackResult = shootCounter.Roll(adventurer, null, mockRandom, 0, ref targetAC, dexBonusCounter, GameCounterRollOptions.IsAttack);
@@ -275,9 +275,9 @@ public class SwnCombatIntegrationTests
 
         // Set up character with basic attributes but no weapon skills (will be unskilled -1 with additional -2 unfamiliarity)
         var sheet = player.Sheet;
-        _playerSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Dexterity).EditCharacterProperty("14", sheet); // +1 bonus
-        _playerSystem.GetProperty<GameCounter>(sheet, SwnSystem.Level).EditCharacterProperty("1", sheet);
-        _playerSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(SwnSystem.Expert, sheet);
+        _playerSystem.GetProperty<GameAbilityCounter>(player, SwnSystem.Dexterity).EditCharacterProperty("14", player); // +1 bonus
+        _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Level).EditCharacterProperty("1", player);
+        _playerSystem.GetProperty<GameProperty>(player, "Class 1").EditCharacterProperty(SwnSystem.Expert, player);
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = player.Sheet;
@@ -286,8 +286,8 @@ public class SwnCombatIntegrationTests
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(20, 12);
 
         // Act - Attack with Shoot skill (no training = -1 skill + -2 unfamiliarity penalty)
-        var shootCounter = _playerSystem.GetProperty<GameCounter>(adventurer.Sheet, SwnSystem.Shoot);
-        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(adventurer.Sheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
+        var shootCounter = _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Shoot);
+        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(player, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
 
         int? targetAC = 15;
         var attackResult = shootCounter.Roll(adventurer, null, mockRandom, 0, ref targetAC, dexBonusCounter, GameCounterRollOptions.IsAttack);
@@ -313,10 +313,10 @@ public class SwnCombatIntegrationTests
 
         // Set up character with Shoot skill level 0 (trained but basic)
         var sheet = player.Sheet;
-        _playerSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Dexterity).EditCharacterProperty("14", sheet); // +1 bonus
-        _playerSystem.GetProperty<GameCounter>(sheet, SwnSystem.Level).EditCharacterProperty("1", sheet);
-        _playerSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(SwnSystem.Expert, sheet);
-        _playerSystem.GetProperty<GameCounter>(sheet, SwnSystem.Shoot).EditCharacterProperty("0", sheet); // Level-0 skill
+        _playerSystem.GetProperty<GameAbilityCounter>(player, SwnSystem.Dexterity).EditCharacterProperty("14", player); // +1 bonus
+        _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Level).EditCharacterProperty("1", player);
+        _playerSystem.GetProperty<GameProperty>(player, "Class 1").EditCharacterProperty(SwnSystem.Expert, player);
+        _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Shoot).EditCharacterProperty("0", player); // Level-0 skill
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = player.Sheet;
@@ -325,8 +325,8 @@ public class SwnCombatIntegrationTests
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(20, 12);
 
         // Act - Attack with Shoot skill (level 0 = no unfamiliarity penalty)
-        var shootCounter = _playerSystem.GetProperty<GameCounter>(adventurer.Sheet, SwnSystem.Shoot);
-        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(adventurer.Sheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
+        var shootCounter = _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Shoot);
+        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(player, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
 
         int? targetAC = 15;
         var attackResult = shootCounter.Roll(adventurer, null, mockRandom, 0, ref targetAC, dexBonusCounter, GameCounterRollOptions.IsAttack);
@@ -352,8 +352,8 @@ public class SwnCombatIntegrationTests
 
         // Set up character with basic attributes but no weapon skills (unskilled but no unfamiliarity for skill checks)
         var sheet = player.Sheet;
-        _playerSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Dexterity).EditCharacterProperty("14", sheet); // +1 bonus
-        _playerSystem.GetProperty<GameCounter>(sheet, SwnSystem.Level).EditCharacterProperty("1", sheet);
+        _playerSystem.GetProperty<GameAbilityCounter>(player, SwnSystem.Dexterity).EditCharacterProperty("14", player); // +1 bonus
+        _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Level).EditCharacterProperty("1", player);
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = player.Sheet;
@@ -362,8 +362,8 @@ public class SwnCombatIntegrationTests
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 3, 6, 5);
 
         // Act - Skill check with Shoot skill (should only get -1 unskilled, no -2 unfamiliarity)
-        var shootCounter = _playerSystem.GetProperty<GameCounter>(adventurer.Sheet, SwnSystem.Shoot);
-        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(adventurer.Sheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
+        var shootCounter = _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Shoot);
+        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(player, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
 
         int? skillTarget = 8;
         var skillResult = shootCounter.Roll(adventurer, null, mockRandom, 0, ref skillTarget, dexBonusCounter, GameCounterRollOptions.None);
@@ -392,10 +392,10 @@ public class SwnCombatIntegrationTests
         swarmCombatant.SwarmCount = 3;
 
         // Get the hit points counter
-        var hitPointsCounter = _monsterSystem.GetProperty<GameCounter>(swarmCombatant.Sheet, SwnSystem.HitPoints);
+        var hitPointsCounter = _monsterSystem.GetProperty<GameCounter>(monster, SwnSystem.HitPoints);
 
         // Act - Get the hit point values
-        var singleMonsterHP = hitPointsCounter.GetValue(monster.Sheet); // Base monster HP
+        var singleMonsterHP = hitPointsCounter.GetValue(monster); // Base monster HP
         var swarmStartingHP = hitPointsCounter.GetStartingValue(swarmCombatant); // Swarm starting HP
         var swarmMaxHP = hitPointsCounter.GetMaxVariableValue(swarmCombatant); // Swarm max HP
         var swarmCurrentHP = hitPointsCounter.GetValue(swarmCombatant); // Current HP (should equal starting)
@@ -423,7 +423,7 @@ public class SwnCombatIntegrationTests
         var swarmCombatant = SwnTestHelpers.CreateMonsterCombatant("SwarmMonster", monster.Sheet);
         swarmCombatant.SwarmCount = 3;
 
-        var hitPointsCounter = _monsterSystem.GetProperty<GameCounter>(swarmCombatant.Sheet, SwnSystem.HitPoints);
+        var hitPointsCounter = _monsterSystem.GetProperty<GameCounter>(monster, SwnSystem.HitPoints);
 
         // Get initial hit points (should be 3x normal)
         var initialHP = hitPointsCounter.GetVariableValue(swarmCombatant);
@@ -451,11 +451,11 @@ public class SwnCombatIntegrationTests
         var sheet = player.Sheet;
 
         // Set up character with good attack stats
-        _playerSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Dexterity).EditCharacterProperty("16", sheet); // +1 bonus
-        _playerSystem.GetProperty<GameCounter>(sheet, SwnSystem.Level).EditCharacterProperty("3", sheet);
-        _playerSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(SwnSystem.Expert, sheet);
-        _playerSystem.GetProperty<GameProperty>(sheet, "Class 2").EditCharacterProperty(SwnSystem.Warrior, sheet);
-        _playerSystem.GetProperty<GameCounter>(sheet, SwnSystem.Shoot).EditCharacterProperty("2", sheet); // Skilled marksman
+        _playerSystem.GetProperty<GameAbilityCounter>(player, SwnSystem.Dexterity).EditCharacterProperty("16", player); // +1 bonus
+        _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Level).EditCharacterProperty("3", player);
+        _playerSystem.GetProperty<GameProperty>(player, "Class 1").EditCharacterProperty(SwnSystem.Expert, player);
+        _playerSystem.GetProperty<GameProperty>(player, "Class 2").EditCharacterProperty(SwnSystem.Warrior, player);
+        _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Shoot).EditCharacterProperty("2", player); // Skilled marksman
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
@@ -467,8 +467,8 @@ public class SwnCombatIntegrationTests
         var bonus = new IntegerParseTree(0, 3);
 
         // Act - Attack roll with ad hoc bonus: 1d20 + skill + attribute bonus + attack bonus + ad hoc bonus
-        var shootCounter = _playerSystem.GetProperty<GameCounter>(sheet, SwnSystem.Shoot);
-        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(sheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
+        var shootCounter = _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Shoot);
+        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(player, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
 
         int? targetAC = 18; // High AC target
         var result = shootCounter.Roll(adventurer, bonus, mockRandom, 0, ref targetAC, dexBonusCounter, GameCounterRollOptions.IsAttack);
@@ -492,11 +492,11 @@ public class SwnCombatIntegrationTests
         var sheet = player.Sheet;
 
         // Set up character with good attack stats
-        _playerSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Dexterity).EditCharacterProperty("14", sheet); // +1 bonus
-        _playerSystem.GetProperty<GameCounter>(sheet, SwnSystem.Level).EditCharacterProperty("2", sheet);
-        _playerSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(SwnSystem.Warrior, sheet);
-        _playerSystem.GetProperty<GameProperty>(sheet, "Class 2").EditCharacterProperty(SwnSystem.Warrior, sheet);
-        _playerSystem.GetProperty<GameCounter>(sheet, SwnSystem.Shoot).EditCharacterProperty("1", sheet); // Decent marksman
+        _playerSystem.GetProperty<GameAbilityCounter>(player, SwnSystem.Dexterity).EditCharacterProperty("14", player); // +1 bonus
+        _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Level).EditCharacterProperty("2", player);
+        _playerSystem.GetProperty<GameProperty>(player, "Class 1").EditCharacterProperty(SwnSystem.Warrior, player);
+        _playerSystem.GetProperty<GameProperty>(player, "Class 2").EditCharacterProperty(SwnSystem.Warrior, player);
+        _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Shoot).EditCharacterProperty("1", player); // Decent marksman
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
@@ -508,8 +508,8 @@ public class SwnCombatIntegrationTests
         var penalty = new IntegerParseTree(0, -3);
 
         // Act - Attack roll with ad hoc penalty: 1d20 + skill + attribute bonus + attack bonus + ad hoc penalty
-        var shootCounter = _playerSystem.GetProperty<GameCounter>(sheet, SwnSystem.Shoot);
-        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(sheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
+        var shootCounter = _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Shoot);
+        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(player, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
 
         int? targetAC = 15;
         var result = shootCounter.Roll(adventurer, penalty, mockRandom, 0, ref targetAC, dexBonusCounter, GameCounterRollOptions.IsAttack);

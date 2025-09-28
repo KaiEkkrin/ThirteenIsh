@@ -9,13 +9,8 @@ internal class SwnCustomCounter(CustomCounter customCounter, AttackBonusCounter?
            maxValue: Math.Max(0, customCounter.DefaultValue),
            options: customCounter.Options)
 {
-    public override int? GetValue(ICounterSheet sheet)
+    protected override int? GetValueInternal(ICharacterBase character)
     {
-        return base.GetValue(sheet) ?? DefaultValue;
-    }
-
-    public override int? GetValue(ITrackedCharacter character)
-    {
-        return base.GetValue(character) ?? AddFix(DefaultValue, character);
+        return character.Sheet.Counters.TryGetValue(Name, out var value) ? value : DefaultValue;
     }
 }

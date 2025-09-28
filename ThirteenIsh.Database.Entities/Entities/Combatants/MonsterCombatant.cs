@@ -24,7 +24,7 @@ public class MonsterCombatant : CombatantBase, ITrackedCharacter
 
     public int SwarmCount { get; set; } = 1;
 
-    CharacterType ITrackedCharacter.Type => CharacterType.Monster;
+    CharacterType ICharacterBase.Type => CharacterType.Monster;
 
     public FixesSheet Fixes { get; set; } = new();
 
@@ -50,4 +50,8 @@ public class MonsterCombatant : CombatantBase, ITrackedCharacter
         return Variables;
     }
 
+    public bool TryGetFix(string name, out int fixValue)
+    {
+        return Fixes.Counters.TryGetValue(name, out fixValue);
+    }
 }

@@ -80,14 +80,14 @@ public abstract class CharacterSystem
     /// Adds this character sheet's fields to the embed -- in their well-known
     /// order of declaration
     /// </summary>
-    public EmbedBuilder AddCharacterSheetFields(EmbedBuilder builder, CharacterSheet sheet,
+    public EmbedBuilder AddCharacterSheetFields(EmbedBuilder builder, ICharacterBase character,
         IReadOnlyCollection<string>? onlyTheseProperties)
     {
         // Discord only allows adding up to 25 fields to an embed, so we group together
         // our categories of counters here, formatting a table for each one.
-        foreach (var group in EnumeratePropertyGroups(sheet))
+        foreach (var group in EnumeratePropertyGroups(character.Sheet))
         {
-            var fieldBuilder = group.BuildEmbedField(sheet, onlyTheseProperties);
+            var fieldBuilder = group.BuildEmbedField(character, onlyTheseProperties);
             if (fieldBuilder is null) continue;
             builder.AddField(fieldBuilder);
         }
@@ -237,9 +237,9 @@ public abstract class CharacterSystem
     /// Gets a property of a known type by exact name match, or throws if not found.
     /// For game logic use :)
     /// </summary>
-    public TProperty GetProperty<TProperty>(CharacterSheet sheet, string name) where TProperty : GamePropertyBase
+    public TProperty GetProperty<TProperty>(ICharacterBase character, string name) where TProperty : GamePropertyBase
     {
-        return TryGetProperty<TProperty>(sheet, name, out var property)
+        return TryGetProperty<TProperty>(character.Sheet, name, out var property)
             ? property
             : throw new ArgumentOutOfRangeException(nameof(name));
     }
@@ -304,10 +304,10 @@ public abstract class CharacterSystem
     {
     }
 
-    public bool TryBuildPropertyValueChoiceComponent(string messageId, string propertyName, CharacterSheet sheet,
+    public bool TryBuildPropertyValueChoiceComponent(string messageId, string propertyName, ICharacterBase character,
         [MaybeNullWhen(false)] out SelectMenuBuilder? menuBuilder, [MaybeNullWhen(true)] out string? errorMessage)
     {
-        if (!TryGetProperty(sheet, propertyName, out var property))
+        if (!TryGetProperty(character.Sheet, propertyName, out var property))
         {
             menuBuilder = null;
             errorMessage =
@@ -322,7 +322,7 @@ public abstract class CharacterSystem
             .WithMaxValues(1)
             .WithPlaceholder($"-- {property.Name} --");
 
-        property.AddPropertyValueChoiceOptions(menuBuilder, sheet);
+        property.AddPropertyValueChoiceOptions(menuBuilder, character);
         errorMessage = null;
         return true;
     }

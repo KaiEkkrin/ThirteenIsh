@@ -5,15 +5,9 @@ namespace ThirteenIsh.Game.Swn;
 internal class SavingThrowCounter(string name, params AttributeBonusCounter[] attributeBonuses)
     : GameCounter(name, options: GameCounterOptions.CanRoll)
 {
-    public override int? GetValue(ICounterSheet sheet)
+    protected override int? GetValueInternal(ICharacterBase character)
     {
-        return GetSavingThrow(attributeBonuses.Select(a => a.GetValue(sheet)));
-    }
-
-    public override int? GetValue(ITrackedCharacter character)
-    {
-        var baseValue = GetSavingThrow(attributeBonuses.Select(a => a.GetValue(character)));
-        return AddFix(baseValue, character);
+        return GetSavingThrow(attributeBonuses.Select(a => a.GetValue(character)));
     }
 
     public override GameCounterRollResult Roll(

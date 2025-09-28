@@ -32,13 +32,13 @@ public class SwnSavingThrowTests
         var sheet = player.Sheet;
 
         // Set STR 16 (+2), CON 14 (+1), so Physical Save = 15 - max(2, 1) = 13
-        _playerSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Strength).EditCharacterProperty("16", sheet);
-        _playerSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Constitution).EditCharacterProperty("14", sheet);
+        _playerSystem.GetProperty<GameAbilityCounter>(player, SwnSystem.Strength).EditCharacterProperty("16", player);
+        _playerSystem.GetProperty<GameAbilityCounter>(player, SwnSystem.Constitution).EditCharacterProperty("14", player);
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
 
-        var physicalSaveCounter = _playerSystem.GetProperty<GameCounter>(sheet, SwnSystem.Physical);
+        var physicalSaveCounter = _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Physical);
 
         // Act - Check calculated value
         var saveValue = physicalSaveCounter.GetValue(adventurer);
@@ -66,13 +66,13 @@ public class SwnSavingThrowTests
         var sheet = player.Sheet;
 
         // Set WIS 18 (+3), CHA 12 (+0), so Mental Save = 15 - max(3, 0) = 12
-        _playerSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Wisdom).EditCharacterProperty("18", sheet);
-        _playerSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Charisma).EditCharacterProperty("12", sheet);
+        _playerSystem.GetProperty<GameAbilityCounter>(player, SwnSystem.Wisdom).EditCharacterProperty("18", player);
+        _playerSystem.GetProperty<GameAbilityCounter>(player, SwnSystem.Charisma).EditCharacterProperty("12", player);
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
 
-        var mentalSaveCounter = _playerSystem.GetProperty<GameCounter>(sheet, SwnSystem.Mental);
+        var mentalSaveCounter = _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Mental);
 
         // Act - Check calculated value
         var saveValue = mentalSaveCounter.GetValue(adventurer);
@@ -100,13 +100,13 @@ public class SwnSavingThrowTests
         var sheet = player.Sheet;
 
         // Set DEX 13 (+0), INT 17 (+2), so Evasion Save = 15 - max(0, 2) = 13
-        _playerSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Dexterity).EditCharacterProperty("13", sheet);
-        _playerSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Intelligence).EditCharacterProperty("17", sheet);
+        _playerSystem.GetProperty<GameAbilityCounter>(player, SwnSystem.Dexterity).EditCharacterProperty("13", player);
+        _playerSystem.GetProperty<GameAbilityCounter>(player, SwnSystem.Intelligence).EditCharacterProperty("17", player);
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
 
-        var evasionSaveCounter = _playerSystem.GetProperty<GameCounter>(sheet, SwnSystem.Evasion);
+        var evasionSaveCounter = _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Evasion);
 
         // Act - Check calculated value
         var saveValue = evasionSaveCounter.GetValue(adventurer);
@@ -134,8 +134,8 @@ public class SwnSavingThrowTests
         var sheet = player.Sheet;
 
         // Set STR 14 (+1), CON 14 (+1), so Physical Save = 15 - max(1, 1) = 14
-        _playerSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Strength).EditCharacterProperty("14", sheet);
-        _playerSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Constitution).EditCharacterProperty("14", sheet);
+        _playerSystem.GetProperty<GameAbilityCounter>(player, SwnSystem.Strength).EditCharacterProperty("14", player);
+        _playerSystem.GetProperty<GameAbilityCounter>(player, SwnSystem.Constitution).EditCharacterProperty("14", player);
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
@@ -143,7 +143,7 @@ public class SwnSavingThrowTests
         // Add a +2 fix to Physical save (making it easier to save)
         adventurer.GetFixes().Counters.Add(new PropertyValue<int>(SwnSystem.Physical, 2));
 
-        var physicalSaveCounter = _playerSystem.GetProperty<GameCounter>(sheet, SwnSystem.Physical);
+        var physicalSaveCounter = _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Physical);
 
         // Act - Check save value with fix
         var saveValue = physicalSaveCounter.GetValue(adventurer);
@@ -170,12 +170,12 @@ public class SwnSavingThrowTests
         var sheet = monster.Sheet;
 
         // Set monster save to 12
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Save").EditCharacterProperty("12", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Save").EditCharacterProperty("12", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
 
-        var saveCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Save");
+        var saveCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Save");
 
         // Act - Check save value
         var saveValue = saveCounter.GetValue(monsterCombatant);
@@ -204,12 +204,12 @@ public class SwnSavingThrowTests
         var sheet = monster.Sheet;
 
         // Set monster save to 15 (harder to save)
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Save").EditCharacterProperty("15", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Save").EditCharacterProperty("15", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
 
-        var saveCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Save");
+        var saveCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Save");
 
         // Act - Roll failed save
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(20, 7); // d20 roll of 7
@@ -234,12 +234,12 @@ public class SwnSavingThrowTests
         var sheet = monster.Sheet;
 
         // Set monster save to 14
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Save").EditCharacterProperty("14", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Save").EditCharacterProperty("14", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
 
-        var saveCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Save");
+        var saveCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Save");
 
         // Act - Roll with +3 bonus
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(20, 10); // d20 roll of 10
@@ -266,12 +266,12 @@ public class SwnSavingThrowTests
         var sheet = monster.Sheet;
 
         // Set monster save to 11
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Save").EditCharacterProperty("11", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Save").EditCharacterProperty("11", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
 
-        var saveCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Save");
+        var saveCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Save");
 
         // Act - Roll without specifying target (should auto-use monster's save value)
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(20, 11); // d20 roll of 11
@@ -296,13 +296,13 @@ public class SwnSavingThrowTests
         var sheet = player.Sheet;
 
         // Set low stats so save would normally be hard (STR 8, CON 8 = +0 each, save = 15)
-        _playerSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Strength).EditCharacterProperty("8", sheet);
-        _playerSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Constitution).EditCharacterProperty("8", sheet);
+        _playerSystem.GetProperty<GameAbilityCounter>(player, SwnSystem.Strength).EditCharacterProperty("8", player);
+        _playerSystem.GetProperty<GameAbilityCounter>(player, SwnSystem.Constitution).EditCharacterProperty("8", player);
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
 
-        var physicalSaveCounter = _playerSystem.GetProperty<GameCounter>(sheet, SwnSystem.Physical);
+        var physicalSaveCounter = _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Physical);
         var saveValue = physicalSaveCounter.GetValue(adventurer);
         saveValue.ShouldBe(15); // Difficult save
 
@@ -327,13 +327,13 @@ public class SwnSavingThrowTests
         var sheet = player.Sheet;
 
         // Set high stats so save would normally be easy (STR 18, CON 18 = +2 each, save = 13)
-        _playerSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Strength).EditCharacterProperty("18", sheet);
-        _playerSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Constitution).EditCharacterProperty("18", sheet);
+        _playerSystem.GetProperty<GameAbilityCounter>(player, SwnSystem.Strength).EditCharacterProperty("18", player);
+        _playerSystem.GetProperty<GameAbilityCounter>(player, SwnSystem.Constitution).EditCharacterProperty("18", player);
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
 
-        var physicalSaveCounter = _playerSystem.GetProperty<GameCounter>(sheet, SwnSystem.Physical);
+        var physicalSaveCounter = _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Physical);
 
         // Act - Roll natural 1 (should fail even though it would normally be easy)
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(20, 1); // d20 roll of 1
@@ -357,12 +357,12 @@ public class SwnSavingThrowTests
         var sheet = monster.Sheet;
 
         // Set monster save to very high value (hard to succeed)
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Save").EditCharacterProperty("19", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Save").EditCharacterProperty("19", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
 
-        var saveCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Save");
+        var saveCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Save");
 
         // Act - Roll natural 20 (should succeed even against high target)
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(20, 20); // d20 roll of 20
@@ -386,12 +386,12 @@ public class SwnSavingThrowTests
         var sheet = monster.Sheet;
 
         // Set monster save to very low value (easy to succeed)
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Save").EditCharacterProperty("2", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Save").EditCharacterProperty("2", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
 
-        var saveCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Save");
+        var saveCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Save");
 
         // Act - Roll natural 1 (should fail even against easy target)
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(20, 1); // d20 roll of 1
@@ -416,7 +416,7 @@ public class SwnSavingThrowTests
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
 
-        var physicalSaveCounter = _playerSystem.GetProperty<GameCounter>(sheet, SwnSystem.Physical);
+        var physicalSaveCounter = _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Physical);
 
         // Act - Roll natural 20 with bonus
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(20, 20); // d20 roll of 20
@@ -443,7 +443,7 @@ public class SwnSavingThrowTests
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
 
-        var physicalSaveCounter = _playerSystem.GetProperty<GameCounter>(sheet, SwnSystem.Physical);
+        var physicalSaveCounter = _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Physical);
 
         // Act - Roll natural 1 with massive bonus (should still fail)
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(20, 1); // d20 roll of 1
@@ -468,12 +468,12 @@ public class SwnSavingThrowTests
         SwnTestHelpers.SetupFullMonster(monster, _monsterSystem);
         var sheet = monster.Sheet;
 
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Save").EditCharacterProperty("18", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Save").EditCharacterProperty("18", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
 
-        var saveCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Save");
+        var saveCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Save");
 
         // Act - Roll natural 20 with negative bonus
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(20, 20); // d20 roll of 20
@@ -497,12 +497,12 @@ public class SwnSavingThrowTests
         SwnTestHelpers.SetupFullMonster(monster, _monsterSystem);
         var sheet = monster.Sheet;
 
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Save").EditCharacterProperty("3", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Save").EditCharacterProperty("3", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
 
-        var saveCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Save");
+        var saveCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Save");
 
         // Act - Roll natural 1 with big bonus (should still fail)
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(20, 1); // d20 roll of 1

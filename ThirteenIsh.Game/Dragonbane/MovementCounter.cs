@@ -7,10 +7,9 @@ internal class MovementCounter(GameProperty kinProperty, GameAbilityCounter agil
 {
     public override bool CanStore => false;
 
-    public override int? GetValue(ICounterSheet sheet)
+    protected override int? GetValueInternal(ICharacterBase character)
     {
-        if (sheet is not CharacterSheet characterSheet) return null;
-        int? baseMovement = kinProperty.GetValue(characterSheet) switch
+        int? baseMovement = kinProperty.GetValue(character) switch
         {
             DragonbaneSystem.Human => 10,
             DragonbaneSystem.Halfling => 8,
@@ -22,7 +21,7 @@ internal class MovementCounter(GameProperty kinProperty, GameAbilityCounter agil
         };
 
         if (!baseMovement.HasValue) return null;
-        int? modifier = agilityCounter.GetValue(characterSheet) switch
+        int? modifier = agilityCounter.GetValue(character) switch
         {
             >= 1 and <= 6 => -4,
             >= 7 and <= 9 => -2,

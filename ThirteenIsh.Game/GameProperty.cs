@@ -13,34 +13,29 @@ internal class GameProperty(string name, string[] possibleValues, bool showOnAdd
 
     public override bool ShowOnAdd => showOnAdd;
 
-    public override void AddPropertyValueChoiceOptions(SelectMenuBuilder builder, CharacterSheet sheet)
+    public override void AddPropertyValueChoiceOptions(SelectMenuBuilder builder, ICharacterBase character)
     {
-        var currentValue = GetValue(sheet);
+        var currentValue = GetValue(character);
         foreach (var possibleValue in possibleValues)
         {
             builder.AddOption(possibleValue, possibleValue, isDefault: possibleValue == currentValue);
         }
     }
 
-    public override string GetDisplayValue(ITrackedCharacter character)
+    public override string GetDisplayValue(ICharacterBase character)
     {
-        return GetValue(character.Sheet) is { Length: > 0 } value ? value : Unset;
-    }
-
-    public override string GetDisplayValue(CharacterSheet sheet)
-    {
-        return GetValue(sheet) is { Length: > 0 } value ? value : Unset;
+        return GetValue(character) is { Length: > 0 } value ? value : Unset;
     }
 
     /// <summary>
     /// Gets this property's value from the character sheet.
     /// </summary>
-    public string GetValue(CharacterSheet characterSheet)
+    public string GetValue(ICharacterBase character)
     {
-        return characterSheet.Properties.TryGetValue(Name, out var value) ? value : string.Empty;
+        return character.Sheet.Properties.TryGetValue(Name, out var value) ? value : string.Empty;
     }
 
-    public override bool TryEditCharacterProperty(string newValue, CharacterSheet sheet,
+    public override bool TryEditCharacterProperty(string newValue, ICharacterBase character,
         [MaybeNullWhen(true)] out string errorMessage)
     {
         if (!possibleValues.Contains(newValue))
@@ -49,9 +44,8 @@ internal class GameProperty(string name, string[] possibleValues, bool showOnAdd
             return false;
         }
 
-        sheet.Properties.SetValue(Name, newValue);
+        character.Sheet.Properties.SetValue(Name, newValue);
         errorMessage = null;
         return true;
     }
 }
-

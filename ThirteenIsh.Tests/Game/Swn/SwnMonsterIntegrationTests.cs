@@ -33,12 +33,12 @@ public class SwnMonsterIntegrationTests
         var sheet = monster.Sheet;
 
         // Act & Assert - Verify all monster stats are set correctly
-        _monsterSystem.GetProperty<GameCounter>(sheet, SwnSystem.HitDice).GetValue(sheet).ShouldBe(4);
-        _monsterSystem.GetProperty<GameCounter>(sheet, SwnSystem.ArmorClass).GetValue(sheet).ShouldBe(15);
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Morale").GetValue(sheet).ShouldBe(8);
+        _monsterSystem.GetProperty<GameCounter>(monster, SwnSystem.HitDice).GetValue(monster).ShouldBe(4);
+        _monsterSystem.GetProperty<GameCounter>(monster, SwnSystem.ArmorClass).GetValue(monster).ShouldBe(15);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Morale").GetValue(monster).ShouldBe(8);
 
         // Verify monster hit points (Hit Dice 4 * 4.5 = 18)
-        _monsterSystem.GetProperty<GameCounter>(sheet, SwnSystem.HitPoints).GetValue(sheet).ShouldBe(18);
+        _monsterSystem.GetProperty<GameCounter>(monster, SwnSystem.HitPoints).GetValue(monster).ShouldBe(18);
     }
 
     [Theory]
@@ -56,10 +56,10 @@ public class SwnMonsterIntegrationTests
         var sheet = monster.Sheet;
 
         // Act
-        _monsterSystem.GetProperty<GameCounter>(sheet, SwnSystem.HitDice).EditCharacterProperty(hitDice.ToString(CultureInfo.InvariantCulture), sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, SwnSystem.HitDice).EditCharacterProperty(hitDice.ToString(CultureInfo.InvariantCulture), monster);
 
         // Assert
-        _monsterSystem.GetProperty<GameCounter>(sheet, SwnSystem.HitPoints).GetValue(sheet).ShouldBe(expectedHitPoints);
+        _monsterSystem.GetProperty<GameCounter>(monster, SwnSystem.HitPoints).GetValue(monster).ShouldBe(expectedHitPoints);
     }
 
     [Fact]
@@ -73,10 +73,10 @@ public class SwnMonsterIntegrationTests
         var sheet = monster.Sheet;
 
         // Assert - Verify default starting values
-        _monsterSystem.GetProperty<GameCounter>(sheet, SwnSystem.HitDice).GetValue(sheet).ShouldBe(1);
-        _monsterSystem.GetProperty<GameCounter>(sheet, SwnSystem.ArmorClass).GetValue(sheet).ShouldBe(10);
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Morale").GetValue(sheet).ShouldBe(7);
-        _monsterSystem.GetProperty<GameCounter>(sheet, SwnSystem.HitPoints).GetValue(sheet).ShouldBe(4); // 1 HD = 4 HP
+        _monsterSystem.GetProperty<GameCounter>(monster, SwnSystem.HitDice).GetValue(monster).ShouldBe(1);
+        _monsterSystem.GetProperty<GameCounter>(monster, SwnSystem.ArmorClass).GetValue(monster).ShouldBe(10);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Morale").GetValue(monster).ShouldBe(7);
+        _monsterSystem.GetProperty<GameCounter>(monster, SwnSystem.HitPoints).GetValue(monster).ShouldBe(4); // 1 HD = 4 HP
     }
 
     [Fact]
@@ -87,10 +87,10 @@ public class SwnMonsterIntegrationTests
         _monsterSystem.SetNewCharacterStartingValues(monster);
         var sheet = monster.Sheet;
 
-        _monsterSystem.GetProperty<GameCounter>(sheet, SwnSystem.HitDice).EditCharacterProperty("6", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, SwnSystem.HitDice).EditCharacterProperty("6", monster);
 
         // Act
-        var summary = _gameSystem.GetCharacterSummary(sheet, CharacterType.Monster);
+        var summary = _gameSystem.GetCharacterSummary(monster);
 
         // Assert
         summary.ShouldBe("6 HD Monster");
@@ -107,10 +107,10 @@ public class SwnMonsterIntegrationTests
         _monsterSystem.SetNewCharacterStartingValues(monster);
         var sheet = monster.Sheet;
 
-        _monsterSystem.GetProperty<GameCounter>(sheet, SwnSystem.HitDice).EditCharacterProperty(hitDice.ToString(CultureInfo.InvariantCulture), sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, SwnSystem.HitDice).EditCharacterProperty(hitDice.ToString(CultureInfo.InvariantCulture), monster);
 
         // Act
-        var summary = _gameSystem.GetCharacterSummary(sheet, CharacterType.Monster);
+        var summary = _gameSystem.GetCharacterSummary(monster);
 
         // Assert
         summary.ShouldBe(expectedSummary);
@@ -125,33 +125,33 @@ public class SwnMonsterIntegrationTests
         var sheet = monster.Sheet;
 
         // Act & Assert - Test all monster counters can be set and retrieved
-        var hitDiceCounter = _monsterSystem.GetProperty<GameCounter>(sheet, SwnSystem.HitDice);
-        hitDiceCounter.EditCharacterProperty("8", sheet);
-        hitDiceCounter.GetValue(sheet).ShouldBe(8);
+        var hitDiceCounter = _monsterSystem.GetProperty<GameCounter>(monster, SwnSystem.HitDice);
+        hitDiceCounter.EditCharacterProperty("8", monster);
+        hitDiceCounter.GetValue(monster).ShouldBe(8);
 
-        var acCounter = _monsterSystem.GetProperty<GameCounter>(sheet, SwnSystem.ArmorClass);
-        acCounter.EditCharacterProperty("16", sheet);
-        acCounter.GetValue(sheet).ShouldBe(16);
+        var acCounter = _monsterSystem.GetProperty<GameCounter>(monster, SwnSystem.ArmorClass);
+        acCounter.EditCharacterProperty("16", monster);
+        acCounter.GetValue(monster).ShouldBe(16);
 
-        var moraleCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Morale");
-        moraleCounter.EditCharacterProperty("9", sheet);
-        moraleCounter.GetValue(sheet).ShouldBe(9);
+        var moraleCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Morale");
+        moraleCounter.EditCharacterProperty("9", monster);
+        moraleCounter.GetValue(monster).ShouldBe(9);
 
         // Attack counter should be available
-        var attackCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Attack");
+        var attackCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Attack");
         attackCounter.ShouldNotBeNull();
 
         // Skill counter should be available
-        var skillCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Skill");
+        var skillCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Skill");
         skillCounter.ShouldNotBeNull();
 
         // Save counter should be available
-        var saveCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Save");
+        var saveCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Save");
         saveCounter.ShouldNotBeNull();
 
         // Hit Points should be computed correctly
-        var hitPointsCounter = _monsterSystem.GetProperty<GameCounter>(sheet, SwnSystem.HitPoints);
-        hitPointsCounter.GetValue(sheet).ShouldBe(36); // 8 HD * 4.5 = 36
+        var hitPointsCounter = _monsterSystem.GetProperty<GameCounter>(monster, SwnSystem.HitPoints);
+        hitPointsCounter.GetValue(monster).ShouldBe(36); // 8 HD * 4.5 = 36
     }
 
     [Fact]
@@ -187,16 +187,16 @@ public class SwnMonsterIntegrationTests
         var sheet = monster.Sheet;
 
         // Act & Assert - Try to set hit dice below minimum
-        var hitDiceCounter = _monsterSystem.GetProperty<GameCounter>(sheet, SwnSystem.HitDice);
+        var hitDiceCounter = _monsterSystem.GetProperty<GameCounter>(monster, SwnSystem.HitDice);
 
         // Should not allow values below 1
-        hitDiceCounter.TryEditCharacterProperty("0", sheet, out var errorMessage).ShouldBeFalse();
+        hitDiceCounter.TryEditCharacterProperty("0", monster, out var errorMessage).ShouldBeFalse();
         errorMessage.ShouldNotBeNullOrEmpty();
 
         // Should allow minimum value of 1
-        hitDiceCounter.TryEditCharacterProperty("1", sheet, out errorMessage).ShouldBeTrue();
+        hitDiceCounter.TryEditCharacterProperty("1", monster, out errorMessage).ShouldBeTrue();
         errorMessage.ShouldBeNullOrEmpty();
-        hitDiceCounter.GetValue(sheet).ShouldBe(1);
+        hitDiceCounter.GetValue(monster).ShouldBe(1);
     }
 
     [Fact]
@@ -208,7 +208,7 @@ public class SwnMonsterIntegrationTests
         var sheet = monster.Sheet;
 
         // Set monster skill to +2
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Skill").EditCharacterProperty("2", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Skill").EditCharacterProperty("2", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
@@ -217,7 +217,7 @@ public class SwnMonsterIntegrationTests
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 4, 6, 3);
 
         // Act - Monster skill check: 2d6 + skill bonus (no attribute bonus)
-        var skillCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Skill");
+        var skillCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Skill");
         int? skillTarget = 10;
         var result = skillCounter.Roll(monsterCombatant, null, mockRandom, 0, ref skillTarget);
 
@@ -240,7 +240,7 @@ public class SwnMonsterIntegrationTests
         var sheet = monster.Sheet;
 
         // Set monster skill to +3 (skilled)
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Skill").EditCharacterProperty("3", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Skill").EditCharacterProperty("3", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
@@ -249,7 +249,7 @@ public class SwnMonsterIntegrationTests
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 5, 6, 4);
 
         // Act - Monster skill check with positive skill bonus
-        var skillCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Skill");
+        var skillCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Skill");
         int? skillTarget = 12;
         var result = skillCounter.Roll(monsterCombatant, null, mockRandom, 0, ref skillTarget);
 
@@ -278,7 +278,7 @@ public class SwnMonsterIntegrationTests
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 6, 6, 5);
 
         // Act - Monster skill check with negative skill bonus (unskilled)
-        var skillCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Skill");
+        var skillCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Skill");
         int? skillTarget = 8;
         var result = skillCounter.Roll(monsterCombatant, null, mockRandom, 0, ref skillTarget);
 
@@ -306,7 +306,7 @@ public class SwnMonsterIntegrationTests
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 3, 6, 4);
 
         // Act - Unskilled monster skill check
-        var skillCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Skill");
+        var skillCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Skill");
         int? skillTarget = 6;
         var result = skillCounter.Roll(monsterCombatant, null, mockRandom, 0, ref skillTarget);
 
@@ -328,12 +328,12 @@ public class SwnMonsterIntegrationTests
         var sheet = monster.Sheet;
 
         // Set monster skill to +1
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Skill").EditCharacterProperty("1", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Skill").EditCharacterProperty("1", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
 
-        var skillCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Skill");
+        var skillCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Skill");
 
         // Test successful skill check
         var highRollRandom = SwnTestHelpers.CreatePredictableRandom(6, 6, 6, 5); // 6 + 5 = 11
@@ -365,7 +365,7 @@ public class SwnMonsterIntegrationTests
         var sheet = monster.Sheet;
 
         // Set monster skill to +2
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Skill").EditCharacterProperty("2", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Skill").EditCharacterProperty("2", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
@@ -374,7 +374,7 @@ public class SwnMonsterIntegrationTests
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 3, 6, 5);
 
         // Act - Monster skill check with NO second counter (no attribute bonus)
-        var skillCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Skill");
+        var skillCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Skill");
         int? skillTarget = 10;
         var result = skillCounter.Roll(monsterCombatant, null, mockRandom, 0, ref skillTarget, null);
 
@@ -396,7 +396,7 @@ public class SwnMonsterIntegrationTests
         var sheet = monster.Sheet;
 
         // Set monster skill to +2
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Skill").EditCharacterProperty("2", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Skill").EditCharacterProperty("2", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
@@ -404,7 +404,7 @@ public class SwnMonsterIntegrationTests
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(20, 15);
 
         // Act - Try to make an attack roll with monster skill counter
-        var skillCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Skill");
+        var skillCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Skill");
         int? targetAC = 15;
         var result = skillCounter.Roll(monsterCombatant, null, mockRandom, 0, ref targetAC, null, GameCounterRollOptions.IsAttack);
 
@@ -423,15 +423,15 @@ public class SwnMonsterIntegrationTests
         var sheet = monster.Sheet;
 
         // Set monster skill to +1 and attack value for comparison
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Skill").EditCharacterProperty("1", sheet);
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Attack").EditCharacterProperty("+4", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Skill").EditCharacterProperty("1", monster);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Attack").EditCharacterProperty("+4", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
 
         // Test skill check (should work)
         var skillRandom = SwnTestHelpers.CreatePredictableRandom(6, 4, 6, 3);
-        var skillCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Skill");
+        var skillCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Skill");
         int? skillTarget = 8;
         var skillResult = skillCounter.Roll(monsterCombatant, null, skillRandom, 0, ref skillTarget);
 
@@ -442,7 +442,7 @@ public class SwnMonsterIntegrationTests
 
         // Test attack with actual attack counter (should work differently)
         var attackRandom = SwnTestHelpers.CreatePredictableRandom(20, 12);
-        var attackCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Attack");
+        var attackCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Attack");
         int? targetAC = 15;
         var attackResult = attackCounter.Roll(monsterCombatant, null, attackRandom, 0, ref targetAC);
 
@@ -468,7 +468,7 @@ public class SwnMonsterIntegrationTests
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 5, 6, 4);
 
         // Act - Unskilled monster skill check
-        var skillCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Skill");
+        var skillCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Skill");
         int? skillTarget = 8;
         var result = skillCounter.Roll(monsterCombatant, null, mockRandom, 0, ref skillTarget);
 
@@ -495,9 +495,9 @@ public class SwnMonsterIntegrationTests
         var playerSheet = player.Sheet;
 
         // Set same skill level for both (but player gets attribute bonus, monster doesn't)
-        _monsterSystem.GetProperty<GameCounter>(monsterSheet, "Skill").EditCharacterProperty("1", monsterSheet);
-        playerSystem.GetProperty<GameCounter>(playerSheet, SwnSystem.Shoot).EditCharacterProperty("1", playerSheet);
-        playerSystem.GetProperty<GameAbilityCounter>(playerSheet, SwnSystem.Dexterity).EditCharacterProperty("14", playerSheet); // +1 bonus
+        _monsterSystem.GetProperty<GameCounter>(monster, "Skill").EditCharacterProperty("1", monster);
+        playerSystem.GetProperty<GameCounter>(player, SwnSystem.Shoot).EditCharacterProperty("1", player);
+        playerSystem.GetProperty<GameAbilityCounter>(player, SwnSystem.Dexterity).EditCharacterProperty("14", player); // +1 bonus
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = monsterSheet;
@@ -510,13 +510,13 @@ public class SwnMonsterIntegrationTests
         var mockRandom2 = SwnTestHelpers.CreatePredictableRandom(6, 3, 6, 4); // 7 total
 
         // Act - Test monster skill check (2d6 + skill only)
-        var monsterSkillCounter = _monsterSystem.GetProperty<GameCounter>(monsterSheet, "Skill");
+        var monsterSkillCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Skill");
         int? monsterTarget = 8;
         var monsterResult = monsterSkillCounter.Roll(monsterCombatant, null, mockRandom1, 0, ref monsterTarget);
 
         // Test player skill check (2d6 + skill + attribute bonus)
-        var playerSkillCounter = playerSystem.GetProperty<GameCounter>(playerSheet, SwnSystem.Shoot);
-        var dexBonusCounter = playerSystem.GetProperty<GameCounter>(playerSheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
+        var playerSkillCounter = playerSystem.GetProperty<GameCounter>(player, SwnSystem.Shoot);
+        var dexBonusCounter = playerSystem.GetProperty<GameCounter>(player, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
         int? playerTarget = 8;
         var playerResult = playerSkillCounter.Roll(adventurer, null, mockRandom2, 0, ref playerTarget, dexBonusCounter, GameCounterRollOptions.None);
 
@@ -544,10 +544,10 @@ public class SwnMonsterIntegrationTests
         var sheet = monster.Sheet;
 
         // Set monster skill to +2
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Skill").EditCharacterProperty("2", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Skill").EditCharacterProperty("2", monster);
 
         // Test with different hit dice values
-        _monsterSystem.GetProperty<GameCounter>(sheet, SwnSystem.HitDice).EditCharacterProperty("8", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, SwnSystem.HitDice).EditCharacterProperty("8", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
@@ -556,7 +556,7 @@ public class SwnMonsterIntegrationTests
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 4, 6, 5);
 
         // Act - Monster skill check should be unaffected by hit dice
-        var skillCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Skill");
+        var skillCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Skill");
         int? skillTarget = 11;
         var result = skillCounter.Roll(monsterCombatant, null, mockRandom, 0, ref skillTarget);
 
@@ -568,8 +568,8 @@ public class SwnMonsterIntegrationTests
         result.CounterName.ShouldBe("Skill");
 
         // Verify hit dice is different but doesn't affect skill check
-        _monsterSystem.GetProperty<GameCounter>(sheet, SwnSystem.HitDice).GetValue(sheet).ShouldBe(8);
-        _monsterSystem.GetProperty<GameCounter>(sheet, SwnSystem.HitPoints).GetValue(sheet).ShouldBe(36); // 8 * 4.5 = 36
+        _monsterSystem.GetProperty<GameCounter>(monster, SwnSystem.HitDice).GetValue(monster).ShouldBe(8);
+        _monsterSystem.GetProperty<GameCounter>(monster, SwnSystem.HitPoints).GetValue(monster).ShouldBe(36); // 8 * 4.5 = 36
     }
 
     [Fact]
@@ -581,7 +581,7 @@ public class SwnMonsterIntegrationTests
         var sheet = monster.Sheet;
 
         // Set monster skill to +1
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Skill").EditCharacterProperty("1", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Skill").EditCharacterProperty("1", monster);
 
         // Create a swarm with 3 monsters
         var swarmCombatant = SwnTestHelpers.CreateMonsterCombatant("SwarmMonster", sheet);
@@ -591,7 +591,7 @@ public class SwnMonsterIntegrationTests
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 3, 6, 6);
 
         // Act - Swarm monster skill check should use same mechanics as single monster
-        var skillCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Skill");
+        var skillCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Skill");
         int? skillTarget = 10;
         var result = skillCounter.Roll(swarmCombatant, null, mockRandom, 0, ref skillTarget);
 
@@ -603,9 +603,9 @@ public class SwnMonsterIntegrationTests
         result.CounterName.ShouldBe("Skill");
 
         // Verify swarm has different hit points but same skill mechanics
-        var hitPointsCounter = _monsterSystem.GetProperty<GameCounter>(sheet, SwnSystem.HitPoints);
+        var hitPointsCounter = _monsterSystem.GetProperty<GameCounter>(monster, SwnSystem.HitPoints);
         var swarmHP = hitPointsCounter.GetValue(swarmCombatant);
-        var singleMonsterHP = hitPointsCounter.GetValue(sheet);
+        var singleMonsterHP = hitPointsCounter.GetValue(monster);
 
         swarmHP.ShouldBe(singleMonsterHP * 3); // Swarm has 3x HP
         // But skill check mechanics remain the same
@@ -620,7 +620,7 @@ public class SwnMonsterIntegrationTests
         var sheet = monster.Sheet;
 
         // Set monster skill to +1
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Skill").EditCharacterProperty("1", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Skill").EditCharacterProperty("1", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
@@ -632,7 +632,7 @@ public class SwnMonsterIntegrationTests
         var bonus = new IntegerParseTree(0, 3);
 
         // Act - Monster skill check with ad hoc bonus: 2d6 + skill + bonus
-        var skillCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Skill");
+        var skillCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Skill");
         int? skillTarget = 10;
         var result = skillCounter.Roll(monsterCombatant, bonus, mockRandom, 0, ref skillTarget);
 
@@ -656,7 +656,7 @@ public class SwnMonsterIntegrationTests
         var sheet = monster.Sheet;
 
         // Set monster skill to +2
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Skill").EditCharacterProperty("2", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Skill").EditCharacterProperty("2", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
@@ -668,7 +668,7 @@ public class SwnMonsterIntegrationTests
         var penalty = new IntegerParseTree(0, -2);
 
         // Act - Monster skill check with ad hoc penalty: 2d6 + skill + penalty
-        var skillCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Skill");
+        var skillCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Skill");
         int? skillTarget = 8;
         var result = skillCounter.Roll(monsterCombatant, penalty, mockRandom, 0, ref skillTarget);
 
@@ -700,7 +700,7 @@ public class SwnMonsterIntegrationTests
 
         // Attempting to get an Effort property should throw since it doesn't exist
         Should.Throw<ArgumentOutOfRangeException>(() =>
-            _monsterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Effort));
+            _monsterSystem.GetProperty<GameCounter>(monster, SwnSystem.Effort));
     }
 
     [Fact]

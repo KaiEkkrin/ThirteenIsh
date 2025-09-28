@@ -6,7 +6,7 @@ internal class RecoveriesCounter() : GameCounter("Recoveries", options: GameCoun
 {
     public override bool CanStore => false;
 
-    public override int? GetValue(ICounterSheet sheet)
+    protected override int? GetValueInternal(ICharacterBase character)
     {
         return 8;
     }

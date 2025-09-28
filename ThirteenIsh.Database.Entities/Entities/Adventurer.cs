@@ -65,4 +65,9 @@ public class Adventurer : SearchableNamedEntityBase, ITrackedCharacter
         Variables.Counters ??= [];
         return Variables;
     }
+
+    public bool TryGetFix(string name, out int fixValue)
+    {
+        return Fixes.Counters.TryGetValue(name, out fixValue);
+    }
 }

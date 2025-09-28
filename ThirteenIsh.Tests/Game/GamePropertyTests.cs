@@ -30,10 +30,10 @@ public class GamePropertyTests
     public void GetValue_PropertyExists_ReturnsValue()
     {
         var property = new GameProperty("Class", new[] { "Fighter", "Wizard" }, false);
-        var sheet = CreateCharacterSheet();
-        sheet.Properties.Add(new PropertyValue<string>("Class", "Fighter"));
+        var character = CreateTrackedCharacter();
+        character.Sheet.Properties.Add(new PropertyValue<string>("Class", "Fighter"));
 
-        var result = property.GetValue(sheet);
+        var result = property.GetValue(character);
 
         result.ShouldBe("Fighter");
     }
@@ -42,32 +42,32 @@ public class GamePropertyTests
     public void GetValue_PropertyDoesNotExist_ReturnsEmptyString()
     {
         var property = new GameProperty("Class", new[] { "Fighter", "Wizard" }, false);
-        var sheet = CreateCharacterSheet();
+        var character = CreateTrackedCharacter();
 
-        var result = property.GetValue(sheet);
+        var result = property.GetValue(character);
 
         result.ShouldBe(string.Empty);
     }
 
     [Fact]
-    public void GetDisplayValue_WithSheet_PropertyExists_ReturnsValue()
+    public void GetDisplayValue_WithCharacter_PropertyExists_ReturnsValue()
     {
         var property = new GameProperty("Class", new[] { "Fighter", "Wizard" }, false);
-        var sheet = CreateCharacterSheet();
-        sheet.Properties.Add(new PropertyValue<string>("Class", "Wizard"));
+        var character = CreateTrackedCharacter();
+        character.Sheet.Properties.Add(new PropertyValue<string>("Class", "Wizard"));
 
-        var result = property.GetDisplayValue(sheet);
+        var result = property.GetDisplayValue(character);
 
         result.ShouldBe("Wizard");
     }
 
     [Fact]
-    public void GetDisplayValue_WithSheet_PropertyEmpty_ReturnsUnset()
+    public void GetDisplayValue_WithCharacter_PropertyEmpty_ReturnsUnset()
     {
         var property = new GameProperty("Class", new[] { "Fighter", "Wizard" }, false);
-        var sheet = CreateCharacterSheet();
+        var character = CreateTrackedCharacter();
 
-        var result = property.GetDisplayValue(sheet);
+        var result = property.GetDisplayValue(character);
 
         result.ShouldBe("(unset)");
     }
@@ -88,69 +88,71 @@ public class GamePropertyTests
     public void TryEditCharacterProperty_ValidValue_UpdatesSheetAndReturnsTrue()
     {
         var property = new GameProperty("Class", new[] { "Fighter", "Wizard", "Rogue" }, false);
-        var sheet = CreateCharacterSheet();
+        var character = CreateTrackedCharacter();
 
-        var result = property.TryEditCharacterProperty("Wizard", sheet, out var errorMessage);
+        var result = property.TryEditCharacterProperty("Wizard", character, out var errorMessage);
 
         result.ShouldBeTrue();
         errorMessage.ShouldBeNull();
-        property.GetValue(sheet).ShouldBe("Wizard");
+        character.Sheet.Properties.TryGetValue("Class", out var value).ShouldBeTrue();
+        value.ShouldBe("Wizard");
     }
 
     [Fact]
     public void TryEditCharacterProperty_InvalidValue_ReturnsFalseWithError()
     {
         var property = new GameProperty("Class", new[] { "Fighter", "Wizard" }, false);
-        var sheet = CreateCharacterSheet();
+        var character = CreateTrackedCharacter();
 
-        var result = property.TryEditCharacterProperty("Paladin", sheet, out var errorMessage);
+        var result = property.TryEditCharacterProperty("Paladin", character, out var errorMessage);
 
         result.ShouldBeFalse();
         errorMessage.ShouldNotBeNull();
         errorMessage.ShouldContain("Paladin");
         errorMessage.ShouldContain("not a possible value");
-        property.GetValue(sheet).ShouldBe(string.Empty);
+        character.Sheet.Properties.TryGetValue("Class", out var value).ShouldBeFalse();
     }
 
     [Fact]
     public void TryEditCharacterProperty_OverwritesExistingValue()
     {
         var property = new GameProperty("Class", new[] { "Fighter", "Wizard", "Rogue" }, false);
-        var sheet = CreateCharacterSheet();
-        sheet.Properties.Add(new PropertyValue<string>("Class", "Fighter"));
+        var character = CreateTrackedCharacter();
+        character.Sheet.Properties.Add(new PropertyValue<string>("Class", "Fighter"));
 
-        var result = property.TryEditCharacterProperty("Rogue", sheet, out var errorMessage);
+        var result = property.TryEditCharacterProperty("Rogue", character, out var errorMessage);
 
         result.ShouldBeTrue();
         errorMessage.ShouldBeNull();
-        property.GetValue(sheet).ShouldBe("Rogue");
+        character.Sheet.Properties.TryGetValue("Class", out var value).ShouldBeTrue();
+        value.ShouldBe("Rogue");
     }
 
     [Fact]
     public void AddPropertyValueChoiceOptions_AddsAllPossibleValues()
     {
         var property = new GameProperty("Class", new[] { "Fighter", "Wizard", "Rogue" }, false);
-        var sheet = CreateCharacterSheet();
+        var character = CreateTrackedCharacter();
         var builder = new SelectMenuBuilder();
 
-        property.AddPropertyValueChoiceOptions(builder, sheet);
+        property.AddPropertyValueChoiceOptions(builder, character);
 
         // We can't easily test the internal state of SelectMenuBuilder,
         // but we can verify it doesn't throw and the method completes
-        Should.NotThrow(() => property.AddPropertyValueChoiceOptions(builder, sheet));
+        Should.NotThrow(() => property.AddPropertyValueChoiceOptions(builder, character));
     }
 
     [Fact]
     public void AddPropertyValueChoiceOptions_MarksCurrentValueAsDefault()
     {
         var property = new GameProperty("Class", new[] { "Fighter", "Wizard", "Rogue" }, false);
-        var sheet = CreateCharacterSheet();
-        sheet.Properties.Add(new PropertyValue<string>("Class", "Wizard"));
+        var character = CreateTrackedCharacter();
+        character.Sheet.Properties.Add(new PropertyValue<string>("Class", "Wizard"));
         var builder = new SelectMenuBuilder();
 
         // This should complete without throwing - we can't easily verify the default option
         // without reflection or changing the Discord.Net API usage
-        Should.NotThrow(() => property.AddPropertyValueChoiceOptions(builder, sheet));
+        Should.NotThrow(() => property.AddPropertyValueChoiceOptions(builder, character));
     }
 
     private static CharacterSheet CreateCharacterSheet()
@@ -178,6 +180,9 @@ public class GamePropertyTests
 
     private sealed class TestTrackedCharacter : ITrackedCharacter
     {
+        private readonly FixesSheet _fixesSheet = new();
+        private readonly VariablesSheet _variablesSheet = new();
+
         public string Name { get; set; } = "";
         public DateTimeOffset LastUpdated { get; set; }
         public CharacterSheet Sheet { get; set; } = new();
@@ -186,7 +191,12 @@ public class GamePropertyTests
         public ulong UserId { get; set; }
         public string? CharacterSystemName { get; set; }
 
-        public FixesSheet GetFixes() => new();
-        public VariablesSheet GetVariables() => new();
+        public FixesSheet GetFixes() => _fixesSheet;
+        public VariablesSheet GetVariables() => _variablesSheet;
+
+        public bool TryGetFix(string name, out int fixValue)
+        {
+            return _fixesSheet.Counters.TryGetValue(name, out fixValue);
+        }
     }
 }

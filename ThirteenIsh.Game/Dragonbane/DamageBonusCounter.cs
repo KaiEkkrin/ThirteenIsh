@@ -11,9 +11,9 @@ internal class DamageBonusCounter(string name, GameAbilityCounter abilityCounter
 {
     public override bool CanStore => false;
 
-    public override int? GetValue(ICounterSheet sheet)
+    protected override int? GetValueInternal(ICharacterBase character)
     {
-        return abilityCounter.GetValue(sheet) switch
+        return abilityCounter.GetValue(character) switch
         {
             <= 12 => 0,
             >= 13 and <= 16 => 4,

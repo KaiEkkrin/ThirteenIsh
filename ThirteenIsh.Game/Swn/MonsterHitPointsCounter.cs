@@ -4,20 +4,16 @@ namespace ThirteenIsh.Game.Swn;
 internal class MonsterHitPointsCounter(GameCounter hitDiceCounter)
     : GameCounter(SwnSystem.HitPoints, SwnSystem.HitPointsAlias, options: GameCounterOptions.HasVariable)
 {
-    public override int? GetValue(ICounterSheet sheet)
-    {
-        var hitDice = hitDiceCounter.GetValue(sheet);
-        return GetMonsterHitPoints(hitDice);
-    }
-
-    public override int? GetValue(ITrackedCharacter character)
+    protected override int? GetValueInternal(ICharacterBase character)
     {
         var hitDice = hitDiceCounter.GetValue(character);
-        var baseValue = GetMonsterHitPoints(hitDice);
+        var value = GetMonsterHitPoints(hitDice);
 
         // A swarm's maximum number of hit points is multiplied by the swarm count
-        var swarmValue = baseValue * Math.Max(1, character.SwarmCount);
-        return AddFix(swarmValue, character);
+        if (character is ITrackedCharacter trackedCharacter)
+            return value * Math.Max(1, trackedCharacter.SwarmCount);
+
+        return value;
     }
 
     private static int? GetMonsterHitPoints(int? hitDice)

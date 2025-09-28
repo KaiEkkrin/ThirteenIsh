@@ -9,7 +9,7 @@ internal class PhysicalDefenseCounter(
     : ClassBasedCounter(ThirteenthAgeSystem.PhysicalDefense, ThirteenthAgeSystem.PhysicalDefenseAlias,
         classProperty)
 {
-    protected override int? GetValueInternal(string? classValue, Func<GameCounter, int?> getCounterValue)
+    protected override int? GetCounterValueInternal(string? classValue, Func<GameCounter, int?> getCounterValue)
     {
         int? basePD = classValue switch
         {

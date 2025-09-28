@@ -72,7 +72,7 @@ internal sealed class CharacterAddSubCommand(CharacterType characterType)
         foreach (var property in showOnAddProperties)
         {
             if (!characterSystem.TryBuildPropertyValueChoiceComponent(
-                message.GetMessageId(property.Name), property.Name, character.Sheet, out var menuBuilder, out var errorMessage))
+                message.GetMessageId(property.Name), property.Name, character, out var menuBuilder, out var errorMessage))
             {
                 // The rest of the logic assumes this won't happen
                 throw new InvalidOperationException(errorMessage);

@@ -131,25 +131,25 @@ internal static class SwnTestHelpers
         var sheet = character.Sheet;
 
         // Set attributes
-        characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Strength).EditCharacterProperty("14", sheet);
-        characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Dexterity).EditCharacterProperty("16", sheet);
-        characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Constitution).EditCharacterProperty("13", sheet);
-        characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Intelligence).EditCharacterProperty("12", sheet);
-        characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Wisdom).EditCharacterProperty("15", sheet);
-        characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Charisma).EditCharacterProperty("10", sheet);
+        characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Strength).EditCharacterProperty("14", character);
+        characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Dexterity).EditCharacterProperty("16", character);
+        characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Constitution).EditCharacterProperty("13", character);
+        characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Intelligence).EditCharacterProperty("12", character);
+        characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Wisdom).EditCharacterProperty("15", character);
+        characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Charisma).EditCharacterProperty("10", character);
 
         // Set level and classes
-        characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Level).EditCharacterProperty("3", sheet);
-        characterSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(SwnSystem.Expert, sheet);
-        characterSystem.GetProperty<GameProperty>(sheet, "Class 2").EditCharacterProperty(SwnSystem.Warrior, sheet);
+        characterSystem.GetProperty<GameCounter>(character, SwnSystem.Level).EditCharacterProperty("3", character);
+        characterSystem.GetProperty<GameProperty>(character, "Class 1").EditCharacterProperty(SwnSystem.Expert, character);
+        characterSystem.GetProperty<GameProperty>(character, "Class 2").EditCharacterProperty(SwnSystem.Warrior, character);
 
         // Set some skills
-        characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Shoot).EditCharacterProperty("2", sheet);
-        characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Fix).EditCharacterProperty("1", sheet);
-        characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Notice).EditCharacterProperty("0", sheet);
+        characterSystem.GetProperty<GameCounter>(character, SwnSystem.Shoot).EditCharacterProperty("2", character);
+        characterSystem.GetProperty<GameCounter>(character, SwnSystem.Fix).EditCharacterProperty("1", character);
+        characterSystem.GetProperty<GameCounter>(character, SwnSystem.Notice).EditCharacterProperty("0", character);
 
         // Set armor value
-        characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.ArmorValue).EditCharacterProperty("13", sheet);
+        characterSystem.GetProperty<GameCounter>(character, SwnSystem.ArmorValue).EditCharacterProperty("13", character);
     }
 
     /// <summary>
@@ -160,12 +160,12 @@ internal static class SwnTestHelpers
         var sheet = monster.Sheet;
 
         // Set monster stats
-        characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.HitDice).EditCharacterProperty("4", sheet);
-        characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.ArmorClass).EditCharacterProperty("15", sheet);
-        characterSystem.GetProperty<GameCounter>(sheet, "Attack").EditCharacterProperty("+6", sheet);
-        characterSystem.GetProperty<GameCounter>(sheet, "Morale").EditCharacterProperty("8", sheet);
-        characterSystem.GetProperty<GameCounter>(sheet, "Skill").EditCharacterProperty("+2", sheet);
-        characterSystem.GetProperty<GameCounter>(sheet, "Save").EditCharacterProperty("12", sheet);
+        characterSystem.GetProperty<GameCounter>(monster, SwnSystem.HitDice).EditCharacterProperty("4", monster);
+        characterSystem.GetProperty<GameCounter>(monster, SwnSystem.ArmorClass).EditCharacterProperty("15", monster);
+        characterSystem.GetProperty<GameCounter>(monster, "Attack").EditCharacterProperty("+6", monster);
+        characterSystem.GetProperty<GameCounter>(monster, "Morale").EditCharacterProperty("8", monster);
+        characterSystem.GetProperty<GameCounter>(monster, "Skill").EditCharacterProperty("+2", monster);
+        characterSystem.GetProperty<GameCounter>(monster, "Save").EditCharacterProperty("12", monster);
     }
 
     /// <summary>

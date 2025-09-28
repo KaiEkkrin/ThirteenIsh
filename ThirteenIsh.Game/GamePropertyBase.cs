@@ -28,13 +28,11 @@ public abstract class GamePropertyBase(string name, string? alias = null, bool i
     /// </summary>
     public virtual bool ShowOnAdd => false;
 
-    public abstract void AddPropertyValueChoiceOptions(SelectMenuBuilder builder, CharacterSheet sheet);
+    public abstract void AddPropertyValueChoiceOptions(SelectMenuBuilder builder, ICharacterBase character);
 
-    public abstract string GetDisplayValue(ITrackedCharacter character);
+    public abstract string GetDisplayValue(ICharacterBase character);
 
-    public abstract string GetDisplayValue(CharacterSheet sheet);
-
-    public abstract bool TryEditCharacterProperty(string newValue, CharacterSheet sheet,
+    public abstract bool TryEditCharacterProperty(string newValue, ICharacterBase character,
         [MaybeNullWhen(true)] out string errorMessage);
 
     /// <summary>
@@ -43,11 +41,11 @@ public abstract class GamePropertyBase(string name, string? alias = null, bool i
     /// instead. Use this one only when we definitely expect the edit to succeed.
     /// </summary>
     /// <param name="newValue">The new value to set</param>
-    /// <param name="sheet">The character sheet to modify</param>
+    /// <param name="character">The character to modify</param>
     /// <exception cref="GamePropertyException">Thrown when the edit fails</exception>
-    public void EditCharacterProperty(string newValue, CharacterSheet sheet)
+    public void EditCharacterProperty(string newValue, ICharacterBase character)
     {
-        if (!TryEditCharacterProperty(newValue, sheet, out var errorMessage))
+        if (!TryEditCharacterProperty(newValue, character, out var errorMessage))
         {
             throw new GamePropertyException($"Failed to set {name} to {newValue} : {errorMessage}");
         }

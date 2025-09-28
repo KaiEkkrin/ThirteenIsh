@@ -5,15 +5,8 @@ namespace ThirteenIsh.Game.Swn;
 internal class ArmorClassCounter(GameCounter armorValueCounter, AttributeBonusCounter dexterity)
     : GameCounter(SwnSystem.ArmorClass, SwnSystem.ArmorClassAlias)
 {
-    public override int? GetValue(ICounterSheet sheet)
+    protected override int? GetValueInternal(ICharacterBase character)
     {
-        if (sheet is not CharacterSheet characterSheet) return null;
-        return armorValueCounter.GetValue(sheet) + dexterity.GetValue(sheet);
-    }
-
-    public override int? GetValue(ITrackedCharacter character)
-    {
-        var baseValue = armorValueCounter.GetValue(character) + dexterity.GetValue(character);
-        return AddFix(baseValue, character);
+        return armorValueCounter.GetValue(character) + dexterity.GetValue(character);
     }
 }

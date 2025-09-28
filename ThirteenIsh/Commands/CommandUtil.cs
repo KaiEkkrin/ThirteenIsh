@@ -71,7 +71,7 @@ internal static partial class CommandUtil
         embedBuilder.AddField("Game System", character.GameSystem);
 
         var characterSystem = GameSystem.Get(character.GameSystem).GetCharacterSystem(character.CharacterType, character.CharacterSystemName);
-        embedBuilder = characterSystem.AddCharacterSheetFields(embedBuilder, character.Sheet, onlyTheseProperties);
+        embedBuilder = characterSystem.AddCharacterSheetFields(embedBuilder, character, onlyTheseProperties);
 
         embedBuilder.AddField("Last Edited", $"{character.LastEdited:F}");
         return embedBuilder.Build();

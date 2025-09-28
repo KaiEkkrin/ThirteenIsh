@@ -34,11 +34,11 @@ public class SwnCustomCounterTests
         // Add custom counter with CanRoll option, set to level 2
         var customCounter = new CustomCounter("TestSkill", 2, GameCounterOptions.CanRoll);
         sheet.CustomCounters = [customCounter];
-        var skillCounter = _playerSystem.GetProperty<GameCounter>(sheet, "TestSkill");
-        skillCounter.EditCharacterProperty("2", sheet);
+        var skillCounter = _playerSystem.GetProperty<GameCounter>(player, "TestSkill");
+        skillCounter.EditCharacterProperty("2", player);
 
         // Set Dexterity for attribute bonus
-        _playerSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Dexterity).EditCharacterProperty("16", sheet);
+        _playerSystem.GetProperty<GameAbilityCounter>(player, SwnSystem.Dexterity).EditCharacterProperty("16", player);
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
@@ -47,7 +47,7 @@ public class SwnCustomCounterTests
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 3, 6, 5);
 
         // Act - Skill check: 2d6 + skill level + attribute bonus
-        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(sheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
+        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(player, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
         int? skillTarget = 10;
         var result = skillCounter.Roll(adventurer, null, mockRandom, 0, ref skillTarget, dexBonusCounter, GameCounterRollOptions.None);
 
@@ -73,8 +73,8 @@ public class SwnCustomCounterTests
         // Add custom counter with CanRoll option, set to level 1
         var customCounter = new CustomCounter("TestWeapon", 1, GameCounterOptions.CanRoll);
         sheet.CustomCounters = [customCounter];
-        var weaponCounter = _playerSystem.GetProperty<GameCounter>(sheet, "TestWeapon");
-        weaponCounter.EditCharacterProperty("1", sheet);
+        var weaponCounter = _playerSystem.GetProperty<GameCounter>(player, "TestWeapon");
+        weaponCounter.EditCharacterProperty("1", player);
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
@@ -83,7 +83,7 @@ public class SwnCustomCounterTests
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(20, 15);
 
         // Act - Attack roll: 1d20 + skill level + attribute bonus + attack bonus
-        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(sheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
+        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(player, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
         int? targetAC = 16;
         var result = weaponCounter.Roll(adventurer, null, mockRandom, 0, ref targetAC, dexBonusCounter, GameCounterRollOptions.IsAttack);
 
@@ -107,11 +107,11 @@ public class SwnCustomCounterTests
         // Add custom counter with default value that allows negative to test unskilled behavior
         var customCounter = new CustomCounter("TestSkill", -1, GameCounterOptions.CanRoll);
         sheet.CustomCounters = [customCounter];
-        var skillCounter = _playerSystem.GetProperty<GameCounter>(sheet, "TestSkill");
+        var skillCounter = _playerSystem.GetProperty<GameCounter>(player, "TestSkill");
         // Don't set the value explicitly, it will use the default value of -1
 
         // Set Dexterity for attribute bonus
-        _playerSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Dexterity).EditCharacterProperty("14", sheet);
+        _playerSystem.GetProperty<GameAbilityCounter>(player, SwnSystem.Dexterity).EditCharacterProperty("14", player);
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
@@ -120,7 +120,7 @@ public class SwnCustomCounterTests
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 4, 6, 3);
 
         // Act - Unskilled skill check (should only get -1 penalty, no unfamiliarity for skill checks)
-        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(sheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
+        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(player, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
         int? skillTarget = 8;
         var result = skillCounter.Roll(adventurer, null, mockRandom, 0, ref skillTarget, dexBonusCounter, GameCounterRollOptions.None);
 
@@ -142,14 +142,14 @@ public class SwnCustomCounterTests
         var sheet = player.Sheet;
 
         // Set up basic character with attack bonus
-        _playerSystem.GetProperty<GameCounter>(sheet, SwnSystem.Level).EditCharacterProperty("1", sheet);
-        _playerSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(SwnSystem.Expert, sheet);
-        _playerSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Dexterity).EditCharacterProperty("14", sheet);
+        _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Level).EditCharacterProperty("1", player);
+        _playerSystem.GetProperty<GameProperty>(player, "Class 1").EditCharacterProperty(SwnSystem.Expert, player);
+        _playerSystem.GetProperty<GameAbilityCounter>(player, SwnSystem.Dexterity).EditCharacterProperty("14", player);
 
         // Add custom counter with unskilled default value (-1)
         var customCounter = new CustomCounter("TestWeapon", -1, GameCounterOptions.CanRoll);
         sheet.CustomCounters = [customCounter];
-        var weaponCounter = _playerSystem.GetProperty<GameCounter>(sheet, "TestWeapon");
+        var weaponCounter = _playerSystem.GetProperty<GameCounter>(player, "TestWeapon");
         // Don't set the value explicitly, it will use the default value of -1
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
@@ -159,7 +159,7 @@ public class SwnCustomCounterTests
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(20, 12);
 
         // Act - Unskilled attack roll (should get both -1 unskilled and -2 unfamiliarity penalties)
-        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(sheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
+        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(player, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
         int? targetAC = 15;
         var result = weaponCounter.Roll(adventurer, null, mockRandom, 0, ref targetAC, dexBonusCounter, GameCounterRollOptions.IsAttack);
 
@@ -211,7 +211,7 @@ public class SwnCustomCounterTests
         // Add custom counter with HasVariable option
         var customCounter = new CustomCounter("TestResource", 10, GameCounterOptions.HasVariable);
         sheet.CustomCounters = [customCounter];
-        var resourceCounter = _playerSystem.GetProperty<GameCounter>(sheet, "TestResource");
+        var resourceCounter = _playerSystem.GetProperty<GameCounter>(player, "TestResource");
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
@@ -245,7 +245,7 @@ public class SwnCustomCounterTests
         // Add custom counter with HasVariable option, range 0-5
         var customCounter = new CustomCounter("TestResource", 3, GameCounterOptions.HasVariable);
         sheet.CustomCounters = [customCounter];
-        var resourceCounter = _playerSystem.GetProperty<GameCounter>(sheet, "TestResource");
+        var resourceCounter = _playerSystem.GetProperty<GameCounter>(player, "TestResource");
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
@@ -274,8 +274,8 @@ public class SwnCustomCounterTests
         // Add custom counter with both CanRoll and HasVariable options
         var customCounter = new CustomCounter("TestAmmo", 6, GameCounterOptions.CanRoll | GameCounterOptions.HasVariable);
         sheet.CustomCounters = [customCounter];
-        var ammoCounter = _playerSystem.GetProperty<GameCounter>(sheet, "TestAmmo");
-        ammoCounter.EditCharacterProperty("2", sheet); // Set skill level to 2
+        var ammoCounter = _playerSystem.GetProperty<GameCounter>(player, "TestAmmo");
+        ammoCounter.EditCharacterProperty("2", player); // Set skill level to 2
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
@@ -291,7 +291,7 @@ public class SwnCustomCounterTests
 
         // Test rollable functionality
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 4, 6, 2);
-        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(sheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
+        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(player, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
 
         int? skillTarget = 9;
         var rollResult = ammoCounter.Roll(adventurer, null, mockRandom, 0, ref skillTarget, dexBonusCounter, GameCounterRollOptions.None);
@@ -315,7 +315,7 @@ public class SwnCustomCounterTests
         // Add custom counter for monster
         var customCounter = new CustomCounter("TestSkill", 1, GameCounterOptions.CanRoll);
         sheet.CustomCounters = [customCounter];
-        var skillCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "TestSkill");
+        var skillCounter = _monsterSystem.GetProperty<GameCounter>(monster, "TestSkill");
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
@@ -355,8 +355,8 @@ public class SwnCustomCounterTests
         character.Sheet = sheet;
 
         // Act - Get value when no value is set (should return default)
-        var sheetValue = swnCustomCounter.GetValue(sheet);
-        var characterValue = swnCustomCounter.GetValue(character.Sheet);
+        var sheetValue = swnCustomCounter.GetValue(character);
+        var characterValue = swnCustomCounter.GetValue(character);
 
         // Assert
         sheetValue.ShouldBe(2); // Should return default value
@@ -397,8 +397,8 @@ public class SwnCustomCounterTests
         // Add custom counter with rollable option, set to level 1
         var customCounter = new CustomCounter("TestSkill", 1, GameCounterOptions.CanRoll);
         sheet.CustomCounters = [customCounter];
-        var skillCounter = _playerSystem.GetProperty<GameCounter>(sheet, "TestSkill");
-        skillCounter.EditCharacterProperty("1", sheet);
+        var skillCounter = _playerSystem.GetProperty<GameCounter>(player, "TestSkill");
+        skillCounter.EditCharacterProperty("1", player);
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
@@ -424,7 +424,7 @@ public class SwnCustomCounterTests
         // Add custom counter with rollable option, default value 2, but don't set explicit value
         var customCounter = new CustomCounter("TestSkill", 2, GameCounterOptions.CanRoll);
         sheet.CustomCounters = [customCounter];
-        var skillCounter = _playerSystem.GetProperty<GameCounter>(sheet, "TestSkill");
+        var skillCounter = _playerSystem.GetProperty<GameCounter>(player, "TestSkill");
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
@@ -450,11 +450,11 @@ public class SwnCustomCounterTests
         // Add custom counter with rollable option, set to level 1
         var customCounter = new CustomCounter("TestSkill", 1, GameCounterOptions.CanRoll);
         sheet.CustomCounters = [customCounter];
-        var skillCounter = _playerSystem.GetProperty<GameCounter>(sheet, "TestSkill");
-        skillCounter.EditCharacterProperty("1", sheet);
+        var skillCounter = _playerSystem.GetProperty<GameCounter>(player, "TestSkill");
+        skillCounter.EditCharacterProperty("1", player);
 
         // Set Dexterity for attribute bonus
-        _playerSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Dexterity).EditCharacterProperty("14", sheet);
+        _playerSystem.GetProperty<GameAbilityCounter>(player, SwnSystem.Dexterity).EditCharacterProperty("14", player);
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
@@ -466,7 +466,7 @@ public class SwnCustomCounterTests
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 3, 6, 4);
 
         // Act - Skill check with fix applied
-        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(sheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
+        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(player, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
         int? skillTarget = 10;
         var result = skillCounter.Roll(adventurer, null, mockRandom, 0, ref skillTarget, dexBonusCounter, GameCounterRollOptions.None);
 
@@ -489,7 +489,7 @@ public class SwnCustomCounterTests
         // Add custom counter with variable option, default value 5
         var customCounter = new CustomCounter("TestResource", 5, GameCounterOptions.HasVariable);
         sheet.CustomCounters = [customCounter];
-        var resourceCounter = _playerSystem.GetProperty<GameCounter>(sheet, "TestResource");
+        var resourceCounter = _playerSystem.GetProperty<GameCounter>(player, "TestResource");
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
@@ -518,7 +518,7 @@ public class SwnCustomCounterTests
         // Add custom counter with variable option, default value 5
         var customCounter = new CustomCounter("TestResource", 5, GameCounterOptions.HasVariable);
         sheet.CustomCounters = [customCounter];
-        var resourceCounter = _playerSystem.GetProperty<GameCounter>(sheet, "TestResource");
+        var resourceCounter = _playerSystem.GetProperty<GameCounter>(player, "TestResource");
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
@@ -550,7 +550,7 @@ public class SwnCustomCounterTests
         // Add custom counter with variable option, default value 4
         var customCounter = new CustomCounter("TestResource", 4, GameCounterOptions.HasVariable);
         sheet.CustomCounters = [customCounter];
-        var resourceCounter = _playerSystem.GetProperty<GameCounter>(sheet, "TestResource");
+        var resourceCounter = _playerSystem.GetProperty<GameCounter>(player, "TestResource");
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
@@ -584,8 +584,8 @@ public class SwnCustomCounterTests
         // Add custom counter with both options, default value 3
         var customCounter = new CustomCounter("TestAmmo", 3, GameCounterOptions.CanRoll | GameCounterOptions.HasVariable);
         sheet.CustomCounters = [customCounter];
-        var ammoCounter = _playerSystem.GetProperty<GameCounter>(sheet, "TestAmmo");
-        ammoCounter.EditCharacterProperty("2", sheet); // Set skill level to 2
+        var ammoCounter = _playerSystem.GetProperty<GameCounter>(player, "TestAmmo");
+        ammoCounter.EditCharacterProperty("2", player); // Set skill level to 2
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
@@ -605,7 +605,7 @@ public class SwnCustomCounterTests
 
         // Test rollable functionality with fix
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 2, 6, 3);
-        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(sheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
+        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(player, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
 
         int? skillTarget = 8;
         var rollResult = ammoCounter.Roll(adventurer, null, mockRandom, 0, ref skillTarget, dexBonusCounter, GameCounterRollOptions.None);
@@ -629,8 +629,8 @@ public class SwnCustomCounterTests
         // Add custom counter with both options, default value 4
         var customCounter = new CustomCounter("TestSkill", 4, GameCounterOptions.CanRoll | GameCounterOptions.HasVariable);
         sheet.CustomCounters = [customCounter];
-        var skillCounter = _playerSystem.GetProperty<GameCounter>(sheet, "TestSkill");
-        skillCounter.EditCharacterProperty("3", sheet); // Set skill level to 3
+        var skillCounter = _playerSystem.GetProperty<GameCounter>(player, "TestSkill");
+        skillCounter.EditCharacterProperty("3", player); // Set skill level to 3
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;

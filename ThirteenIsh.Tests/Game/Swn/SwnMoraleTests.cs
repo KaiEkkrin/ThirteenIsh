@@ -31,12 +31,12 @@ public class SwnMoraleTests
         var sheet = monster.Sheet;
 
         // Set monster morale to 8
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Morale").EditCharacterProperty("8", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Morale").EditCharacterProperty("8", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
 
-        var moraleCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Morale");
+        var moraleCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Morale");
 
         // Act - Roll 2d6 = 7 (success because 7 <= 8)
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 4, 6, 3); // First die 4, second die 3 = 7 total
@@ -63,12 +63,12 @@ public class SwnMoraleTests
         var sheet = monster.Sheet;
 
         // Set monster morale to 6 (relatively low)
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Morale").EditCharacterProperty("6", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Morale").EditCharacterProperty("6", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
 
-        var moraleCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Morale");
+        var moraleCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Morale");
 
         // Act - Roll 2d6 = 9 (failure because 9 > 6)
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 5, 6, 4); // First die 5, second die 4 = 9 total
@@ -94,12 +94,12 @@ public class SwnMoraleTests
         var sheet = monster.Sheet;
 
         // Set monster morale to 10
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Morale").EditCharacterProperty("10", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Morale").EditCharacterProperty("10", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
 
-        var moraleCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Morale");
+        var moraleCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Morale");
 
         // Act - Roll 2d6 = 10 (success because 10 <= 10)
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 6, 6, 4); // First die 6, second die 4 = 10 total
@@ -122,12 +122,12 @@ public class SwnMoraleTests
         var sheet = monster.Sheet;
 
         // Set monster morale to 9
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Morale").EditCharacterProperty("9", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Morale").EditCharacterProperty("9", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
 
-        var moraleCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Morale");
+        var moraleCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Morale");
 
         // Act - Roll 2d6 = 6 + 2 bonus = 8 (success because 8 <= 9)
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 3, 6, 3); // First die 3, second die 3 = 6 total
@@ -153,12 +153,12 @@ public class SwnMoraleTests
         var sheet = monster.Sheet;
 
         // Set monster morale to 8
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Morale").EditCharacterProperty("8", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Morale").EditCharacterProperty("8", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
 
-        var moraleCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Morale");
+        var moraleCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Morale");
 
         // Act - Roll 2d6 = 10 - 3 penalty = 7 (success because 7 <= 8)
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 6, 6, 4); // First die 6, second die 4 = 10 total
@@ -184,12 +184,12 @@ public class SwnMoraleTests
         var sheet = monster.Sheet;
 
         // Set monster morale to very low value (would normally be hard to succeed)
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Morale").EditCharacterProperty("2", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Morale").EditCharacterProperty("2", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
 
-        var moraleCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Morale");
+        var moraleCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Morale");
 
         // Act - Roll natural 2 (minimum possible on 2d6)
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 1, 6, 1); // First die 1, second die 1 = 2 total
@@ -213,12 +213,12 @@ public class SwnMoraleTests
         var sheet = monster.Sheet;
 
         // Set monster morale to maximum possible value
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Morale").EditCharacterProperty("12", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Morale").EditCharacterProperty("12", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
 
-        var moraleCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Morale");
+        var moraleCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Morale");
 
         // Act - Roll natural 12 (maximum possible on 2d6)
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 6, 6, 6); // First die 6, second die 6 = 12 total
@@ -242,12 +242,12 @@ public class SwnMoraleTests
         var sheet = monster.Sheet;
 
         // Set monster morale to low value
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Morale").EditCharacterProperty("5", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Morale").EditCharacterProperty("5", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
 
-        var moraleCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Morale");
+        var moraleCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Morale");
 
         // Act - Roll natural 12 against low morale (should fail)
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 6, 6, 6); // First die 6, second die 6 = 12 total
@@ -270,12 +270,12 @@ public class SwnMoraleTests
         var sheet = monster.Sheet;
 
         // Set monster morale to 7 (default value)
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Morale").EditCharacterProperty("7", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Morale").EditCharacterProperty("7", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
 
-        var moraleCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Morale");
+        var moraleCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Morale");
 
         // Act - Roll without specifying target (should auto-use morale value)
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 2, 6, 4); // First die 2, second die 4 = 6 total
@@ -302,12 +302,12 @@ public class SwnMoraleTests
         var sheet = monster.Sheet;
 
         // Set monster morale to 8
-        _monsterSystem.GetProperty<GameCounter>(sheet, "Morale").EditCharacterProperty("8", sheet);
+        _monsterSystem.GetProperty<GameCounter>(monster, "Morale").EditCharacterProperty("8", monster);
 
         var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
         monsterCombatant.Sheet = sheet;
 
-        var moraleCounter = _monsterSystem.GetProperty<GameCounter>(sheet, "Morale");
+        var moraleCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Morale");
 
         // Act - Roll 2d6 = 7, but +3 bonus makes it 10 > 8 (failure)
         var mockRandom = SwnTestHelpers.CreatePredictableRandom(6, 4, 6, 3); // First die 4, second die 3 = 7 total

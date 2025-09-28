@@ -11,21 +11,11 @@ internal abstract class ClassBasedCounter(
 {
     public sealed override bool CanStore => false;
 
-    // Here we need to have different ways to calculate the value in the tracked character case because
-    // we could have fix values for both the ability bonuses and the final value
-    public sealed override int? GetValue(ICounterSheet sheet)
+    protected sealed override int? GetValueInternal(ICharacterBase character)
     {
-        if (sheet is not CharacterSheet characterSheet) return null;
-        var classValue = classProperty.GetValue(characterSheet);
-        return GetValueInternal(classValue, counter => counter.GetValue(sheet));
+        var classValue = classProperty.GetValue(character);
+        return GetCounterValueInternal(classValue, counter => counter.GetValue(character));
     }
 
-    public sealed override int? GetValue(ITrackedCharacter character)
-    {
-        var classValue = classProperty.GetValue(character.Sheet);
-        var baseValue = GetValueInternal(classValue, counter => counter.GetValue(character));
-        return AddFix(baseValue, character);
-    }
-
-    protected abstract int? GetValueInternal(string? classValue, Func<GameCounter, int?> getCounterValue);
+    protected abstract int? GetCounterValueInternal(string? classValue, Func<GameCounter, int?> getCounterValue);
 }

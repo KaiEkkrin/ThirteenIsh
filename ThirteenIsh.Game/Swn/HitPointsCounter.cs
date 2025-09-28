@@ -5,25 +5,13 @@ internal class HitPointsCounter(GameCounter levelCounter, GameProperty class1Pro
     AttributeBonusCounter constitutionBonusCounter)
     : GameCounter(SwnSystem.HitPoints, SwnSystem.HitPointsAlias, options: GameCounterOptions.HasVariable)
 {
-    public override int? GetValue(ICounterSheet sheet)
+    protected override int? GetValueInternal(ICharacterBase character)
     {
-        if (sheet is not CharacterSheet characterSheet) return null;
         return GetHitPoints(
-            levelCounter.GetValue(sheet),
-            class1Property.GetValue(characterSheet),
-            class2Property.GetValue(characterSheet),
-            constitutionBonusCounter.GetValue(sheet));
-    }
-
-    public override int? GetValue(ITrackedCharacter character)
-    {
-        var baseValue = GetHitPoints(
             levelCounter.GetValue(character),
-            class1Property.GetValue(character.Sheet),
-            class2Property.GetValue(character.Sheet),
+            class1Property.GetValue(character),
+            class2Property.GetValue(character),
             constitutionBonusCounter.GetValue(character));
-
-        return AddFix(baseValue, character);
     }
 
     private static int? GetHitPoints(int? level, string class1, string class2, int? conBonus)

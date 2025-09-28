@@ -9,7 +9,7 @@ internal sealed class SetCharacterPropertyOperation(GamePropertyBase property, s
 {
     public override EditResult<Character> DoEdit(DataContext context, Character character)
     {
-        if (!property.TryEditCharacterProperty(newValue, character.Sheet, out var errorMessage))
+        if (!property.TryEditCharacterProperty(newValue, character, out var errorMessage))
         {
             return CreateError(errorMessage);
         }

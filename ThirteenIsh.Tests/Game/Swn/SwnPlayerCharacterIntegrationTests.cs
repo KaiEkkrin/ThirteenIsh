@@ -32,39 +32,39 @@ public class SwnPlayerCharacterIntegrationTests
         var sheet = character.Sheet;
 
         // Act & Assert - Verify base attributes
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Strength).GetValue(sheet).ShouldBe(14);
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Dexterity).GetValue(sheet).ShouldBe(16);
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Constitution).GetValue(sheet).ShouldBe(13);
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Intelligence).GetValue(sheet).ShouldBe(12);
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Wisdom).GetValue(sheet).ShouldBe(15);
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Charisma).GetValue(sheet).ShouldBe(10);
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Strength).GetValue(character).ShouldBe(14);
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Dexterity).GetValue(character).ShouldBe(16);
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Constitution).GetValue(character).ShouldBe(13);
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Intelligence).GetValue(character).ShouldBe(12);
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Wisdom).GetValue(character).ShouldBe(15);
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Charisma).GetValue(character).ShouldBe(10);
 
         // Verify attribute bonuses
-        _characterSystem.GetProperty<GameCounter>(sheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Strength)).GetValue(sheet).ShouldBe(1); // 14 = +1
-        _characterSystem.GetProperty<GameCounter>(sheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity)).GetValue(sheet).ShouldBe(1); // 16 = +1
-        _characterSystem.GetProperty<GameCounter>(sheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Constitution)).GetValue(sheet).ShouldBe(0); // 13 = +0
-        _characterSystem.GetProperty<GameCounter>(sheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Intelligence)).GetValue(sheet).ShouldBe(0); // 12 = +0
-        _characterSystem.GetProperty<GameCounter>(sheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Wisdom)).GetValue(sheet).ShouldBe(1); // 15 = +1
-        _characterSystem.GetProperty<GameCounter>(sheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Charisma)).GetValue(sheet).ShouldBe(0); // 10 = +0
+        _characterSystem.GetProperty<GameCounter>(character, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Strength)).GetValue(character).ShouldBe(1); // 14 = +1
+        _characterSystem.GetProperty<GameCounter>(character, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity)).GetValue(character).ShouldBe(1); // 16 = +1
+        _characterSystem.GetProperty<GameCounter>(character, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Constitution)).GetValue(character).ShouldBe(0); // 13 = +0
+        _characterSystem.GetProperty<GameCounter>(character, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Intelligence)).GetValue(character).ShouldBe(0); // 12 = +0
+        _characterSystem.GetProperty<GameCounter>(character, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Wisdom)).GetValue(character).ShouldBe(1); // 15 = +1
+        _characterSystem.GetProperty<GameCounter>(character, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Charisma)).GetValue(character).ShouldBe(0); // 10 = +0
 
         // Verify level and classes
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Level).GetValue(sheet).ShouldBe(3);
-        _characterSystem.GetProperty<GameProperty>(sheet, "Class 1").GetValue(sheet).ShouldBe(SwnSystem.Expert);
-        _characterSystem.GetProperty<GameProperty>(sheet, "Class 2").GetValue(sheet).ShouldBe(SwnSystem.Warrior);
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Level).GetValue(character).ShouldBe(3);
+        _characterSystem.GetProperty<GameProperty>(character, "Class 1").GetValue(character).ShouldBe(SwnSystem.Expert);
+        _characterSystem.GetProperty<GameProperty>(character, "Class 2").GetValue(character).ShouldBe(SwnSystem.Warrior);
 
         // Verify Attack Bonus (Expert/Warrior at level 3 = 3/2 + warrior_bonus = 1 + 1 = 2)
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.AttackBonus).GetValue(sheet).ShouldBe(2);
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.AttackBonus).GetValue(character).ShouldBe(2);
 
         // Verify Hit Points (6 + (3-1)*3.5 + (con_bonus + warrior_bonus) * level = 6 + 7 + (0 + 2) * 3 = 19)
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.HitPoints).GetValue(sheet).ShouldBe(19);
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.HitPoints).GetValue(character).ShouldBe(19);
 
         // Verify Armor Class (Armor Value 13 + Dex bonus 1 = 14)
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.ArmorClass).GetValue(sheet).ShouldBe(14);
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.ArmorClass).GetValue(character).ShouldBe(14);
 
         // Verify Saving Throws
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Evasion).GetValue(sheet).ShouldBe(15 - Math.Max(1, 1)); // 15 - max(dex_bonus, int_bonus) = 14
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Mental).GetValue(sheet).ShouldBe(15 - Math.Max(1, 0)); // 15 - max(wis_bonus, cha_bonus) = 14
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Physical).GetValue(sheet).ShouldBe(15 - Math.Max(1, 0)); // 15 - max(str_bonus, con_bonus) = 14
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Evasion).GetValue(character).ShouldBe(15 - Math.Max(1, 1)); // 15 - max(dex_bonus, int_bonus) = 14
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Mental).GetValue(character).ShouldBe(15 - Math.Max(1, 0)); // 15 - max(wis_bonus, cha_bonus) = 14
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Physical).GetValue(character).ShouldBe(15 - Math.Max(1, 0)); // 15 - max(str_bonus, con_bonus) = 14
     }
 
     [Theory]
@@ -82,12 +82,12 @@ public class SwnPlayerCharacterIntegrationTests
         var sheet = character.Sheet;
 
         // Act
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Level).EditCharacterProperty(level.ToString(CultureInfo.InvariantCulture), sheet);
-        _characterSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(class1, sheet);
-        _characterSystem.GetProperty<GameProperty>(sheet, "Class 2").EditCharacterProperty(class2, sheet);
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Level).EditCharacterProperty(level.ToString(CultureInfo.InvariantCulture), character);
+        _characterSystem.GetProperty<GameProperty>(character, "Class 1").EditCharacterProperty(class1, character);
+        _characterSystem.GetProperty<GameProperty>(character, "Class 2").EditCharacterProperty(class2, character);
 
         // Assert
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.AttackBonus).GetValue(sheet).ShouldBe(expectedAttackBonus);
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.AttackBonus).GetValue(character).ShouldBe(expectedAttackBonus);
     }
 
     [Theory]
@@ -109,12 +109,12 @@ public class SwnPlayerCharacterIntegrationTests
         var sheet = character.Sheet;
 
         // Act - Set up Expert/Warrior (partial warrior)
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Level).EditCharacterProperty(level.ToString(CultureInfo.InvariantCulture), sheet);
-        _characterSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(SwnSystem.Expert, sheet);
-        _characterSystem.GetProperty<GameProperty>(sheet, "Class 2").EditCharacterProperty(SwnSystem.Warrior, sheet);
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Level).EditCharacterProperty(level.ToString(CultureInfo.InvariantCulture), character);
+        _characterSystem.GetProperty<GameProperty>(character, "Class 1").EditCharacterProperty(SwnSystem.Expert, character);
+        _characterSystem.GetProperty<GameProperty>(character, "Class 2").EditCharacterProperty(SwnSystem.Warrior, character);
 
         // Assert
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.AttackBonus).GetValue(sheet).ShouldBe(expectedAttackBonus);
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.AttackBonus).GetValue(character).ShouldBe(expectedAttackBonus);
     }
 
     [Theory]
@@ -131,13 +131,13 @@ public class SwnPlayerCharacterIntegrationTests
         var sheet = character.Sheet;
 
         // Act
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Level).EditCharacterProperty(level.ToString(CultureInfo.InvariantCulture), sheet);
-        _characterSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(class1, sheet);
-        _characterSystem.GetProperty<GameProperty>(sheet, "Class 2").EditCharacterProperty(class2, sheet);
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Constitution).EditCharacterProperty(constitution.ToString(CultureInfo.InvariantCulture), sheet);
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Level).EditCharacterProperty(level.ToString(CultureInfo.InvariantCulture), character);
+        _characterSystem.GetProperty<GameProperty>(character, "Class 1").EditCharacterProperty(class1, character);
+        _characterSystem.GetProperty<GameProperty>(character, "Class 2").EditCharacterProperty(class2, character);
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Constitution).EditCharacterProperty(constitution.ToString(CultureInfo.InvariantCulture), character);
 
         // Assert
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.HitPoints).GetValue(sheet).ShouldBe(expectedHitPoints);
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.HitPoints).GetValue(character).ShouldBe(expectedHitPoints);
     }
 
     [Theory]
@@ -154,11 +154,11 @@ public class SwnPlayerCharacterIntegrationTests
         var sheet = character.Sheet;
 
         // Act
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Strength).EditCharacterProperty(attributeValue.ToString(CultureInfo.InvariantCulture), sheet);
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Strength).EditCharacterProperty(attributeValue.ToString(CultureInfo.InvariantCulture), character);
 
         // Assert
-        _characterSystem.GetProperty<GameCounter>(sheet, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Strength))
-            .GetValue(sheet).ShouldBe(expectedBonus);
+        _characterSystem.GetProperty<GameCounter>(character, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Strength))
+            .GetValue(character).ShouldBe(expectedBonus);
     }
 
     [Fact]
@@ -170,11 +170,11 @@ public class SwnPlayerCharacterIntegrationTests
         var sheet = character.Sheet;
 
         // Set Dexterity to 16 (+1 bonus) and Armor Value to 15
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Dexterity).EditCharacterProperty("16", sheet);
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.ArmorValue).EditCharacterProperty("15", sheet);
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Dexterity).EditCharacterProperty("16", character);
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.ArmorValue).EditCharacterProperty("15", character);
 
         // Act & Assert
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.ArmorClass).GetValue(sheet).ShouldBe(16); // 15 + 1
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.ArmorClass).GetValue(character).ShouldBe(16); // 15 + 1
     }
 
     [Fact]
@@ -186,22 +186,22 @@ public class SwnPlayerCharacterIntegrationTests
         var sheet = character.Sheet;
 
         // Set various attributes for different bonuses
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Strength).EditCharacterProperty("16", sheet); // +1
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Dexterity).EditCharacterProperty("14", sheet); // +1
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Constitution).EditCharacterProperty("12", sheet); // +0
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Intelligence).EditCharacterProperty("18", sheet); // +2
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Wisdom).EditCharacterProperty("10", sheet); // +0
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Charisma).EditCharacterProperty("8", sheet); // -1
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Strength).EditCharacterProperty("16", character); // +1
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Dexterity).EditCharacterProperty("14", character); // +1
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Constitution).EditCharacterProperty("12", character); // +0
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Intelligence).EditCharacterProperty("18", character); // +2
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Wisdom).EditCharacterProperty("10", character); // +0
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Charisma).EditCharacterProperty("8", character); // -1
 
         // Act & Assert
         // Evasion = 15 - max(dex_bonus, int_bonus) = 15 - max(1, 2) = 13
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Evasion).GetValue(sheet).ShouldBe(13);
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Evasion).GetValue(character).ShouldBe(13);
 
         // Mental = 15 - max(wis_bonus, cha_bonus) = 15 - max(0, -1) = 15
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Mental).GetValue(sheet).ShouldBe(15);
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Mental).GetValue(character).ShouldBe(15);
 
         // Physical = 15 - max(str_bonus, con_bonus) = 15 - max(1, 0) = 14
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Physical).GetValue(sheet).ShouldBe(14);
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Physical).GetValue(character).ShouldBe(14);
     }
 
     [Fact]
@@ -212,12 +212,12 @@ public class SwnPlayerCharacterIntegrationTests
         _characterSystem.SetNewCharacterStartingValues(character);
         var sheet = character.Sheet;
 
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Level).EditCharacterProperty("5", sheet);
-        _characterSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(SwnSystem.Expert, sheet);
-        _characterSystem.GetProperty<GameProperty>(sheet, "Class 2").EditCharacterProperty(SwnSystem.Warrior, sheet);
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Level).EditCharacterProperty("5", character);
+        _characterSystem.GetProperty<GameProperty>(character, "Class 1").EditCharacterProperty(SwnSystem.Expert, character);
+        _characterSystem.GetProperty<GameProperty>(character, "Class 2").EditCharacterProperty(SwnSystem.Warrior, character);
 
         // Act
-        var summary = _gameSystem.GetCharacterSummary(sheet, CharacterType.PlayerCharacter);
+        var summary = _gameSystem.GetCharacterSummary(character);
 
         // Assert
         summary.ShouldBe("Level 5 Expert/Warrior");
@@ -237,14 +237,14 @@ public class SwnPlayerCharacterIntegrationTests
         _characterSystem.SetNewCharacterStartingValues(character);
         var sheet = character.Sheet;
 
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Level).EditCharacterProperty("3", sheet);
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Level).EditCharacterProperty("3", character);
         if (!string.IsNullOrEmpty(class1))
-            _characterSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(class1, sheet);
+            _characterSystem.GetProperty<GameProperty>(character, "Class 1").EditCharacterProperty(class1, character);
         if (!string.IsNullOrEmpty(class2))
-            _characterSystem.GetProperty<GameProperty>(sheet, "Class 2").EditCharacterProperty(class2, sheet);
+            _characterSystem.GetProperty<GameProperty>(character, "Class 2").EditCharacterProperty(class2, character);
 
         // Act
-        var summary = _gameSystem.GetCharacterSummary(sheet, CharacterType.PlayerCharacter);
+        var summary = _gameSystem.GetCharacterSummary(character);
 
         // Assert
         summary.ShouldBe(expectedSummary);
@@ -259,16 +259,16 @@ public class SwnPlayerCharacterIntegrationTests
         var sheet = character.Sheet;
 
         // Set up a non-psychic character (Expert/Warrior with no psychic skills)
-        _characterSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(SwnSystem.Expert, sheet);
-        _characterSystem.GetProperty<GameProperty>(sheet, "Class 2").EditCharacterProperty(SwnSystem.Warrior, sheet);
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Constitution).EditCharacterProperty("16", sheet); // +1 bonus
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Wisdom).EditCharacterProperty("14", sheet); // +1 bonus
+        _characterSystem.GetProperty<GameProperty>(character, "Class 1").EditCharacterProperty(SwnSystem.Expert, character);
+        _characterSystem.GetProperty<GameProperty>(character, "Class 2").EditCharacterProperty(SwnSystem.Warrior, character);
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Constitution).EditCharacterProperty("16", character); // +1 bonus
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Wisdom).EditCharacterProperty("14", character); // +1 bonus
 
         // Don't set any psychic skills (they default to -1, which means no psychic training)
 
         // Act & Assert - Effort should be null for non-psychic characters
-        var effortCounter = _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Effort);
-        effortCounter.GetValue(sheet).ShouldBeNull();
+        var effortCounter = _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Effort);
+        effortCounter.GetValue(character).ShouldBeNull();
 
         // Test with an adventurer too
         var adventurer = SwnTestHelpers.CreateAdventurer();
@@ -285,18 +285,18 @@ public class SwnPlayerCharacterIntegrationTests
         var sheet = character.Sheet;
 
         // Set up a non-psychic character with some psychic training (Expert/Warrior with psychic skills)
-        _characterSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(SwnSystem.Expert, sheet);
-        _characterSystem.GetProperty<GameProperty>(sheet, "Class 2").EditCharacterProperty(SwnSystem.Warrior, sheet);
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Constitution).EditCharacterProperty("16", sheet); // +1 bonus
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Wisdom).EditCharacterProperty("14", sheet); // +1 bonus
+        _characterSystem.GetProperty<GameProperty>(character, "Class 1").EditCharacterProperty(SwnSystem.Expert, character);
+        _characterSystem.GetProperty<GameProperty>(character, "Class 2").EditCharacterProperty(SwnSystem.Warrior, character);
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Constitution).EditCharacterProperty("16", character); // +1 bonus
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Wisdom).EditCharacterProperty("14", character); // +1 bonus
 
         // Set psychic skills (non-psychic class gets no attribute bonus)
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Telepathy).EditCharacterProperty("1", sheet);
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Telekinesis).EditCharacterProperty("0", sheet);
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Telepathy).EditCharacterProperty("1", character);
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Telekinesis).EditCharacterProperty("0", character);
 
         // Act & Assert - Effort = 1 (base) + 0 (no class bonus) + 1 (highest psychic skill) = 2
-        var effortCounter = _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Effort);
-        effortCounter.GetValue(sheet).ShouldBe(2);
+        var effortCounter = _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Effort);
+        effortCounter.GetValue(character).ShouldBe(2);
 
         // Test with an adventurer too
         var adventurer = SwnTestHelpers.CreateAdventurer();
@@ -313,18 +313,18 @@ public class SwnPlayerCharacterIntegrationTests
         var sheet = character.Sheet;
 
         // Set up a full psychic character
-        _characterSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(SwnSystem.Psychic, sheet);
-        _characterSystem.GetProperty<GameProperty>(sheet, "Class 2").EditCharacterProperty(SwnSystem.Psychic, sheet);
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Constitution).EditCharacterProperty("16", sheet); // +1 bonus
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Wisdom).EditCharacterProperty("18", sheet); // +2 bonus (higher)
+        _characterSystem.GetProperty<GameProperty>(character, "Class 1").EditCharacterProperty(SwnSystem.Psychic, character);
+        _characterSystem.GetProperty<GameProperty>(character, "Class 2").EditCharacterProperty(SwnSystem.Psychic, character);
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Constitution).EditCharacterProperty("16", character); // +1 bonus
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Wisdom).EditCharacterProperty("18", character); // +2 bonus (higher)
 
         // Set psychic skills
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Telepathy).EditCharacterProperty("2", sheet);
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Metapsionics).EditCharacterProperty("1", sheet);
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Telepathy).EditCharacterProperty("2", character);
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Metapsionics).EditCharacterProperty("1", character);
 
         // Act & Assert - Effort = 1 (base) + 2 (max of Con/Wis bonus for psychic class) + 2 (highest psychic skill) = 5
-        var effortCounter = _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Effort);
-        effortCounter.GetValue(sheet).ShouldBe(5);
+        var effortCounter = _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Effort);
+        effortCounter.GetValue(character).ShouldBe(5);
     }
 
     [Fact]
@@ -336,17 +336,17 @@ public class SwnPlayerCharacterIntegrationTests
         var sheet = character.Sheet;
 
         // Set up a partial psychic character (Expert/Psychic)
-        _characterSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(SwnSystem.Expert, sheet);
-        _characterSystem.GetProperty<GameProperty>(sheet, "Class 2").EditCharacterProperty(SwnSystem.Psychic, sheet);
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Constitution).EditCharacterProperty("14", sheet); // +1 bonus
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Wisdom).EditCharacterProperty("16", sheet); // +1 bonus
+        _characterSystem.GetProperty<GameProperty>(character, "Class 1").EditCharacterProperty(SwnSystem.Expert, character);
+        _characterSystem.GetProperty<GameProperty>(character, "Class 2").EditCharacterProperty(SwnSystem.Psychic, character);
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Constitution).EditCharacterProperty("14", character); // +1 bonus
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Wisdom).EditCharacterProperty("16", character); // +1 bonus
 
         // Set psychic skills
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Biopsionics).EditCharacterProperty("1", sheet);
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Biopsionics).EditCharacterProperty("1", character);
 
         // Act & Assert - Effort = 1 (base) + 1 (max of Con/Wis bonus for partial psychic) + 1 (highest psychic skill) = 3
-        var effortCounter = _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Effort);
-        effortCounter.GetValue(sheet).ShouldBe(3);
+        var effortCounter = _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Effort);
+        effortCounter.GetValue(character).ShouldBe(3);
     }
 
     [Fact]
@@ -358,17 +358,17 @@ public class SwnPlayerCharacterIntegrationTests
         var sheet = character.Sheet;
 
         // Set up a psychic character with known Effort value
-        _characterSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(SwnSystem.Psychic, sheet);
-        _characterSystem.GetProperty<GameProperty>(sheet, "Class 2").EditCharacterProperty(SwnSystem.Expert, sheet);
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Constitution).EditCharacterProperty("14", sheet); // +1 bonus
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Wisdom).EditCharacterProperty("16", sheet); // +1 bonus
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Telepathy).EditCharacterProperty("2", sheet);
+        _characterSystem.GetProperty<GameProperty>(character, "Class 1").EditCharacterProperty(SwnSystem.Psychic, character);
+        _characterSystem.GetProperty<GameProperty>(character, "Class 2").EditCharacterProperty(SwnSystem.Expert, character);
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Constitution).EditCharacterProperty("14", character); // +1 bonus
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Wisdom).EditCharacterProperty("16", character); // +1 bonus
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Telepathy).EditCharacterProperty("2", character);
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
 
         // Act & Assert - Effort = 1 (base) + 1 (max attribute bonus) + 2 (highest psychic skill) = 4
-        var effortCounter = _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Effort);
+        var effortCounter = _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Effort);
         var maxEffort = effortCounter.GetMaxVariableValue(adventurer);
         var startingEffort = effortCounter.GetStartingValue(adventurer);
         var currentEffort = effortCounter.GetVariableValue(adventurer);
@@ -387,16 +387,16 @@ public class SwnPlayerCharacterIntegrationTests
         var sheet = character.Sheet;
 
         // Set up a psychic character with Effort = 3
-        _characterSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(SwnSystem.Expert, sheet);
-        _characterSystem.GetProperty<GameProperty>(sheet, "Class 2").EditCharacterProperty(SwnSystem.Psychic, sheet);
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Constitution).EditCharacterProperty("12", sheet); // +0 bonus
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Wisdom).EditCharacterProperty("14", sheet); // +1 bonus
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Telekinesis).EditCharacterProperty("1", sheet);
+        _characterSystem.GetProperty<GameProperty>(character, "Class 1").EditCharacterProperty(SwnSystem.Expert, character);
+        _characterSystem.GetProperty<GameProperty>(character, "Class 2").EditCharacterProperty(SwnSystem.Psychic, character);
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Constitution).EditCharacterProperty("12", character); // +0 bonus
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Wisdom).EditCharacterProperty("14", character); // +1 bonus
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Telekinesis).EditCharacterProperty("1", character);
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
 
-        var effortCounter = _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Effort);
+        var effortCounter = _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Effort);
 
         // Verify initial state: Effort = 1 (base) + 1 (max attribute bonus) + 1 (psychic skill) = 3
         effortCounter.GetMaxVariableValue(adventurer).ShouldBe(3);
@@ -426,16 +426,16 @@ public class SwnPlayerCharacterIntegrationTests
         var sheet = character.Sheet;
 
         // Set up a psychic character with Effort = 2
-        _characterSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(SwnSystem.Expert, sheet);
-        _characterSystem.GetProperty<GameProperty>(sheet, "Class 2").EditCharacterProperty(SwnSystem.Psychic, sheet);
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Constitution).EditCharacterProperty("10", sheet); // +0 bonus
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Wisdom).EditCharacterProperty("10", sheet); // +0 bonus
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Biopsionics).EditCharacterProperty("1", sheet);
+        _characterSystem.GetProperty<GameProperty>(character, "Class 1").EditCharacterProperty(SwnSystem.Expert, character);
+        _characterSystem.GetProperty<GameProperty>(character, "Class 2").EditCharacterProperty(SwnSystem.Psychic, character);
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Constitution).EditCharacterProperty("10", character); // +0 bonus
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Wisdom).EditCharacterProperty("10", character); // +0 bonus
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Biopsionics).EditCharacterProperty("1", character);
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
 
-        var effortCounter = _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Effort);
+        var effortCounter = _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Effort);
 
         // Verify Effort = 1 (base) + 0 (no attribute bonus) + 1 (psychic skill) = 2
         effortCounter.GetMaxVariableValue(adventurer).ShouldBe(2);
@@ -462,11 +462,11 @@ public class SwnPlayerCharacterIntegrationTests
         var sheet = character.Sheet;
 
         // Set up a psychic character with base Effort = 2
-        _characterSystem.GetProperty<GameProperty>(sheet, "Class 1").EditCharacterProperty(SwnSystem.Expert, sheet);
-        _characterSystem.GetProperty<GameProperty>(sheet, "Class 2").EditCharacterProperty(SwnSystem.Psychic, sheet);
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Constitution).EditCharacterProperty("10", sheet); // +0 bonus
-        _characterSystem.GetProperty<GameAbilityCounter>(sheet, SwnSystem.Wisdom).EditCharacterProperty("10", sheet); // +0 bonus
-        _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Precognition).EditCharacterProperty("1", sheet);
+        _characterSystem.GetProperty<GameProperty>(character, "Class 1").EditCharacterProperty(SwnSystem.Expert, character);
+        _characterSystem.GetProperty<GameProperty>(character, "Class 2").EditCharacterProperty(SwnSystem.Psychic, character);
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Constitution).EditCharacterProperty("10", character); // +0 bonus
+        _characterSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Wisdom).EditCharacterProperty("10", character); // +0 bonus
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Precognition).EditCharacterProperty("1", character);
 
         var adventurer = SwnTestHelpers.CreateAdventurer();
         adventurer.Sheet = sheet;
@@ -474,7 +474,7 @@ public class SwnPlayerCharacterIntegrationTests
         // Add a fix of +2 to Effort
         adventurer.GetFixes().Counters.Add(new PropertyValue<int>(SwnSystem.Effort, 2));
 
-        var effortCounter = _characterSystem.GetProperty<GameCounter>(sheet, SwnSystem.Effort);
+        var effortCounter = _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Effort);
 
         // Act & Assert - Check max and starting values with fix
         var maxValue = effortCounter.GetMaxVariableValue(adventurer);

@@ -7,17 +7,10 @@ internal class AttributeBonusCounter(GameCounter attributeCounter)
 {
     public override bool CanStore => false;
 
-    public override int? GetValue(ICounterSheet sheet)
-    {
-        var score = attributeCounter.GetValue(sheet);
-        return GetBonusValue(score);
-    }
-
-    public override int? GetValue(ITrackedCharacter character)
+    protected override int? GetValueInternal(ICharacterBase character)
     {
         var score = attributeCounter.GetValue(character);
-        var baseValue = GetBonusValue(score);
-        return AddFix(baseValue, character);
+        return GetBonusValue(score);
     }
 
     public static string GetBonusCounterName(string counterName) => $"{counterName} Bonus";

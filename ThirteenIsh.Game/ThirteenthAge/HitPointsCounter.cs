@@ -9,7 +9,7 @@ internal class HitPointsCounter(
     : ClassBasedCounter(ThirteenthAgeSystem.HitPoints, ThirteenthAgeSystem.HitPointsAlias, classProperty,
         GameCounterOptions.HasVariable)
 {
-    protected override int? GetValueInternal(string? classValue, Func<GameCounter, int?> getCounterValue)
+    protected override int? GetCounterValueInternal(string? classValue, Func<GameCounter, int?> getCounterValue)
     {
         // See page 31, 76 and onwards. Why is this so baroque?!
         var conBonus = getCounterValue(constitutionBonusCounter);

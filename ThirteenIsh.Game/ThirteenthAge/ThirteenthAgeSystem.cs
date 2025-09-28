@@ -180,7 +180,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         ulong userId)
     {
         var dexterityBonusCounter = GetCharacterSystem(CharacterType.PlayerCharacter, null)
-            .GetProperty<GameCounter>(adventurer.Sheet, AbilityBonusCounter.GetBonusCounterName(Dexterity));
+            .GetProperty<GameCounter>(adventurer, AbilityBonusCounter.GetBonusCounterName(Dexterity));
 
         int? targetValue = null;
         var initiative = dexterityBonusCounter.Roll(adventurer, null, random, rerolls, ref targetValue);
@@ -200,34 +200,14 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         return EncounterRollResult.BuildSuccess(initiative, combatant.Alias);
     }
 
-    public override string GetCharacterSummary(CharacterSheet sheet, CharacterType type)
+    public override string GetCharacterSummary(ICharacterBase character)
     {
-        var characterSystem = GetCharacterSystem(type, null);
-        switch (type)
-        {
-            case CharacterType.PlayerCharacter:
-                var characterClass = characterSystem.GetProperty<GameProperty>(sheet, Class).GetValue(sheet);
-                var level = characterSystem.GetProperty<GameCounter>(sheet, Level).GetValue(sheet);
-                return $"Level {level} {characterClass}";
-
-            case CharacterType.Monster:
-                // TODO Add a monster type and level or what have you to display here
-                return "Monster";
-
-            default:
-                throw new ArgumentException("Unrecognised character type", nameof(type));
-        }
-    }
-
-    public override string GetCharacterSummary(ITrackedCharacter character)
-    {
-        var sheet = character.Sheet;
         var characterSystem = GetCharacterSystem(character.Type, null);
         switch (character.Type)
         {
             case CharacterType.PlayerCharacter:
-                var characterClass = characterSystem.GetProperty<GameProperty>(sheet, Class).GetValue(sheet);
-                var level = characterSystem.GetProperty<GameCounter>(sheet, Level).GetValue(character);
+                var characterClass = characterSystem.GetProperty<GameProperty>(character, Class).GetValue(character);
+                var level = characterSystem.GetProperty<GameCounter>(character, Level).GetValue(character);
                 return $"Level {level} {characterClass}";
 
             case CharacterType.Monster:
@@ -263,7 +243,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         var matchingMonster = encounter.Combatants.OfType<MonsterCombatant>()
             .FirstOrDefault(c => c.Name == combatant.Name && c.UserId == userId);
 
-        var initiativeCounter = characterSystem.GetProperty<GameCounter>(combatant.Sheet, Initiative);
+        var initiativeCounter = characterSystem.GetProperty<GameCounter>(combatant, Initiative);
         if (matchingMonster is { Initiative: { } roll, InitiativeRollWorking: { } working })
         {
             // We have already rolled for this monster type -- re-use the same one.

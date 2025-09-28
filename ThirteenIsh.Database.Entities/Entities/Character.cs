@@ -4,7 +4,7 @@ namespace ThirteenIsh.Database.Entities;
 
 [Index(nameof(UserId), nameof(CharacterType), nameof(Name), IsUnique = true)]
 [Index(nameof(UserId), nameof(CharacterType), nameof(NameUpper), IsUnique = true)]
-public class Character : SearchableNamedEntityBase, IHasLastEdited
+public class Character : SearchableNamedEntityBase, ICharacter, IHasLastEdited
 {
     /// <summary>
     /// The owning user ID.
@@ -21,6 +21,8 @@ public class Character : SearchableNamedEntityBase, IHasLastEdited
     /// </summary>
     public required CharacterType CharacterType { get; set; }
 
+    CharacterType ICharacterBase.Type => CharacterType;
+
     /// <summary>
     /// The game system this character uses.
     /// </summary>
@@ -35,4 +37,10 @@ public class Character : SearchableNamedEntityBase, IHasLastEdited
     /// The datetime last updated.
     /// </summary>
     public DateTimeOffset LastEdited { get; set; }
+
+    public bool TryGetFix(string name, out int fixValue)
+    {
+        fixValue = 0;
+        return false;
+    }
 }

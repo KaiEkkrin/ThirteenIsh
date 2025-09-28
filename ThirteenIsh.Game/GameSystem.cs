@@ -124,15 +124,7 @@ public abstract class GameSystem
     /// <summary>
     /// Provides a one-line summary of the character for character list purposes.
     /// </summary>
-    public abstract string GetCharacterSummary(CharacterSheet sheet, CharacterType type);
-
-    /// <summary>
-    /// Provides a one-line summary of the character for character list purposes.
-    /// </summary>
-    public virtual string GetCharacterSummary(ITrackedCharacter character)
-    {
-        return GetCharacterSummary(character.Sheet, character.Type);
-    }
+    public abstract string GetCharacterSummary(ICharacterBase character);
 
     /// <summary>
     /// Gets the character system for a character type and optional system name.

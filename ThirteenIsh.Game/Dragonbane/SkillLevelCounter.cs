@@ -26,9 +26,9 @@ internal class SkillLevelCounter(GameAbilityCounter attribute, GameCounter skill
 
     public override bool CanStore => false;
 
-    public override int? GetValue(ICounterSheet sheet)
+    protected override int? GetValueInternal(ICharacterBase character)
     {
-        var attributeValue = attribute.GetValue(sheet);
+        var attributeValue = attribute.GetValue(character);
         int? baseChance = attributeValue switch
         {
             >= 1 and <= 5 => 3,
@@ -39,7 +39,7 @@ internal class SkillLevelCounter(GameAbilityCounter attribute, GameCounter skill
             _ => null
         };
 
-        var skillValue = skill.GetValue(sheet);
+        var skillValue = skill.GetValue(character);
         if (!baseChance.HasValue || !skillValue.HasValue) return null;
         return skillValue >= 1
             ? Math.Min(18, baseChance.Value * 2 + skillValue.Value - 1)

@@ -39,7 +39,7 @@ internal sealed class ListCharactersMessageHandler(SqlDataService dataService) :
             foreach (var character in list)
             {
                 var gameSystem = GameSystem.Get(character.GameSystem);
-                var summary = gameSystem.GetCharacterSummary(character.Sheet, message.CharacterType);
+                var summary = gameSystem.GetCharacterSummary(character);
 
                 embedBuilder.AddField(new EmbedFieldBuilder()
                     .WithIsInline(false)

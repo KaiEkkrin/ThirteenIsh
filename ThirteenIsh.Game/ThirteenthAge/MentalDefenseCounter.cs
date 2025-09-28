@@ -8,7 +8,7 @@ internal class MentalDefenseCounter(
     AbilityBonusCounter charismaBonusCounter)
     : ClassBasedCounter(ThirteenthAgeSystem.MentalDefense, ThirteenthAgeSystem.MentalDefenseAlias, classProperty)
 {
-    protected override int? GetValueInternal(string? classValue, Func<GameCounter, int?> getCounterValue)
+    protected override int? GetCounterValueInternal(string? classValue, Func<GameCounter, int?> getCounterValue)
     {
         int? baseMD = classValue switch
         {

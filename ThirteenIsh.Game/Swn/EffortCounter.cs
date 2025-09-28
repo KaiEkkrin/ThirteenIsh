@@ -10,27 +10,14 @@ internal class EffortCounter(
     params GameCounter[] psychicSkillCounters)
     : GameCounter(SwnSystem.Effort, options: GameCounterOptions.HasVariable)
 {
-    public override int? GetValue(ICounterSheet sheet)
+    protected override int? GetValueInternal(ICharacterBase character)
     {
-        if (sheet is not CharacterSheet characterSheet) return null;
         return GetEffort(
-            class1Property.GetValue(characterSheet),
-            class2Property.GetValue(characterSheet),
-            constitutionBonusCounter.GetValue(sheet),
-            wisdomBonusCounter.GetValue(sheet),
-            psychicSkillCounters.Select(counter => counter.GetValue(sheet)));
-    }
-
-    public override int? GetValue(ITrackedCharacter character)
-    {
-        var baseValue = GetEffort(
-            class1Property.GetValue(character.Sheet),
-            class2Property.GetValue(character.Sheet),
+            class1Property.GetValue(character),
+            class2Property.GetValue(character),
             constitutionBonusCounter.GetValue(character),
             wisdomBonusCounter.GetValue(character),
             psychicSkillCounters.Select(counter => counter.GetValue(character)));
-
-        return AddFix(baseValue, character);
     }
 
     private static int? GetEffort(string class1, string class2, int? conBonus, int? wisBonus, IEnumerable<int?> psychicSkills)
