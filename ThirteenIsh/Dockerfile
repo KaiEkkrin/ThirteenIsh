@@ -8,13 +8,9 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["ThirteenIsh.Database.Entities/ThirteenIsh.Database.Entities.csproj", "ThirteenIsh.Database.Entities/"]
-RUN dotnet restore "./ThirteenIsh.Database.Entities/./ThirteenIsh.Database.Entities.csproj"
 COPY ["ThirteenIsh.Database/ThirteenIsh.Database.csproj", "ThirteenIsh.Database/"]
-RUN dotnet restore "./ThirteenIsh.Database/./ThirteenIsh.Database.csproj"
 COPY ["ThirteenIsh.Parsing/ThirteenIsh.Parsing.csproj", "ThirteenIsh.Parsing/"]
-RUN dotnet restore "./ThirteenIsh.Parsing/./ThirteenIsh.Parsing.csproj"
 COPY ["ThirteenIsh.Game/ThirteenIsh.Game.csproj", "ThirteenIsh.Game/"]
-RUN dotnet restore "./ThirteenIsh.Game/./ThirteenIsh.Game.csproj"
 COPY ["ThirteenIsh/ThirteenIsh.csproj", "ThirteenIsh/"]
 RUN dotnet restore "./ThirteenIsh/./ThirteenIsh.csproj"
 COPY . .
