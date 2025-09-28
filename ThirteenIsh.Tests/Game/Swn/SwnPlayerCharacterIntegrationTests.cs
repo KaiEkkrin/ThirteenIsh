@@ -18,7 +18,7 @@ public class SwnPlayerCharacterIntegrationTests
     public SwnPlayerCharacterIntegrationTests()
     {
         _gameSystem = SwnTestHelpers.CreateSwnSystem();
-        _characterSystem = (SwnCharacterSystem)_gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
+        _characterSystem = (SwnCharacterSystem)_gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter, null);
     }
 
     [Fact]

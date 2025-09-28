@@ -175,8 +175,10 @@ internal class SwnSystem : GameSystem
             .AddProperty(monsterHitPointsCounter)
             .Build();
 
-        SwnCharacterSystem playerCharacterSystem = new(CharacterType.PlayerCharacter, [basics, attributes, skills, psychicSkills, general, savingThrows, equipment]);
-        SwnCharacterSystem monsterCharacterSystem = new(CharacterType.Monster, [monsterStats]);
+        SwnCharacterSystem playerCharacterSystem = new("Player Character", CharacterTypeCompatibility.PlayerCharacter,
+            CharacterType.PlayerCharacter, [basics, attributes, skills, psychicSkills, general, savingThrows, equipment]);
+        SwnCharacterSystem monsterCharacterSystem = new("Monster", CharacterTypeCompatibility.Monster,
+            CharacterType.Monster, [monsterStats]);
         return new SwnSystem(SystemName, [playerCharacterSystem, monsterCharacterSystem]);
     }
 
@@ -197,7 +199,7 @@ internal class SwnSystem : GameSystem
             UserId = userId
         };
 
-        var characterSystem = GetCharacterSystem(CharacterType.Monster);
+        var characterSystem = GetCharacterSystem(CharacterType.Monster, null);
         characterSystem.ResetVariables(combatant);
 
         // In SWN, monsters use 1d8 initiative with no dexterity bonus
@@ -221,7 +223,7 @@ internal class SwnSystem : GameSystem
         NameAliasCollection nameAliasCollection, IRandomWrapper random, int rerolls, ulong userId)
     {
         // In Stars Without Number, the initiative roll is 1d8 + Dexterity bonus.
-        var dexterityBonusCounter = GetCharacterSystem(CharacterType.PlayerCharacter)
+        var dexterityBonusCounter = GetCharacterSystem(CharacterType.PlayerCharacter, null)
             .GetProperty<GameCounter>(adventurer.Sheet, AttributeBonusCounter.GetBonusCounterName(Dexterity));
 
         ParseTreeBase parseTree = DiceRollParseTree.BuildWithRerolls(8, 0, 1);
@@ -256,7 +258,7 @@ internal class SwnSystem : GameSystem
 
     public override string GetCharacterSummary(CharacterSheet sheet, CharacterType type)
     {
-        var characterSystem = GetCharacterSystem(type);
+        var characterSystem = GetCharacterSystem(type, null);
         switch (type)
         {
             case CharacterType.PlayerCharacter:

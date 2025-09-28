@@ -95,7 +95,8 @@ internal sealed class ThirteenthAgeSystem : GameSystem
             .AddProperty(new RecoveriesCounter())
             .AddProperty(new RecoveryDieCounter(classProperty));
 
-        var playerCharacterSystem = new ThirteenthAgeCharacterSystemBuilder(CharacterType.PlayerCharacter, SystemName)
+        var playerCharacterSystem = new ThirteenthAgeCharacterSystemBuilder("Player Character", SystemName,
+                CharacterTypeCompatibility.PlayerCharacter, CharacterType.PlayerCharacter)
             .AddPropertyGroup(basicsBuilder)
             .AddPropertyGroup(abilityScoresBuilder)
             .AddPropertyGroup(generalBuilder)
@@ -110,7 +111,8 @@ internal sealed class ThirteenthAgeSystem : GameSystem
             .AddProperty(new GameCounter(PhysicalDefense, PhysicalDefenseAlias))
             .AddProperty(new GameCounter(MentalDefense, MentalDefenseAlias));
 
-        var monsterSystem = new ThirteenthAgeCharacterSystemBuilder(CharacterType.Monster, SystemName)
+        var monsterSystem = new ThirteenthAgeCharacterSystemBuilder("Monster", SystemName,
+                CharacterTypeCompatibility.Monster, CharacterType.Monster)
             .AddPropertyGroup(monsterStatsBuilder)
             .Build();
 
@@ -149,7 +151,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
             UserId = userId
         };
 
-        var characterSystem = GetCharacterSystem(CharacterType.Monster);
+        var characterSystem = GetCharacterSystem(CharacterType.Monster, null);
         characterSystem.ResetVariables(combatant);
 
         // Roll its initiative
@@ -177,7 +179,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
         int rerolls,
         ulong userId)
     {
-        var dexterityBonusCounter = GetCharacterSystem(CharacterType.PlayerCharacter)
+        var dexterityBonusCounter = GetCharacterSystem(CharacterType.PlayerCharacter, null)
             .GetProperty<GameCounter>(adventurer.Sheet, AbilityBonusCounter.GetBonusCounterName(Dexterity));
 
         int? targetValue = null;
@@ -200,7 +202,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
 
     public override string GetCharacterSummary(CharacterSheet sheet, CharacterType type)
     {
-        var characterSystem = GetCharacterSystem(type);
+        var characterSystem = GetCharacterSystem(type, null);
         switch (type)
         {
             case CharacterType.PlayerCharacter:
@@ -220,7 +222,7 @@ internal sealed class ThirteenthAgeSystem : GameSystem
     public override string GetCharacterSummary(ITrackedCharacter character)
     {
         var sheet = character.Sheet;
-        var characterSystem = GetCharacterSystem(character.Type);
+        var characterSystem = GetCharacterSystem(character.Type, null);
         switch (character.Type)
         {
             case CharacterType.PlayerCharacter:

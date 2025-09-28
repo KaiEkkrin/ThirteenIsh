@@ -4,6 +4,18 @@ using System.Collections.Frozen;
 namespace ThirteenIsh.Game;
 
 /// <summary>
+/// Indicates which character types a character system supports.
+/// </summary>
+[Flags]
+public enum CharacterTypeCompatibility
+{
+    None = 0,
+    PlayerCharacter = 1,
+    Monster = 2,
+    Both = PlayerCharacter | Monster
+}
+
+/// <summary>
 /// Describes a game system's idea of a particular type of characters.
 /// </summary>
 public abstract class CharacterSystem
@@ -14,11 +26,13 @@ public abstract class CharacterSystem
     private readonly FrozenDictionary<string, GamePropertyBase> _properties;
     private readonly ImmutableList<GamePropertyGroup<GameCounter>> _variableCounterGroups;
 
-    protected CharacterSystem(CharacterType characterType, string gameSystemName,
-        ImmutableList<GamePropertyGroup> propertyGroups)
+    protected CharacterSystem(string name, string gameSystemName, CharacterTypeCompatibility compatibility,
+        CharacterType? defaultForType, ImmutableList<GamePropertyGroup> propertyGroups)
     {
-        CharacterType = characterType;
+        Name = name;
         _gameSystemName = gameSystemName;
+        Compatibility = compatibility;
+        DefaultForType = defaultForType;
         _propertyGroups = propertyGroups;
 
         Dictionary<string, GamePropertyBase> properties = [];
@@ -48,9 +62,19 @@ public abstract class CharacterSystem
     public const string Custom = "Custom";
 
     /// <summary>
-    /// The character type.
+    /// The name of this character system.
     /// </summary>
-    public CharacterType CharacterType { get; }
+    public string Name { get; }
+
+    /// <summary>
+    /// Indicates which character types this system supports.
+    /// </summary>
+    public CharacterTypeCompatibility Compatibility { get; }
+
+    /// <summary>
+    /// The character type this system is the default for, if any.
+    /// </summary>
+    public CharacterType? DefaultForType { get; }
 
     /// <summary>
     /// Adds this character sheet's fields to the embed -- in their well-known
@@ -287,7 +311,7 @@ public abstract class CharacterSystem
         {
             menuBuilder = null;
             errorMessage =
-                $"No property '{propertyName}' found in {_gameSystemName} {CharacterType.FriendlyName(FriendlyNameOptions.Plural)}.";
+                $"No property '{propertyName}' found in {_gameSystemName} {Name}.";
 
             return false;
         }

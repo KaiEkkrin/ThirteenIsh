@@ -2,12 +2,13 @@
 
 namespace ThirteenIsh.Game.Dragonbane;
 
-internal class DragonbaneCharacterSystemBuilder(CharacterType characterType, string name)
+internal class DragonbaneCharacterSystemBuilder(string characterSystemName, string gameSystemName,
+    CharacterTypeCompatibility compatibility, CharacterType? defaultForType)
     : CharacterSystemBuilder
 {
     public override CharacterSystem Build()
     {
-        var propertyGroups = ValidatePropertyGroups(name);
-        return new DragonbaneCharacterSystem(characterType, name, propertyGroups);
+        var propertyGroups = ValidatePropertyGroups(gameSystemName);
+        return new DragonbaneCharacterSystem(characterSystemName, gameSystemName, compatibility, defaultForType, propertyGroups);
     }
 }

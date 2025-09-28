@@ -42,7 +42,7 @@ internal sealed class PcFixMessageHandler(SqlDataService dataService) : MessageH
         public override EditResult<FixResult> DoEdit(DataContext context, Adventurer adventurer)
         {
             var gameSystem = GameSystem.Get(adventurer.Adventure.GameSystem);
-            var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
+            var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter, adventurer.CharacterSystemName);
 
             // Important -- don't allow fixing hidden counters! Then you wouldn't be able to tell they
             // had been fixed (no display), which would be super confusing

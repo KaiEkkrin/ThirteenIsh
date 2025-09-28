@@ -39,7 +39,7 @@ internal sealed class CharacterAddSubCommand(CharacterType characterType)
         // Add the character
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var character = await dataService.CreateCharacterAsync(name, characterType, gameSystemName,
-            command.User.Id, gameSystem.GetCharacterSystem(characterType).SetNewCharacterStartingValues, cancellationToken);
+            command.User.Id, gameSystem.GetCharacterSystem(characterType, null).SetNewCharacterStartingValues, cancellationToken);
         if (character is null)
         {
             await command.RespondAsync(
@@ -49,7 +49,7 @@ internal sealed class CharacterAddSubCommand(CharacterType characterType)
         }
 
         // If we don't have show-on-add properties, we've finished
-        var characterSystem = gameSystem.GetCharacterSystem(characterType);
+        var characterSystem = gameSystem.GetCharacterSystem(characterType, null);
         var showOnAddProperties = characterSystem.GetShowOnAddProperties().ToList();
         if (showOnAddProperties.Count == 0)
         {

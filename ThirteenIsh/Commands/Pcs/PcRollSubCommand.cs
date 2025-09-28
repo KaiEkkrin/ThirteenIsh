@@ -54,7 +54,7 @@ internal sealed class PcRollSubCommand() : SubCommandBase("roll", "Rolls against
         }
 
         var gameSystem = GameSystem.Get(adventure.GameSystem);
-        var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
+        var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter, adventurer.CharacterSystemName);
         var counter = characterSystem.FindCounter(adventurer.Sheet, namePart,
             c => c.Options.HasFlag(GameCounterOptions.CanRoll));
 

@@ -1,4 +1,6 @@
 ﻿using ThirteenIsh.Database;
+using ThirteenIsh.Database.Entities;
+using ThirteenIsh.Database.Entities.Combatants;
 using ThirteenIsh.Game;
 using ThirteenIsh.Results;
 
@@ -10,7 +12,7 @@ internal sealed class CombatEditVariableOperation(IEditVariableSubOperation subO
     public override EditResult<CombatEditVariableResult> DoEdit(DataContext context, CombatantResult param)
     {
         var gameSystem = GameSystem.Get(param.Adventure.GameSystem);
-        var characterSystem = gameSystem.GetCharacterSystem(param.Combatant.CharacterType);
+        var characterSystem = gameSystem.GetCharacterSystem(param.Combatant.CharacterType, param.Character.CharacterSystemName);
         return subOperation.DoEdit(param.Character, characterSystem, gameSystem, out var gameCounter, out var working,
             out var errorMessage)
             ? new EditResult<CombatEditVariableResult>(new CombatEditVariableResult(param, gameCounter, gameSystem, working))

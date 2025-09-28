@@ -22,6 +22,11 @@ public interface ITrackedCharacter
 
     ulong UserId { get; }
 
+    /// <summary>
+    /// The character system name (optional - if null, uses default for CharacterType).
+    /// </summary>
+    string? CharacterSystemName { get; }
+
     FixesSheet GetFixes();
 
     VariablesSheet GetVariables();

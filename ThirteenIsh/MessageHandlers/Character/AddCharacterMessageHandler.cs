@@ -49,7 +49,7 @@ internal sealed class AddCharacterMessageHandler(SqlDataService dataService) : M
         }
 
         // If we got here, we're setting a property value
-        var characterSystem = gameSystem.GetCharacterSystem(message.CharacterType);
+        var characterSystem = gameSystem.GetCharacterSystem(message.CharacterType, character.CharacterSystemName);
         var property = characterSystem.GetProperty(controlId);
         if (property is null)
         {

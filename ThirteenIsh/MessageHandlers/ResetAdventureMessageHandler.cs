@@ -38,7 +38,7 @@ internal sealed class ResetAdventureMessageHandler(SqlDataService dataService) :
         public override EditResult<EditResult> DoEdit(DataContext context, Adventurer adventurer)
         {
             var gameSystem = GameSystem.Get(adventurer.Adventure.GameSystem);
-            var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
+            var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter, adventurer.CharacterSystemName);
             characterSystem.ResetVariables(adventurer);
             return new EditResult<EditResult>(new EditResult(adventurer, gameSystem));
         }

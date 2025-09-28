@@ -7,10 +7,22 @@ namespace ThirteenIsh.Game;
 /// <summary>
 /// Describes a game system, providing game-specific ways of interacting with it.
 /// </summary>
-public abstract class GameSystem(string name, IEnumerable<CharacterSystem> characterSystems)
+public abstract class GameSystem
 {
-    private readonly FrozenDictionary<CharacterType, CharacterSystem> _characterSystems =
-        characterSystems.ToFrozenDictionary(o => o.CharacterType);
+    private readonly FrozenDictionary<string, CharacterSystem> _characterSystemsByName;
+    private readonly FrozenDictionary<CharacterType, CharacterSystem> _defaultCharacterSystems;
+
+    protected GameSystem(string name, IEnumerable<CharacterSystem> characterSystems)
+    {
+        Name = name;
+        var systemsList = characterSystems.ToList();
+        ValidateCharacterSystems(systemsList);
+
+        _characterSystemsByName = systemsList.ToFrozenDictionary(cs => cs.Name);
+        _defaultCharacterSystems = systemsList
+            .Where(cs => cs.DefaultForType.HasValue)
+            .ToFrozenDictionary(cs => cs.DefaultForType!.Value);
+    }
 
     public static readonly IReadOnlyList<GameSystem> AllGameSystems =
     [
@@ -27,7 +39,7 @@ public abstract class GameSystem(string name, IEnumerable<CharacterSystem> chara
     /// <summary>
     /// This game system's name.
     /// </summary>
-    public string Name { get; } = name;
+    public string Name { get; }
 
     /// <summary>
     /// Writes an encounter summary table suitable for being part of a pinned message.
@@ -123,9 +135,73 @@ public abstract class GameSystem(string name, IEnumerable<CharacterSystem> chara
     }
 
     /// <summary>
-    /// Gets the character system for a character type.
+    /// Gets the character system for a character type and optional system name.
     /// </summary>
-    public CharacterSystem GetCharacterSystem(CharacterType characterType) => _characterSystems[characterType];
+    public CharacterSystem GetCharacterSystem(CharacterType characterType, string? characterSystemName)
+    {
+        if (string.IsNullOrEmpty(characterSystemName))
+        {
+            if (_defaultCharacterSystems.TryGetValue(characterType, out var defaultSystem))
+                return defaultSystem;
+            throw new InvalidOperationException($"No default character system found for {characterType} in {Name}");
+        }
+
+        if (_characterSystemsByName.TryGetValue(characterSystemName, out var namedSystem))
+        {
+            if (namedSystem.Compatibility.HasFlag(GetCompatibilityFlag(characterType)))
+                return namedSystem;
+            throw new InvalidOperationException($"Character system '{characterSystemName}' does not support {characterType} in {Name}");
+        }
+
+        throw new InvalidOperationException($"Character system '{characterSystemName}' not found in {Name}");
+    }
+
+    private static CharacterTypeCompatibility GetCompatibilityFlag(CharacterType characterType)
+    {
+        return characterType switch
+        {
+            CharacterType.PlayerCharacter => CharacterTypeCompatibility.PlayerCharacter,
+            CharacterType.Monster => CharacterTypeCompatibility.Monster,
+            _ => throw new ArgumentException($"Unknown character type: {characterType}")
+        };
+    }
+
+    private static void ValidateCharacterSystems(IList<CharacterSystem> characterSystems)
+    {
+        // Check that each CharacterSystem supports at least one CharacterType
+        foreach (var cs in characterSystems)
+        {
+            if (cs.Compatibility == CharacterTypeCompatibility.None)
+                throw new InvalidOperationException($"Character system '{cs.Name}' must support at least one character type");
+        }
+
+        // Check that each CharacterSystem with DefaultForType actually supports that type
+        foreach (var cs in characterSystems.Where(cs => cs.DefaultForType.HasValue))
+        {
+            var requiredFlag = GetCompatibilityFlag(cs.DefaultForType!.Value);
+            if (!cs.Compatibility.HasFlag(requiredFlag))
+                throw new InvalidOperationException($"Character system '{cs.Name}' is marked as default for {cs.DefaultForType} but does not support that character type");
+        }
+
+        // Check that each CharacterType has exactly one default
+        var characterTypes = Enum.GetValues<CharacterType>();
+        foreach (var characterType in characterTypes)
+        {
+            var defaultsForType = characterSystems.Count(cs => cs.DefaultForType == characterType);
+            if (defaultsForType == 0)
+                throw new InvalidOperationException($"No default character system found for {characterType}");
+            if (defaultsForType > 1)
+                throw new InvalidOperationException($"Multiple default character systems found for {characterType}");
+        }
+
+        // Check for duplicate names
+        var duplicateNames = characterSystems.GroupBy(cs => cs.Name)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .ToList();
+        if (duplicateNames.Count > 0)
+            throw new InvalidOperationException($"Duplicate character system names found: {string.Join(", ", duplicateNames)}");
+    }
 
     protected virtual void AddEncounterHeadingRow(List<TableRow> data, Encounter encounter)
     {
@@ -154,7 +230,7 @@ public abstract class GameSystem(string name, IEnumerable<CharacterSystem> chara
         var maxCellCount = int.MinValue;
         foreach (var combatant in encounter.CombatantsInTurnOrder)
         {
-            var characterSystem = GetCharacterSystem(combatant.CharacterType);
+            var characterSystem = GetCharacterSystem(combatant.CharacterType, null);
             var character = await characterDataService.GetCharacterAsync(combatant, encounter, cancellationToken)
                 ?? throw new GamePropertyException($"Character not found for {combatant.Alias}");
 

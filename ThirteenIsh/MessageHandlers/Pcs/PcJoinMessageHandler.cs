@@ -64,7 +64,7 @@ internal sealed class PcJoinMessageHandler(SqlDataService dataService, DiscordSe
                 };
 
                 var gameSystem = GameSystem.Get(character.GameSystem);
-                var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
+                var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter, character.CharacterSystemName);
                 characterSystem.ResetVariables(adventurer);
                 adventure.Adventurers.Add(adventurer);
                 return new EditResult<Adventure>(adventure);

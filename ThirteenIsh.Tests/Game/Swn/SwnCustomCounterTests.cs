@@ -19,8 +19,8 @@ public class SwnCustomCounterTests
     public SwnCustomCounterTests()
     {
         _gameSystem = SwnTestHelpers.CreateSwnSystem();
-        _playerSystem = (SwnCharacterSystem)_gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
-        _monsterSystem = (SwnCharacterSystem)_gameSystem.GetCharacterSystem(CharacterType.Monster);
+        _playerSystem = (SwnCharacterSystem)_gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter, null);
+        _monsterSystem = (SwnCharacterSystem)_gameSystem.GetCharacterSystem(CharacterType.Monster, null);
     }
 
     [Fact]

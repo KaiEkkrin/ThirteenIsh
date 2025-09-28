@@ -70,7 +70,7 @@ internal static partial class CommandUtil
         embedBuilder.WithTitle(title);
         embedBuilder.AddField("Game System", character.GameSystem);
 
-        var characterSystem = GameSystem.Get(character.GameSystem).GetCharacterSystem(character.CharacterType);
+        var characterSystem = GameSystem.Get(character.GameSystem).GetCharacterSystem(character.CharacterType, character.CharacterSystemName);
         embedBuilder = characterSystem.AddCharacterSheetFields(embedBuilder, character.Sheet, onlyTheseProperties);
 
         embedBuilder.AddField("Last Edited", $"{character.LastEdited:F}");
@@ -87,7 +87,7 @@ internal static partial class CommandUtil
         if (command != null) embedBuilder.WithAuthor(command.User);
         embedBuilder.WithTitle(options.Title);
 
-        var characterSystem = gameSystem.GetCharacterSystem(character.Type);
+        var characterSystem = gameSystem.GetCharacterSystem(character.Type, character.CharacterSystemName);
         var withTags = options.Flags.HasFlag(AdventurerSummaryFlags.WithTags);
         embedBuilder = options.Flags.HasFlag(AdventurerSummaryFlags.OnlyVariables)
             ? characterSystem.AddTrackedCharacterVariableFields(embedBuilder, character, options.OnlyTheseProperties,

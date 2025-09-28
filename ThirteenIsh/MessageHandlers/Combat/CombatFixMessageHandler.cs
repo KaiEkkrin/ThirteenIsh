@@ -3,6 +3,7 @@ using ThirteenIsh.ChannelMessages.Combat;
 using ThirteenIsh.Commands;
 using ThirteenIsh.Database;
 using ThirteenIsh.Database.Entities;
+using ThirteenIsh.Database.Entities.Combatants;
 using ThirteenIsh.Game;
 using ThirteenIsh.Results;
 using ThirteenIsh.Services;
@@ -56,7 +57,7 @@ internal sealed class CombatFixMessageHandler(SqlDataService dataService, Discor
         public override EditResult<FixResult> DoEdit(DataContext context, CombatantResult param)
         {
             var gameSystem = GameSystem.Get(param.Adventure.GameSystem);
-            var characterSystem = gameSystem.GetCharacterSystem(param.Combatant.CharacterType);
+            var characterSystem = gameSystem.GetCharacterSystem(param.Combatant.CharacterType, param.Character.CharacterSystemName);
 
             // Important -- don't allow fixing hidden counters! Then you wouldn't be able to tell they
             // had been fixed (no display), which would be super confusing

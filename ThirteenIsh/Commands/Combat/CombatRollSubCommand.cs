@@ -3,6 +3,7 @@ using Discord.WebSocket;
 using System.Globalization;
 using System.Text;
 using ThirteenIsh.Database.Entities;
+using ThirteenIsh.Database.Entities.Combatants;
 using ThirteenIsh.Game;
 using ThirteenIsh.Parsing;
 using ThirteenIsh.Services;
@@ -59,7 +60,7 @@ internal sealed class CombatRollSubCommand() : SubCommandBase("roll", "Rolls aga
                 var (adventure, encounter, combatant, character) = output;
 
                 var gameSystem = GameSystem.Get(adventure.GameSystem);
-                var characterSystem = gameSystem.GetCharacterSystem(combatant.CharacterType);
+                var characterSystem = gameSystem.GetCharacterSystem(combatant.CharacterType, character.CharacterSystemName);
 
                 var counter = characterSystem.FindCounter(character.Sheet, namePart,
                     c => c.Options.HasFlag(GameCounterOptions.CanRoll));

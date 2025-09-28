@@ -10,7 +10,7 @@ internal sealed class PcEditVariableOperation(IEditVariableSubOperation subOpera
     public override EditResult<PcEditVariableResult> DoEdit(DataContext context, Adventurer adventurer)
     {
         var gameSystem = GameSystem.Get(adventurer.Adventure.GameSystem);
-        var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
+        var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter, adventurer.CharacterSystemName);
         return subOperation.DoEdit(adventurer, characterSystem, gameSystem, out var gameCounter, out var working,
             out var errorMessage)
             ? new EditResult<PcEditVariableResult>(new PcEditVariableResult(adventurer, gameCounter, gameSystem, working))

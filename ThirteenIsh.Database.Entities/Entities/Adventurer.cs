@@ -27,6 +27,11 @@ public class Adventurer : SearchableNamedEntityBase, ITrackedCharacter
     /// </summary>
     public required CharacterSheet Sheet { get; set; }
 
+    /// <summary>
+    /// The character system name (optional - if null, uses default for CharacterType).
+    /// </summary>
+    public string? CharacterSystemName { get; set; }
+
     [NotMapped]
     public int SwarmCount => 1;
 

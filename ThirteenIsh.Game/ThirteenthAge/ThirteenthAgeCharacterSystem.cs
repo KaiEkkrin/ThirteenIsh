@@ -2,8 +2,9 @@
 
 namespace ThirteenIsh.Game.ThirteenthAge;
 
-internal class ThirteenthAgeCharacterSystem(CharacterType characterType, string gameSystemName,
-    ImmutableList<GamePropertyGroup> propertyGroups) : CharacterSystem(characterType, gameSystemName, propertyGroups)
+internal class ThirteenthAgeCharacterSystem(string name, string gameSystemName, CharacterTypeCompatibility compatibility,
+    CharacterType? defaultForType, ImmutableList<GamePropertyGroup> propertyGroups)
+    : CharacterSystem(name, gameSystemName, compatibility, defaultForType, propertyGroups)
 {
     protected override GameCounter BuildCustomCounter(CustomCounter cc)
     {

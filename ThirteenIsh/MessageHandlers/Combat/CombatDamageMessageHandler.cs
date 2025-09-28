@@ -31,7 +31,7 @@ internal sealed class CombatDamageMessageHandler(SqlDataService dataService, Dis
                 var (adventure, encounter, combatant, character) = output;
 
                 var gameSystem = GameSystem.Get(adventure.GameSystem);
-                var characterSystem = gameSystem.GetCharacterSystem(combatant.CharacterType);
+                var characterSystem = gameSystem.GetCharacterSystem(combatant.CharacterType, character.CharacterSystemName);
 
                 if (!TryGetCounter(characterSystem, message.CounterNamePart, character.Sheet, out var counter,
                     out var errorMessage))
@@ -105,7 +105,7 @@ internal sealed class CombatDamageMessageHandler(SqlDataService dataService, Dis
                     stringBuilder.AppendLine(CultureInfo.CurrentCulture, $" : {result.Roll}");
                     stringBuilder.AppendLine(result.Working);
 
-                    var vsCharacterSystem = gameSystem.GetCharacterSystem(targetCharacter.Type);
+                    var vsCharacterSystem = gameSystem.GetCharacterSystem(targetCharacter.Type, targetCharacter.CharacterSystemName);
                     var vsCounter = string.IsNullOrEmpty(message.VsNamePart)
                         ? vsCharacterSystem.GetDefaultDamageCounter(targetCharacter.Sheet)
                         : vsCharacterSystem.FindCounter(targetCharacter.Sheet, message.VsNamePart,

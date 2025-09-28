@@ -2,12 +2,13 @@
 
 namespace ThirteenIsh.Game.ThirteenthAge;
 
-internal class ThirteenthAgeCharacterSystemBuilder(CharacterType characterType, string name)
+internal class ThirteenthAgeCharacterSystemBuilder(string characterSystemName, string gameSystemName,
+    CharacterTypeCompatibility compatibility, CharacterType? defaultForType)
     : CharacterSystemBuilder
 {
     public override CharacterSystem Build()
     {
-        var propertyGroups = ValidatePropertyGroups(name);
-        return new ThirteenthAgeCharacterSystem(characterType, name, propertyGroups);
+        var propertyGroups = ValidatePropertyGroups(gameSystemName);
+        return new ThirteenthAgeCharacterSystem(characterSystemName, gameSystemName, compatibility, defaultForType, propertyGroups);
     }
 }

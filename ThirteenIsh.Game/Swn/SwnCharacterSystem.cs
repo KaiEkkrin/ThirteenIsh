@@ -2,12 +2,13 @@
 
 namespace ThirteenIsh.Game.Swn;
 
-internal class SwnCharacterSystem(CharacterType characterType, ImmutableList<GamePropertyGroup> propertyGroups)
-    : CharacterSystem(characterType, SwnSystem.SystemName, propertyGroups)
+internal class SwnCharacterSystem(string name, CharacterTypeCompatibility compatibility, CharacterType? defaultForType,
+    ImmutableList<GamePropertyGroup> propertyGroups)
+    : CharacterSystem(name, SwnSystem.SystemName, compatibility, defaultForType, propertyGroups)
 {
     public override void SetNewCharacterStartingValues(Character character)
     {
-        if (CharacterType == CharacterType.PlayerCharacter)
+        if (character.CharacterType == CharacterType.PlayerCharacter)
         {
             // Character level begins at 1
             var level = GetProperty<GameCounter>(character.Sheet, SwnSystem.Level);
@@ -17,7 +18,7 @@ internal class SwnCharacterSystem(CharacterType characterType, ImmutableList<Gam
             var armorValue = GetProperty<GameCounter>(character.Sheet, SwnSystem.ArmorValue);
             armorValue.EditCharacterProperty("10", character.Sheet);
         }
-        else if (CharacterType == CharacterType.Monster)
+        else if (character.CharacterType == CharacterType.Monster)
         {
             // Hit Dice begins at 1 for monsters
             var hitDice = GetProperty<GameCounter>(character.Sheet, SwnSystem.HitDice);
@@ -36,7 +37,7 @@ internal class SwnCharacterSystem(CharacterType characterType, ImmutableList<Gam
     protected override GameCounter BuildCustomCounter(CustomCounter cc)
     {
         AttackBonusCounter? attackBonusCounter = null;
-        if (CharacterType == CharacterType.PlayerCharacter)
+        if (Compatibility.HasFlag(CharacterTypeCompatibility.PlayerCharacter))
         {
             // Get the attack bonus counter by its well-known name for PCs
             attackBonusCounter = (AttackBonusCounter)GetProperty(SwnSystem.AttackBonus)!;

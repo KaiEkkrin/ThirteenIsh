@@ -2,8 +2,9 @@
 
 namespace ThirteenIsh.Game.Dragonbane;
 
-internal class DragonbaneCharacterSystem(CharacterType characterType, string gameSystemName,
-    ImmutableList<GamePropertyGroup> propertyGroups) : CharacterSystem(characterType, gameSystemName, propertyGroups)
+internal class DragonbaneCharacterSystem(string name, string gameSystemName, CharacterTypeCompatibility compatibility,
+    CharacterType? defaultForType, ImmutableList<GamePropertyGroup> propertyGroups)
+    : CharacterSystem(name, gameSystemName, compatibility, defaultForType, propertyGroups)
 {
     protected override GameCounter BuildCustomCounter(CustomCounter cc)
     {

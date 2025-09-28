@@ -53,7 +53,7 @@ internal sealed class PcUpdateMessageHandler(SqlDataService dataService) : Messa
             // Scrub the adventurer's fixes and variables -- don't leave lying around any for custom
             // counters that no longer exist
             var gameSystem = GameSystem.Get(character.GameSystem);
-            var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
+            var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter, character.CharacterSystemName);
             characterSystem.ScrubCustomCounters(adventurer);
 
             return new EditResult<Adventurer>(adventurer);

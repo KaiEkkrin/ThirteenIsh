@@ -141,7 +141,8 @@ internal sealed class DragonbaneSystem : GameSystem
             .AddProperty(new GameCounter("Armor", options: GameCounterOptions.HasVariable))
             .AddProperty(new GameCounter("Helmet", options: GameCounterOptions.HasVariable));
 
-        var playerCharacterSystem = new DragonbaneCharacterSystemBuilder(CharacterType.PlayerCharacter, SystemName)
+        var playerCharacterSystem = new DragonbaneCharacterSystemBuilder("Player Character", SystemName,
+                CharacterTypeCompatibility.PlayerCharacter, CharacterType.PlayerCharacter)
             .AddPropertyGroup(basicsBuilder)
             .AddPropertyGroup(attributesBuilder)
             .AddPropertyGroup(derivedRatingsBuilder)
@@ -216,7 +217,7 @@ internal sealed class DragonbaneSystem : GameSystem
 
     public override string GetCharacterSummary(CharacterSheet sheet, CharacterType type)
     {
-        var characterSystem = GetCharacterSystem(type);
+        var characterSystem = GetCharacterSystem(type, null);
         var kin = characterSystem.GetProperty<GameProperty>(sheet, Kin).GetValue(sheet);
         var profession = characterSystem.GetProperty<GameProperty>(sheet, Profession).GetValue(sheet);
         return $"{kin} {profession}";

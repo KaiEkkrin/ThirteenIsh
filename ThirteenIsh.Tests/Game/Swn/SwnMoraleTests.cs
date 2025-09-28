@@ -18,7 +18,7 @@ public class SwnMoraleTests
     public SwnMoraleTests()
     {
         _gameSystem = SwnTestHelpers.CreateSwnSystem();
-        _monsterSystem = (SwnCharacterSystem)_gameSystem.GetCharacterSystem(CharacterType.Monster);
+        _monsterSystem = (SwnCharacterSystem)_gameSystem.GetCharacterSystem(CharacterType.Monster, null);
     }
 
     [Fact]

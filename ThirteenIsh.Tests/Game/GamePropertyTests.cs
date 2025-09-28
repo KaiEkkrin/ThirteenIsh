@@ -184,6 +184,7 @@ public class GamePropertyTests
         public int SwarmCount { get; set; }
         public CharacterType Type { get; set; }
         public ulong UserId { get; set; }
+        public string? CharacterSystemName { get; set; }
 
         public FixesSheet GetFixes() => new();
         public VariablesSheet GetVariables() => new();

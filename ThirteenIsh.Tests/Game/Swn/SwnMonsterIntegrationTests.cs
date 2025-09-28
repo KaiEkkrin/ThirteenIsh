@@ -19,7 +19,7 @@ public class SwnMonsterIntegrationTests
     public SwnMonsterIntegrationTests()
     {
         _gameSystem = SwnTestHelpers.CreateSwnSystem();
-        _monsterSystem = (SwnCharacterSystem)_gameSystem.GetCharacterSystem(CharacterType.Monster);
+        _monsterSystem = (SwnCharacterSystem)_gameSystem.GetCharacterSystem(CharacterType.Monster, null);
     }
 
     [Fact]
@@ -490,7 +490,7 @@ public class SwnMonsterIntegrationTests
         var monsterSheet = monster.Sheet;
 
         var player = SwnTestHelpers.CreatePlayerCharacter();
-        var playerSystem = (SwnCharacterSystem)_gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter);
+        var playerSystem = (SwnCharacterSystem)_gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter, null);
         playerSystem.SetNewCharacterStartingValues(player);
         var playerSheet = player.Sheet;
 

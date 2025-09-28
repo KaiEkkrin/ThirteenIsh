@@ -24,7 +24,7 @@ internal sealed class CharacterSetMessageHandler(SqlDataService dataService) : M
         }
 
         var gameSystem = GameSystem.Get(character.GameSystem);
-        var characterSystem = gameSystem.GetCharacterSystem(message.CharacterType);
+        var characterSystem = gameSystem.GetCharacterSystem(message.CharacterType, character.CharacterSystemName);
         var property = characterSystem.FindStorableProperty(character.Sheet, message.PropertyName);
         if (property is null)
         {

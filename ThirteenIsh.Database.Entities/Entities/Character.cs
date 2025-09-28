@@ -27,6 +27,11 @@ public class Character : SearchableNamedEntityBase, IHasLastEdited
     public required string GameSystem { get; set; }
 
     /// <summary>
+    /// The character system name (optional - if null, uses default for CharacterType).
+    /// </summary>
+    public string? CharacterSystemName { get; set; }
+
+    /// <summary>
     /// The datetime last updated.
     /// </summary>
     public DateTimeOffset LastEdited { get; set; }

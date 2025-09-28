@@ -30,7 +30,7 @@ internal sealed class CombatAttackMessageHandler(SqlDataService dataService, Dis
                 var (adventure, encounter, combatant, character) = output;
 
                 var gameSystem = GameSystem.Get(adventure.GameSystem);
-                var characterSystem = gameSystem.GetCharacterSystem(combatant.CharacterType);
+                var characterSystem = gameSystem.GetCharacterSystem(combatant.CharacterType, character.CharacterSystemName);
                 var counter = characterSystem.FindCounter(character.Sheet, message.NamePart,
                     c => c.Options.HasFlag(GameCounterOptions.CanRoll));
 
@@ -66,7 +66,7 @@ internal sealed class CombatAttackMessageHandler(SqlDataService dataService, Dis
                         continue;
                     }
 
-                    var vsCharacterSystem = gameSystem.GetCharacterSystem(targetCharacter.Type);
+                    var vsCharacterSystem = gameSystem.GetCharacterSystem(targetCharacter.Type, targetCharacter.CharacterSystemName);
                     var vsCounter = vsCharacterSystem.FindCounter(targetCharacter.Sheet, message.VsNamePart, _ => true);
                     if (vsCounter is null)
                     {

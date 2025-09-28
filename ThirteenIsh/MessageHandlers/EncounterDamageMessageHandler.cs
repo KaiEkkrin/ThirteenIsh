@@ -121,7 +121,7 @@ internal sealed class EncounterDamageMessageHandler(SqlDataService dataService, 
             if (character is null) return CreateError($"No character sheet found for combatant '{combatant.Alias}.");
 
             var gameSystem = GameSystem.Get(adventure.GameSystem);
-            var characterSystem = gameSystem.GetCharacterSystem(combatant.CharacterType);
+            var characterSystem = gameSystem.GetCharacterSystem(combatant.CharacterType, character.CharacterSystemName);
             var counter = characterSystem.FindCounter(character.Sheet, message.VariableName,
                 c => c.Options.HasFlag(GameCounterOptions.HasVariable));
 
