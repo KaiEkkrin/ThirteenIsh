@@ -4,7 +4,7 @@ FROM mcr.microsoft.com/dotnet/runtime:8.0 AS base
 USER app
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS publish
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["ThirteenIsh.Database.Entities/ThirteenIsh.Database.Entities.csproj", "ThirteenIsh.Database.Entities/"]
@@ -15,10 +15,6 @@ COPY ["ThirteenIsh/ThirteenIsh.csproj", "ThirteenIsh/"]
 RUN dotnet restore "./ThirteenIsh/./ThirteenIsh.csproj"
 COPY . .
 WORKDIR "/src/ThirteenIsh"
-RUN dotnet build "./ThirteenIsh.csproj" --no-restore -c $BUILD_CONFIGURATION -o /app/build
-
-FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "./ThirteenIsh.csproj" --no-restore -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
