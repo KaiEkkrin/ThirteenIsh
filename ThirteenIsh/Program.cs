@@ -12,6 +12,13 @@ public class Program
     public static IHostBuilder CreateHostBuilder(string[] args)
     {
         var builder = Host.CreateDefaultBuilder(args)
+            .ConfigureLogging(logging =>
+            {
+                logging.AddSimpleConsole(options =>
+                {
+                    options.TimestampFormat = "[yyyy-MM-dd HH:mm:ss] ";
+                });
+            })
             .ConfigureAppConfiguration(configurationBuilder =>
             {
                 configurationBuilder.AddCommandLine(args)
