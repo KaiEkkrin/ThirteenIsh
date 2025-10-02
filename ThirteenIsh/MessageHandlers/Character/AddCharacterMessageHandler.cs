@@ -1,4 +1,4 @@
-﻿using Discord;
+using Discord;
 using Discord.WebSocket;
 using ThirteenIsh.Commands;
 using ThirteenIsh.Database.Entities.Messages;

@@ -15,7 +15,7 @@ internal sealed class CharacterAddSubCommand(CharacterType characterType)
         return base.CreateBuilder()
             .AddOption("name", ApplicationCommandOptionType.String, $"The {characterType.FriendlyName()} name.",
                 isRequired: true)
-            .AddOption(GameSystem.BuildGameSystemChoiceOption("game-system"));
+            .AddOption(GameSystem.BuildGameSystemAndCharacterSystemChoiceOption("game-system", characterType));
     }
 
     public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
@@ -29,17 +29,29 @@ internal sealed class CharacterAddSubCommand(CharacterType characterType)
             return;
         }
 
-        if (!CommandUtil.TryGetOption<string>(option, "game-system", out var gameSystemName) ||
-            GameSystem.AllGameSystems.FirstOrDefault(o => o.Name == gameSystemName) is not { } gameSystem)
+        if (!CommandUtil.TryGetOption<string>(option, "game-system", out var selection))
         {
-            await command.RespondAsync("Must choose a recognised game system", ephemeral: true);
+            await command.RespondAsync("Must choose a game system", ephemeral: true);
             return;
         }
 
-        // Add the character
+        // Parse the selection which is in format "GameSystemName" or "GameSystemName::CharacterSystemName"
+        if (!GameSystem.TryParseGameSystemAndCharacterSystemChoice(selection, characterType,
+            out var gameSystem, out var characterSystem, out var errorMessage))
+        {
+            await command.RespondAsync(errorMessage, ephemeral: true);
+            return;
+        }
+
+        // Create the character
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
-        var character = await dataService.CreateCharacterAsync(name, characterType, gameSystemName,
-            command.User.Id, gameSystem.GetCharacterSystem(characterType, null).SetNewCharacterStartingValues, cancellationToken);
+        var character = await dataService.CreateCharacterAsync(name, characterType, gameSystem.Name,
+            command.User.Id, c =>
+            {
+                c.CharacterSystemName = characterSystem.Name;
+                characterSystem.SetNewCharacterStartingValues(c);
+            }, cancellationToken);
+
         if (character is null)
         {
             await command.RespondAsync(
@@ -49,7 +61,6 @@ internal sealed class CharacterAddSubCommand(CharacterType characterType)
         }
 
         // If we don't have show-on-add properties, we've finished
-        var characterSystem = gameSystem.GetCharacterSystem(characterType, null);
         var showOnAddProperties = characterSystem.GetShowOnAddProperties().ToList();
         if (showOnAddProperties.Count == 0)
         {
@@ -72,10 +83,10 @@ internal sealed class CharacterAddSubCommand(CharacterType characterType)
         foreach (var property in showOnAddProperties)
         {
             if (!characterSystem.TryBuildPropertyValueChoiceComponent(
-                message.GetMessageId(property.Name), property.Name, character, out var menuBuilder, out var errorMessage))
+                message.GetMessageId(property.Name), property.Name, character, out var menuBuilder, out var errorMessage2))
             {
                 // The rest of the logic assumes this won't happen
-                throw new InvalidOperationException(errorMessage);
+                throw new InvalidOperationException(errorMessage2);
             }
 
             componentBuilder.WithSelectMenu(menuBuilder);

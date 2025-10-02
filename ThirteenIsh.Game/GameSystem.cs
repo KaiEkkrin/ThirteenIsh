@@ -27,7 +27,9 @@ public abstract class GameSystem
     public static readonly IReadOnlyList<GameSystem> AllGameSystems =
     [
         ThirteenthAge.ThirteenthAgeSystem.Build(),
-        Dragonbane.DragonbaneSystem.Build(),
+        // TODO : Dragonbane game system is disabled until we make a monster
+        // implementation that works with it.
+        // Dragonbane.DragonbaneSystem.Build(),
         SwnSystem.Build()
     ];
 
@@ -67,6 +69,80 @@ public abstract class GameSystem
         }
 
         return builder;
+    }
+
+    public static SlashCommandOptionBuilder BuildGameSystemAndCharacterSystemChoiceOption(string name, CharacterType characterType)
+    {
+        var builder = new SlashCommandOptionBuilder()
+            .WithName(name)
+            .WithDescription("The game system.")
+            .WithRequired(true)
+            .WithType(ApplicationCommandOptionType.String);
+
+        var compatibilityFlag = GetCompatibilityFlag(characterType);
+
+        foreach (var gameSystem in AllGameSystems)
+        {
+            var compatibleCharacterSystems = gameSystem.GetCharacterSystems()
+                .Where(cs => cs.Compatibility.HasFlag(compatibilityFlag))
+                .ToList();
+
+            if (compatibleCharacterSystems.Count == 0)
+                continue;
+
+            if (compatibleCharacterSystems.Count == 1)
+            {
+                // Single character system - just show game system name
+                var value = $"{gameSystem.Name}";
+                builder.AddChoice(gameSystem.Name, value);
+            }
+            else
+            {
+                // Multiple character systems - show "Game System -- Character System"
+                foreach (var characterSystem in compatibleCharacterSystems)
+                {
+                    var label = $"{gameSystem.Name} -- {characterSystem.Name}";
+                    var value = $"{gameSystem.Name}::{characterSystem.Name}";
+                    builder.AddChoice(label, value);
+                }
+            }
+        }
+
+        return builder;
+    }
+
+    public static bool TryParseGameSystemAndCharacterSystemChoice(
+        string selection,
+        CharacterType characterType,
+        [MaybeNullWhen(false)] out GameSystem gameSystem,
+        [MaybeNullWhen(false)] out CharacterSystem characterSystem,
+        [MaybeNullWhen(true)] out string errorMessage)
+    {
+        var parts = selection.Split("::", StringSplitOptions.None);
+        var gameSystemName = parts[0];
+
+        gameSystem = AllGameSystems.FirstOrDefault(gs => gs.Name == gameSystemName);
+        if (gameSystem is null)
+        {
+            characterSystem = null;
+            errorMessage = $"Game system '{gameSystemName}' not found.";
+            return false;
+        }
+
+        string? characterSystemName = parts.Length > 1 ? parts[1] : null;
+
+        try
+        {
+            characterSystem = gameSystem.GetCharacterSystem(characterType, characterSystemName);
+            errorMessage = null;
+            return true;
+        }
+        catch (InvalidOperationException ex)
+        {
+            characterSystem = null;
+            errorMessage = ex.Message;
+            return false;
+        }
     }
 
     /// <summary>
@@ -146,6 +222,14 @@ public abstract class GameSystem
         }
 
         throw new InvalidOperationException($"Character system '{characterSystemName}' not found in {Name}");
+    }
+
+    /// <summary>
+    /// Gets all character systems for this game system.
+    /// </summary>
+    public IEnumerable<CharacterSystem> GetCharacterSystems()
+    {
+        return _characterSystemsByName.Values;
     }
 
     private static CharacterTypeCompatibility GetCompatibilityFlag(CharacterType characterType)
