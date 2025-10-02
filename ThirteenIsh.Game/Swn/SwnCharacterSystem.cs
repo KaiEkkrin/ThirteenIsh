@@ -29,7 +29,7 @@ internal class SwnCharacterSystem(string name, CharacterTypeCompatibility compat
             armorClass.EditCharacterProperty("10", character);
 
             // Morale begins at 7 (typical value)
-            var morale = GetProperty<GameCounter>(character, "Morale");
+            var morale = GetProperty<GameCounter>(character, SwnSystem.Morale);
             morale.EditCharacterProperty("7", character);
         }
     }

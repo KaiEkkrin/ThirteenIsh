@@ -1,7 +1,7 @@
 
 namespace ThirteenIsh.Game.Swn;
 
-internal class MonsterSavingThrowCounter() : GameCounter("Save", options: GameCounterOptions.CanRoll)
+internal class MonsterSavingThrowCounter() : GameCounter(SwnSystem.Save, options: GameCounterOptions.CanRoll)
 {
     public override GameCounterRollResult Roll(
         ITrackedCharacter character, ParseTreeBase? bonus, IRandomWrapper random, int rerolls, ref int? targetValue,

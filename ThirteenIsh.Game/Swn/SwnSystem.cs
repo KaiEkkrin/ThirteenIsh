@@ -69,6 +69,7 @@ internal class SwnSystem : GameSystem
 
     public const string HitDice = "Hit Dice";
     public const string HitDiceAlias = "HD";
+    public const string Morale = "Morale";
     public const string Attack = "Attack";
     public const string Skill = "Skill";
     public const string Save = "Save";
@@ -162,7 +163,7 @@ internal class SwnSystem : GameSystem
 
         // Build monster system
         GameCounter hitDiceCounter = new(HitDice, HitDiceAlias, defaultValue: 1, minValue: 1);
-        var monsterMorale = new MoraleCounter("Morale");
+        var monsterMorale = new MoraleCounter(Morale);
         var monsterHitPointsCounter = new MonsterHitPointsCounter(hitDiceCounter);
 
         var monsterStats = new GamePropertyGroupBuilder(MonsterStats)

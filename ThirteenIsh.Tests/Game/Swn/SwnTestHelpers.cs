@@ -162,10 +162,10 @@ internal static class SwnTestHelpers
         // Set monster stats
         characterSystem.GetProperty<GameCounter>(monster, SwnSystem.HitDice).EditCharacterProperty("4", monster);
         characterSystem.GetProperty<GameCounter>(monster, SwnSystem.ArmorClass).EditCharacterProperty("15", monster);
-        characterSystem.GetProperty<GameCounter>(monster, "Attack").EditCharacterProperty("+6", monster);
-        characterSystem.GetProperty<GameCounter>(monster, "Morale").EditCharacterProperty("8", monster);
-        characterSystem.GetProperty<GameCounter>(monster, "Skill").EditCharacterProperty("+2", monster);
-        characterSystem.GetProperty<GameCounter>(monster, "Save").EditCharacterProperty("12", monster);
+        characterSystem.GetProperty<GameCounter>(monster, SwnSystem.Attack).EditCharacterProperty("+6", monster);
+        characterSystem.GetProperty<GameCounter>(monster, SwnSystem.Morale).EditCharacterProperty("8", monster);
+        characterSystem.GetProperty<GameCounter>(monster, SwnSystem.Skill).EditCharacterProperty("+2", monster);
+        characterSystem.GetProperty<GameCounter>(monster, SwnSystem.Save).EditCharacterProperty("12", monster);
     }
 
     /// <summary>
