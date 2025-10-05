@@ -21,7 +21,8 @@ internal sealed class CombatAttackSubCommand()
             .AddOption("target", ApplicationCommandOptionType.String,
                 "The target(s) in the current encounter (comma separated). Specify `vs` and the counter targeted.",
                 isRequired: true)
-            .AddOption("vs", ApplicationCommandOptionType.String, "The counter targeted.", isRequired: true);
+            .AddOption("vs", ApplicationCommandOptionType.String, "The counter targeted.", isRequired: true)
+            .AddOption("second", ApplicationCommandOptionType.String, "The secondary property for this roll, e.g. for SWN skill checks.");
     }
 
     public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
@@ -63,6 +64,10 @@ internal sealed class CombatAttackSubCommand()
             ? aliasString
             : null;
 
+        var secondaryNamePart = CommandUtil.TryGetOption<string>(option, "second", out var secondString)
+            ? secondString
+            : null;
+
         var channelMessageService = serviceProvider.GetRequiredService<ChannelMessageService>();
         await channelMessageService.AddMessageAsync(command, new CombatAttackMessage
         {
@@ -74,7 +79,8 @@ internal sealed class CombatAttackSubCommand()
             Rerolls = rerolls,
             Targets = targets,
             UserId = command.User.Id,
-            VsNamePart = vsNamePart
+            VsNamePart = vsNamePart,
+            SecondaryNamePart = secondaryNamePart
         });
     }
 }

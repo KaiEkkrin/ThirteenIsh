@@ -3,7 +3,6 @@ using Discord.WebSocket;
 using System.Globalization;
 using System.Text;
 using ThirteenIsh.Database.Entities;
-using ThirteenIsh.Database.Entities.Combatants;
 using ThirteenIsh.Game;
 using ThirteenIsh.Parsing;
 using ThirteenIsh.Services;
@@ -21,7 +20,8 @@ internal sealed class CombatRollSubCommand() : SubCommandBase("roll", "Rolls aga
             .AddOption("alias", ApplicationCommandOptionType.String, "The combatant alias to roll for.")
             .AddOption("bonus", ApplicationCommandOptionType.String, "A bonus dice expression to add.")
             .AddOption("dc", ApplicationCommandOptionType.Integer, "The amount that counts as a success.")
-            .AddRerollsOption("rerolls");
+            .AddRerollsOption("rerolls")
+            .AddOption("second", ApplicationCommandOptionType.String, "The secondary property for this roll, e.g. for SWN skill checks.");
     }
 
     public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
@@ -72,8 +72,22 @@ internal sealed class CombatRollSubCommand() : SubCommandBase("roll", "Rolls aga
                     return;
                 }
 
+                GameCounter? secondaryCounter = null;
+                if (CommandUtil.TryGetOption<string>(option, "second", out var secondaryNamePart))
+                {
+                    secondaryCounter = characterSystem.FindCounter(character.Sheet, secondaryNamePart,
+                        c => c.Options.HasFlag(GameCounterOptions.CanRoll));
+
+                    if (secondaryCounter is null)
+                    {
+                        await command.RespondAsync($"'{secondaryNamePart}' does not uniquely match a rollable property.",
+                            ephemeral: true);
+                        return;
+                    }
+                }
+
                 var random = serviceProvider.GetRequiredService<IRandomWrapper>();
-                var result = counter.Roll(character, bonus, random, rerolls, ref dc);
+                var result = counter.Roll(character, bonus, random, rerolls, ref dc, secondaryCounter);
                 if (result.Error != GameCounterRollError.Success)
                 {
                     await command.RespondAsync($"'{namePart}' : {result.ErrorMessage}", ephemeral: true);

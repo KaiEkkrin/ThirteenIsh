@@ -42,6 +42,21 @@ internal sealed class CombatAttackMessageHandler(SqlDataService dataService, Dis
                     return;
                 }
 
+                GameCounter? secondaryCounter = null;
+                if (!string.IsNullOrWhiteSpace(message.SecondaryNamePart))
+                {
+                    secondaryCounter = characterSystem.FindCounter(character.Sheet, message.SecondaryNamePart,
+                        c => c.Options.HasFlag(GameCounterOptions.CanRoll));
+
+                    if (secondaryCounter is null)
+                    {
+                        await interaction.ModifyOriginalResponseAsync(properties => properties.Content =
+                            $"'{message.SecondaryNamePart}' does not uniquely match a rollable property.");
+
+                        return;
+                    }
+                }
+
                 var attackBonus = characterSystem.GetAttackBonus(character, encounter, message.Bonus);
 
                 List<CombatantBase> targetCombatants = [];
@@ -84,7 +99,7 @@ internal sealed class CombatAttackMessageHandler(SqlDataService dataService, Dis
                         continue;
                     }
 
-                    var result = counter.Roll(character, attackBonus, random, message.Rerolls, ref dc, flags: GameCounterRollOptions.IsAttack);
+                    var result = counter.Roll(character, attackBonus, random, message.Rerolls, ref dc, secondaryCounter, GameCounterRollOptions.IsAttack);
                     if (result.Error != GameCounterRollError.Success)
                     {
                         stringBuilder.AppendLine(CultureInfo.CurrentCulture,

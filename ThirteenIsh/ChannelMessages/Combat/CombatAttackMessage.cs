@@ -10,4 +10,5 @@ internal sealed class CombatAttackMessage : CombatMessage
     public int Rerolls { get; init; }
     public required IReadOnlyCollection<string> Targets { get; init; }
     public required string VsNamePart { get; init; }
+    public string? SecondaryNamePart { get; init; }
 }
