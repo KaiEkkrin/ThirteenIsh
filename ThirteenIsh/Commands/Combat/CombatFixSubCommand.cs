@@ -12,7 +12,7 @@ internal sealed class CombatFixSubCommand(bool asGm) : SubCommandBase("fix", "Fi
         return base.CreateBuilder()
             .AddOption("alias", ApplicationCommandOptionType.String, "The combatant alias to edit.",
                 isRequired: asGm)
-            .AddOption("counter-name", ApplicationCommandOptionType.String, "The counter name to fix.")
+            .AddOption("attribute", ApplicationCommandOptionType.String, "The attribute to fix.")
             .AddOption("value", ApplicationCommandOptionType.Integer, "The fix value.");
     }
 
@@ -28,9 +28,9 @@ internal sealed class CombatFixSubCommand(bool asGm) : SubCommandBase("fix", "Fi
             ? aliasString
             : null;
 
-        if (!CommandUtil.TryGetOption<string>(option, "counter-name", out var counterNamePart))
+        if (!CommandUtil.TryGetOption<string>(option, "attribute", out var counterNamePart))
         {
-            await command.RespondAsync("No counter name part supplied.", ephemeral: true);
+            await command.RespondAsync("No attribute supplied.", ephemeral: true);
             return;
         }
 

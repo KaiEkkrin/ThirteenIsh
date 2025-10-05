@@ -22,7 +22,7 @@ internal abstract class PcVSubCommandBase(bool asGm, string name, string descrip
         return base.CreateBuilder()
             .AddOptionIf(asGm, builder => builder.AddOption("name", ApplicationCommandOptionType.String,
                 "The character name.", isRequired: true))
-            .AddOption("variable-name", ApplicationCommandOptionType.String, nameOptionDescription)
+            .AddOption("attribute", ApplicationCommandOptionType.String, nameOptionDescription)
             .AddOption("value", ApplicationCommandOptionType.String, valueOptionDescription);
     }
 
@@ -40,9 +40,9 @@ internal abstract class PcVSubCommandBase(bool asGm, string name, string descrip
             return;
         }
 
-        if (!CommandUtil.TryGetOption<string>(option, "variable-name", out var variableNamePart))
+        if (!CommandUtil.TryGetOption<string>(option, "attribute", out var variableNamePart))
         {
-            await command.RespondAsync("No variable name part supplied.", ephemeral: true);
+            await command.RespondAsync("No attribute supplied.", ephemeral: true);
             return;
         }
 

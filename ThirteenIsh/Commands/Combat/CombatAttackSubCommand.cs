@@ -13,7 +13,7 @@ internal sealed class CombatAttackSubCommand()
     public override SlashCommandOptionBuilder CreateBuilder()
     {
         return base.CreateBuilder()
-            .AddOption("counter", ApplicationCommandOptionType.String, "The counter name to roll.",
+            .AddOption("attribute", ApplicationCommandOptionType.String, "The attribute name to roll.",
                 isRequired: true)
             .AddOption("alias", ApplicationCommandOptionType.String, "The combatant alias to roll for.")
             .AddOption("bonus", ApplicationCommandOptionType.String, "A bonus dice expression to add.")
@@ -21,16 +21,16 @@ internal sealed class CombatAttackSubCommand()
             .AddOption("target", ApplicationCommandOptionType.String,
                 "The target(s) in the current encounter (comma separated). Specify `vs` and the counter targeted.")
             .AddOption("vs", ApplicationCommandOptionType.String, "The counter targeted.")
-            .AddOption("second", ApplicationCommandOptionType.String, "The secondary property for this roll, e.g. for SWN skill checks.");
+            .AddOption("modifier", ApplicationCommandOptionType.String, "The secondary property for this roll, e.g. for SWN skill checks.");
     }
 
     public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
         IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
         if (command is not { ChannelId: { } channelId, GuildId: { } guildId }) return;
-        if (!CommandUtil.TryGetOption<string>(option, "counter", out var namePart))
+        if (!CommandUtil.TryGetOption<string>(option, "attribute", out var namePart))
         {
-            await command.RespondAsync("No name part supplied.", ephemeral: true);
+            await command.RespondAsync("No attribute supplied.", ephemeral: true);
             return;
         }
 
@@ -77,7 +77,7 @@ internal sealed class CombatAttackSubCommand()
             ? aliasString
             : null;
 
-        var secondaryNamePart = CommandUtil.TryGetOption<string>(option, "second", out var secondString)
+        var secondaryNamePart = CommandUtil.TryGetOption<string>(option, "modifier", out var secondString)
             ? secondString
             : null;
 

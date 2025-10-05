@@ -15,22 +15,22 @@ internal sealed class CombatRollSubCommand() : SubCommandBase("roll", "Rolls aga
     public override SlashCommandOptionBuilder CreateBuilder()
     {
         return base.CreateBuilder()
-            .AddOption("name", ApplicationCommandOptionType.String, "The property name to roll.",
+            .AddOption("attribute", ApplicationCommandOptionType.String, "The property name to roll.",
                 isRequired: true)
             .AddOption("alias", ApplicationCommandOptionType.String, "The combatant alias to roll for.")
             .AddOption("bonus", ApplicationCommandOptionType.String, "A bonus dice expression to add.")
-            .AddOption("dc", ApplicationCommandOptionType.Integer, "The amount that counts as a success.")
+            .AddOption("vs", ApplicationCommandOptionType.Integer, "The amount that counts as a success.")
             .AddRerollsOption("rerolls")
-            .AddOption("second", ApplicationCommandOptionType.String, "The secondary property for this roll, e.g. for SWN skill checks.");
+            .AddOption("modifier", ApplicationCommandOptionType.String, "The secondary property for this roll, e.g. for SWN skill checks.");
     }
 
     public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
         IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
         if (command is not { ChannelId: { } channelId, GuildId: { } guildId }) return;
-        if (!CommandUtil.TryGetOption<string>(option, "name", out var namePart))
+        if (!CommandUtil.TryGetOption<string>(option, "attribute", out var namePart))
         {
-            await command.RespondAsync("No name part supplied.", ephemeral: true);
+            await command.RespondAsync("No attribute supplied.", ephemeral: true);
             return;
         }
 
@@ -41,7 +41,7 @@ internal sealed class CombatRollSubCommand() : SubCommandBase("roll", "Rolls aga
             return;
         }
 
-        int? dc = CommandUtil.TryGetOption<int>(option, "dc", out var t) ? t : null;
+        int? dc = CommandUtil.TryGetOption<int>(option, "vs", out var t) ? t : null;
         if (!CommandUtil.TryGetOption<int>(option, "rerolls", out var rerolls)) rerolls = 0;
 
         var alias = CommandUtil.TryGetOption<string>(option, "alias", out var aliasString)
@@ -73,7 +73,7 @@ internal sealed class CombatRollSubCommand() : SubCommandBase("roll", "Rolls aga
                 }
 
                 GameCounter? secondaryCounter = null;
-                if (CommandUtil.TryGetOption<string>(option, "second", out var secondaryNamePart))
+                if (CommandUtil.TryGetOption<string>(option, "modifier", out var secondaryNamePart))
                 {
                     secondaryCounter = characterSystem.FindCounter(character.Sheet, secondaryNamePart,
                         c => c.Options.HasFlag(GameCounterOptions.CanRoll));

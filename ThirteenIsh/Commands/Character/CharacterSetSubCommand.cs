@@ -15,7 +15,7 @@ internal sealed class CharacterSetSubCommand(CharacterType characterType)
         return base.CreateBuilder()
             .AddOption("name", ApplicationCommandOptionType.String, $"The {characterType.FriendlyName()} name.",
                 isRequired: true)
-            .AddOption("property-name", ApplicationCommandOptionType.String, "The property name to set.",
+            .AddOption("attribute", ApplicationCommandOptionType.String, "The attribute to set.",
                 isRequired: true)
             .AddOption("value", ApplicationCommandOptionType.String, "The property value.",
                 isRequired: true);
@@ -31,9 +31,9 @@ internal sealed class CharacterSetSubCommand(CharacterType characterType)
             return;
         }
 
-        if (!CommandUtil.TryGetOption<string>(option, "property-name", out var propertyName))
+        if (!CommandUtil.TryGetOption<string>(option, "attribute", out var propertyName))
         {
-            await command.RespondAsync("A property name is required.", ephemeral: true);
+            await command.RespondAsync("An attribute is required.", ephemeral: true);
             return;
         }
 

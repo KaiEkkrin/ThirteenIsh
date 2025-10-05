@@ -17,8 +17,8 @@ internal sealed class CombatDamageSubCommand()
     public override SlashCommandOptionBuilder CreateBuilder()
     {
         return base.CreateBuilder()
-            .AddOption("counter", ApplicationCommandOptionType.String, "An optional counter to add.")
-            .AddOption("dice", ApplicationCommandOptionType.String, "The dice to roll.", isRequired: true)
+            .AddOption("attribute", ApplicationCommandOptionType.String, "An optional attribute to add.")
+            .AddOption("damage", ApplicationCommandOptionType.String, "The damage dice to roll.", isRequired: true)
             .AddOption("alias", ApplicationCommandOptionType.String, "The combatant alias to roll for.")
             .AddOption(new SlashCommandOptionBuilder()
                 .WithName("multiplier")
@@ -42,13 +42,13 @@ internal sealed class CombatDamageSubCommand()
     {
         if (command is not { ChannelId: { } channelId, GuildId: { } guildId }) return;
 
-        var counterNamePart = CommandUtil.TryGetOption<string>(option, "counter", out var counterNamePartValue)
+        var counterNamePart = CommandUtil.TryGetOption<string>(option, "attribute", out var counterNamePartValue)
             ? counterNamePartValue
             : null;
 
-        if (!CommandUtil.TryGetOption<string>(option, "dice", out var diceString))
+        if (!CommandUtil.TryGetOption<string>(option, "damage", out var diceString))
         {
-            await command.RespondAsync("No dice supplied.", ephemeral: true);
+            await command.RespondAsync("No damage supplied.", ephemeral: true);
             return;
         }
 
@@ -99,9 +99,9 @@ internal sealed class CombatDamageSubCommand()
     private static bool TryGetCounter(CharacterSystem characterSystem, IApplicationCommandInteractionDataOption option,
         CharacterSheet sheet, out GameCounter? counter, [MaybeNullWhen(true)] out string errorMessage)
     {
-        if (!CommandUtil.TryGetOption<string>(option, "counter", out var namePart))
+        if (!CommandUtil.TryGetOption<string>(option, "attribute", out var namePart))
         {
-            // This is okay -- no counter specified
+            // This is okay -- no attribute specified
             counter = null;
             errorMessage = null;
             return true;

@@ -19,7 +19,7 @@ internal abstract class CombatVSubCommandBase(bool asGm, string name, string des
         return base.CreateBuilder()
             .AddOption("alias", ApplicationCommandOptionType.String, "The combatant alias to edit.",
                 isRequired: asGm)
-            .AddOption("variable-name", ApplicationCommandOptionType.String, nameOptionDescription,
+            .AddOption("attribute", ApplicationCommandOptionType.String, nameOptionDescription,
                 isRequired: true)
             .AddOption("value", ApplicationCommandOptionType.String, valueOptionDescription,
                 isRequired: true);
@@ -29,9 +29,9 @@ internal abstract class CombatVSubCommandBase(bool asGm, string name, string des
         IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
         if (command is not { ChannelId: { } channelId, GuildId: { } guildId }) return;
-        if (!CommandUtil.TryGetOption<string>(option, "variable-name", out var namePart))
+        if (!CommandUtil.TryGetOption<string>(option, "attribute", out var namePart))
         {
-            await command.RespondAsync("No variable name part supplied.", ephemeral: true);
+            await command.RespondAsync("No attribute supplied.", ephemeral: true);
             return;
         }
 

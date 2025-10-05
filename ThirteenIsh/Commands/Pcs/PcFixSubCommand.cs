@@ -14,7 +14,7 @@ internal sealed class PcFixSubCommand(bool asGm) : SubCommandBase("fix", "Fixes 
         return base.CreateBuilder()
             .AddOptionIf(asGm, builder => builder.AddOption("name", ApplicationCommandOptionType.String,
                 "The character name.", isRequired: true))
-            .AddOption("counter-name", ApplicationCommandOptionType.String, "The counter name to fix.")
+            .AddOption("attribute", ApplicationCommandOptionType.String, "The attribute to fix.")
             .AddOption("value", ApplicationCommandOptionType.Integer, "The fix value.");
     }
 
@@ -32,9 +32,9 @@ internal sealed class PcFixSubCommand(bool asGm) : SubCommandBase("fix", "Fixes 
             return;
         }
 
-        if (!CommandUtil.TryGetOption<string>(option, "counter-name", out var counterNamePart))
+        if (!CommandUtil.TryGetOption<string>(option, "attribute", out var counterNamePart))
         {
-            await command.RespondAsync("No counter name part supplied.", ephemeral: true);
+            await command.RespondAsync("No attribute supplied.", ephemeral: true);
             return;
         }
 
