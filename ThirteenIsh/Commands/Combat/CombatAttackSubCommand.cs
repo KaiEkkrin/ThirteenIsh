@@ -19,9 +19,8 @@ internal sealed class CombatAttackSubCommand()
             .AddOption("bonus", ApplicationCommandOptionType.String, "A bonus dice expression to add.")
             .AddRerollsOption("rerolls")
             .AddOption("target", ApplicationCommandOptionType.String,
-                "The target(s) in the current encounter (comma separated). Specify `vs` and the counter targeted.",
-                isRequired: true)
-            .AddOption("vs", ApplicationCommandOptionType.String, "The counter targeted.", isRequired: true)
+                "The target(s) in the current encounter (comma separated). Specify `vs` and the counter targeted.")
+            .AddOption("vs", ApplicationCommandOptionType.String, "The counter targeted.")
             .AddOption("second", ApplicationCommandOptionType.String, "The secondary property for this roll, e.g. for SWN skill checks.");
     }
 
@@ -44,20 +43,34 @@ internal sealed class CombatAttackSubCommand()
 
         if (!CommandUtil.TryGetOption<int>(option, "rerolls", out var rerolls)) rerolls = 0;
 
-        var targets = CommandUtil.TryGetOption<string>(option, "target", out var targetString)
-            ? targetString.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            : null;
-        if (targets is not { Length: > 0 })
+        var hasTarget = CommandUtil.TryGetOption<string>(option, "target", out var targetString);
+        var hasVs = CommandUtil.TryGetOption<string>(option, "vs", out var vsString);
+
+        // Validate target/vs pairing
+        if (hasTarget != hasVs)
         {
-            await command.RespondAsync("No target supplied.", ephemeral: true);
+            await command.RespondAsync("Both 'target' and 'vs' must be specified together, or neither should be specified.", ephemeral: true);
             return;
         }
 
-        var vsNamePart = CommandUtil.TryGetOption<string>(option, "vs", out var vsString) ? vsString : null;
-        if (string.IsNullOrWhiteSpace(vsNamePart))
+        string[]? targets = null;
+        string? vsNamePart = null;
+
+        if (hasTarget && hasVs)
         {
-            await command.RespondAsync("No vs supplied.", ephemeral: true);
-            return;
+            targets = targetString!.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (targets.Length == 0)
+            {
+                await command.RespondAsync("No target supplied.", ephemeral: true);
+                return;
+            }
+
+            vsNamePart = vsString!;
+            if (string.IsNullOrWhiteSpace(vsNamePart))
+            {
+                await command.RespondAsync("No vs supplied.", ephemeral: true);
+                return;
+            }
         }
 
         var alias = CommandUtil.TryGetOption<string>(option, "alias", out var aliasString)

@@ -566,4 +566,62 @@ public class SwnCombatIntegrationTests
             }, encounter);
         unknownCharacter.ShouldBeNull();
     }
+
+    [Fact]
+    public void Combat_MonsterAttack_WithoutTarget_RollsWithoutSuccessIndication()
+    {
+        // Arrange
+        var monster = SwnTestHelpers.CreateMonster();
+        _monsterSystem.SetNewCharacterStartingValues(monster);
+        SwnTestHelpers.SetupFullMonster(monster, _monsterSystem);
+
+        var monsterCombatant = SwnTestHelpers.CreateMonsterCombatant();
+        monsterCombatant.Sheet = monster.Sheet;
+
+        // Set up predictable dice rolls: d20 roll = 15
+        var mockRandom = SwnTestHelpers.CreatePredictableRandom(20, 15);
+
+        // Act - Monster attack without a target (no target AC provided)
+        var attackCounter = _monsterSystem.GetProperty<GameCounter>(monster, "Attack");
+        int? targetAC = null; // No target specified
+        var attackResult = attackCounter.Roll(monsterCombatant, null, mockRandom, 0, ref targetAC);
+
+        // Assert
+        attackResult.Error.ShouldBe(GameCounterRollError.Success);
+        // Expected: 15 (d20) + 6 (attack bonus) = 21
+        attackResult.Roll.ShouldBe(21);
+        attackResult.Success.ShouldBeNull(); // No target, so no success/failure indication
+        attackResult.Working.ShouldContain("15"); // Should show the d20 roll
+    }
+
+    [Fact]
+    public void Combat_PlayerCharacterAttack_WithoutTarget_RollsWithoutSuccessIndication()
+    {
+        // Arrange
+        var player = SwnTestHelpers.CreatePlayerCharacter();
+        _playerSystem.SetNewCharacterStartingValues(player);
+        SwnTestHelpers.SetupFullPlayerCharacter(player, _playerSystem);
+
+        var adventurer = SwnTestHelpers.CreateAdventurer();
+        adventurer.Sheet = player.Sheet;
+
+        // Set up predictable dice roll: d20 roll = 18
+        var mockRandom = SwnTestHelpers.CreatePredictableRandom(20, 18);
+
+        // Act - Player Shoot skill attack without a target
+        var shootCounter = _playerSystem.GetProperty<GameCounter>(player, SwnSystem.Shoot);
+        var dexBonusCounter = _playerSystem.GetProperty<GameCounter>(player, AttributeBonusCounter.GetBonusCounterName(SwnSystem.Dexterity));
+
+        int? targetAC = null; // No target specified
+        var attackResult = shootCounter.Roll(adventurer, null, mockRandom, 0, ref targetAC, dexBonusCounter, GameCounterRollOptions.IsAttack);
+
+        // Assert
+        attackResult.Error.ShouldBe(GameCounterRollError.Success);
+        // Expected: 18 (d20) + 2 (skill) + 1 (dex) + 2 (attack bonus) = 23
+        attackResult.Roll.ShouldBe(23);
+        attackResult.Success.ShouldBeNull(); // No target, so no success/failure indication
+        attackResult.Working.ShouldContain("18"); // Should show the d20 roll
+        attackResult.CounterName.ShouldContain("Shoot");
+        attackResult.CounterName.ShouldContain("attack");
+    }
 }

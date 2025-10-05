@@ -59,6 +59,33 @@ internal sealed class CombatAttackMessageHandler(SqlDataService dataService, Dis
 
                 var attackBonus = characterSystem.GetAttackBonus(character, encounter, message.Bonus);
 
+                var user = await discordService.GetGuildUserAsync(message.GuildId, message.UserId);
+
+                // Handle no-target attack (just roll without success/failure indication)
+                if (message.Targets is null || message.VsNamePart is null)
+                {
+                    int? dc = null;
+                    var result = counter.Roll(character, attackBonus, random, message.Rerolls, ref dc, secondaryCounter, GameCounterRollOptions.IsAttack);
+                    if (result.Error != GameCounterRollError.Success)
+                    {
+                        await interaction.ModifyOriginalResponseAsync(properties => properties.Content =
+                            $"'{message.NamePart}' : {result.ErrorMessage}");
+                        return;
+                    }
+
+                    var titleBuilder = new StringBuilder()
+                        .Append(CultureInfo.CurrentCulture, $"{character.Name} : Rolled {counter.Name} : {result.Roll}");
+
+                    var embedBuilder = new EmbedBuilder()
+                        .WithAuthor(user)
+                        .WithTitle(titleBuilder.ToString())
+                        .WithDescription(result.Working);
+
+                    await interaction.ModifyOriginalResponseAsync(properties => properties.Embed = embedBuilder.Build());
+                    return;
+                }
+
+                // Handle targeted attack
                 List<CombatantBase> targetCombatants = [];
                 if (!CommandUtil.TryFindCombatants(message.Targets, encounter, targetCombatants, out var errorMessage))
                 {
@@ -121,14 +148,12 @@ internal sealed class CombatAttackMessageHandler(SqlDataService dataService, Dis
                     ? $"'{message.VsNamePart}'"
                     : string.Join(", ", vsCounterNames);
 
-                var user = await discordService.GetGuildUserAsync(message.GuildId, message.UserId);
-
-                var embedBuilder = new EmbedBuilder()
+                var targetedEmbedBuilder = new EmbedBuilder()
                     .WithAuthor(user)
                     .WithTitle($"{character.Name} : Rolled {counter.Name} vs {vsCounterNameSummary}")
                     .WithDescription(stringBuilder.ToString());
 
-                await interaction.ModifyOriginalResponseAsync(properties => properties.Embed = embedBuilder.Build());
+                await interaction.ModifyOriginalResponseAsync(properties => properties.Embed = targetedEmbedBuilder.Build());
             });
 
         return true;

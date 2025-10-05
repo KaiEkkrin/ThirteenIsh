@@ -8,7 +8,7 @@ internal sealed class CombatAttackMessage : CombatMessage
     public required string NamePart { get; init; }
     public ParseTreeBase? Bonus { get; init; }
     public int Rerolls { get; init; }
-    public required IReadOnlyCollection<string> Targets { get; init; }
-    public required string VsNamePart { get; init; }
+    public IReadOnlyCollection<string>? Targets { get; init; }
+    public string? VsNamePart { get; init; }
     public string? SecondaryNamePart { get; init; }
 }
