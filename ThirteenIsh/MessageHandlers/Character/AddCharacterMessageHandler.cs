@@ -64,8 +64,8 @@ internal sealed class AddCharacterMessageHandler(SqlDataService dataService) : M
             : throw new InvalidOperationException($"Unexpected interaction type: {interaction.GetType()}");
 
         var result = await dataService.EditCharacterAsync(
-            message.Name, new SetCharacterPropertyOperation(property, newValue), interaction.User.Id, message.CharacterType,
-            cancellationToken);
+            message.Name, new SetNewCharacterPropertyOperation(characterSystem, property, newValue),
+            interaction.User.Id, message.CharacterType, cancellationToken);
 
         return await result.Handle(
             async errorMessage =>

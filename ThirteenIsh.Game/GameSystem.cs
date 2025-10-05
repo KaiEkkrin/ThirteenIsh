@@ -306,7 +306,7 @@ public abstract class GameSystem
         var maxCellCount = int.MinValue;
         foreach (var combatant in encounter.CombatantsInTurnOrder)
         {
-            var characterSystem = GetCharacterSystem(combatant.CharacterType, null);
+            var characterSystem = GetCharacterSystem(combatant.CharacterType, combatant.CharacterSystemName);
             var character = await characterDataService.GetCharacterAsync(combatant, encounter, cancellationToken)
                 ?? throw new GamePropertyException($"Character not found for {combatant.Alias}");
 

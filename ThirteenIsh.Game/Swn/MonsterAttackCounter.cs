@@ -1,7 +1,7 @@
 
 namespace ThirteenIsh.Game.Swn;
 
-internal class MonsterAttackCounter() : GameCounter(SwnSystem.Attack, options: GameCounterOptions.CanRoll)
+internal class MonsterAttackCounter(string name) : GameCounter(name, options: GameCounterOptions.CanRoll)
 {
     public override GameCounterRollResult Roll(
         ITrackedCharacter character, ParseTreeBase? bonus, IRandomWrapper random, int rerolls, ref int? targetValue,

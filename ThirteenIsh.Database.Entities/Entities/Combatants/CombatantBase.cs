@@ -3,6 +3,11 @@
 public abstract class CombatantBase
 {
     /// <summary>
+    /// The character system name (optional - if null, uses default for CharacterType).
+    /// </summary>
+    public string? CharacterSystemName { get; set; }
+
+    /// <summary>
     /// This combatant's character type.
     /// </summary>
     public abstract CharacterType CharacterType { get; }
@@ -39,7 +44,6 @@ public abstract class CombatantBase
     /// The owning user ID.
     /// </summary>
     public required ulong UserId { get; set; }
-
 }
 
 /// <summary>

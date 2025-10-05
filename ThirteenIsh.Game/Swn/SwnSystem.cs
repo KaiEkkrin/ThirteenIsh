@@ -1,10 +1,16 @@
 
 
+using System.ComponentModel;
+
 namespace ThirteenIsh.Game.Swn;
 
 internal class SwnSystem : GameSystem
 {
     public const string SystemName = "Stars Without Number";
+
+    public const string PlayerCharacter = "Player Character";
+    public const string Monster = "Monster";
+    public const string Starship = "Starship";
 
     public const string Basics = "Basics";
     public const string Attributes = "Attributes";
@@ -14,6 +20,7 @@ internal class SwnSystem : GameSystem
     public const string SavingThrows = "Saving Throws";
     public const string Equipment = "Equipment";
     public const string MonsterStats = "Monster Stats";
+    public const string StarshipStats = "Starship Stats";
 
     public const string Expert = "Expert";
     public const string Psychic = "Psychic";
@@ -74,11 +81,36 @@ internal class SwnSystem : GameSystem
     public const string Skill = "Skill";
     public const string Save = "Save";
 
+    public const string Armor = "Armor";
+    public const string Speed = "Speed";
+    public const string Power = "Power";
+    public const string Mass = "Mass";
+    public const string Crew = "Crew";
+
+    public const string HullClass = "Hull Class";
+    public const string Fighter = "Fighter";
+    public const string Frigate = "Frigate";
+    public const string Cruiser = "Cruiser";
+    public const string Capital = "Capital";
+
+    public const string Weapons = "Weapons";
+
+    public const string CommandPoints = "Command Points";
+    public const string CommandPointsAlias = "CP";
+
     private SwnSystem(string name, IEnumerable<CharacterSystem> characterSystems) : base(name, characterSystems)
     {
     }
 
     public static SwnSystem Build()
+    {
+        var playerCharacterSystem = BuildPlayerCharacterSystem();
+        var monsterCharacterSystem = BuildMonsterCharacterSystem();
+        var starshipCharacterSystem = BuildStarshipCharacterSystem();
+        return new SwnSystem(SystemName, [playerCharacterSystem, monsterCharacterSystem, starshipCharacterSystem]);
+    }
+
+    private static SwnPlayerCharacterSystem BuildPlayerCharacterSystem()
     {
         // Add two of the same for a full class, or two different ones for an Adventurer with the
         // matching partial classes.
@@ -161,7 +193,11 @@ internal class SwnSystem : GameSystem
             .AddProperties(evasion, mental, physical)
             .Build();
 
-        // Build monster system
+        return new SwnPlayerCharacterSystem([basics, attributes, skills, psychicSkills, general, savingThrows, equipment]);
+    }
+
+    private static SwnMonsterCharacterSystem BuildMonsterCharacterSystem()
+    {
         GameCounter hitDiceCounter = new(HitDice, HitDiceAlias, defaultValue: 1, minValue: 1);
         var monsterMorale = new MoraleCounter(Morale);
         var monsterHitPointsCounter = new MonsterHitPointsCounter(hitDiceCounter);
@@ -169,18 +205,54 @@ internal class SwnSystem : GameSystem
         var monsterStats = new GamePropertyGroupBuilder(MonsterStats)
             .AddProperty(hitDiceCounter)
             .AddProperty(new GameCounter(ArmorClass, ArmorClassAlias))
-            .AddProperty(new MonsterAttackCounter())
+            .AddProperty(new MonsterAttackCounter(Attack))
             .AddProperty(monsterMorale)
             .AddProperty(new MonsterSkillCounter(Skill))
             .AddProperty(new MonsterSavingThrowCounter())
             .AddProperty(monsterHitPointsCounter)
             .Build();
 
-        SwnCharacterSystem playerCharacterSystem = new("Player Character", CharacterTypeCompatibility.PlayerCharacter,
-            CharacterType.PlayerCharacter, [basics, attributes, skills, psychicSkills, general, savingThrows, equipment]);
-        SwnCharacterSystem monsterCharacterSystem = new("Monster", CharacterTypeCompatibility.Monster,
-            CharacterType.Monster, [monsterStats]);
-        return new SwnSystem(SystemName, [playerCharacterSystem, monsterCharacterSystem]);
+        return new SwnMonsterCharacterSystem([monsterStats]);
+    }
+
+    private static SwnStarshipCharacterSystem BuildStarshipCharacterSystem()
+    {
+        // This might look a bit weird (obviously starship hit points are not the same thing as
+        // player character or monster hit points!) but it makes it fit into our encounter system
+        // more easily.
+        GameProperty hullClassProperty = new(HullClass, [ Fighter, Frigate, Cruiser, Capital ], true);
+
+        GameCounter hitPointsCounter = new(HitPoints, HitPointsAlias, defaultValue: 1, minValue: 1,
+            options: GameCounterOptions.HasVariable);
+
+        GameCounter armorClassCounter = new(ArmorClass, ArmorClassAlias);
+        GameCounter armorCounter = new(Armor);
+        GameCounter speedCounter = new(Speed);
+        MonsterSkillCounter skillCounter = new(Skill, defaultValue: 1);
+        GameCounter powerCounter = new(Power, defaultValue: 5, options: GameCounterOptions.HasVariable);
+        GameCounter massCounter = new(Mass, defaultValue: 5, options: GameCounterOptions.HasVariable);
+        GameCounter crewCounter = new(Crew, defaultValue: 1, options: GameCounterOptions.HasVariable);
+
+        GameCounter commandPointsCounter = new(CommandPoints, CommandPointsAlias, defaultValue: 4,
+            options: GameCounterOptions.HasVariable);
+
+        MonsterAttackCounter weaponsCounter = new(Weapons);
+
+        var starshipStats = new GamePropertyGroupBuilder(StarshipStats)
+            .AddProperty(hullClassProperty)
+            .AddProperty(hitPointsCounter)
+            .AddProperty(armorClassCounter)
+            .AddProperty(armorCounter)
+            .AddProperty(speedCounter)
+            .AddProperty(skillCounter)
+            .AddProperty(powerCounter)
+            .AddProperty(massCounter)
+            .AddProperty(crewCounter)
+            .AddProperty(commandPointsCounter)
+            .AddProperty(weaponsCounter)
+            .Build();
+
+        return new SwnStarshipCharacterSystem([starshipStats]);
     }
 
     public override EncounterRollResult EncounterAdd(Character character, Encounter encounter,
@@ -193,6 +265,7 @@ internal class SwnSystem : GameSystem
         MonsterCombatant combatant = new()
         {
             Alias = nameAliasCollection.Add(character.Name, 5, true),
+            CharacterSystemName = character.CharacterSystemName,
             LastUpdated = DateTimeOffset.UtcNow,
             Name = character.Name,
             Sheet = character.Sheet,
@@ -200,7 +273,7 @@ internal class SwnSystem : GameSystem
             UserId = userId
         };
 
-        var characterSystem = GetCharacterSystem(CharacterType.Monster, null);
+        var characterSystem = GetCharacterSystem(CharacterType.Monster, character.CharacterSystemName);
         characterSystem.ResetVariables(combatant);
 
         // In SWN, monsters use 1d8 initiative with no dexterity bonus
@@ -224,7 +297,7 @@ internal class SwnSystem : GameSystem
         NameAliasCollection nameAliasCollection, IRandomWrapper random, int rerolls, ulong userId)
     {
         // In Stars Without Number, the initiative roll is 1d8 + Dexterity bonus.
-        var dexterityBonusCounter = GetCharacterSystem(CharacterType.PlayerCharacter, null)
+        var dexterityBonusCounter = GetCharacterSystem(CharacterType.PlayerCharacter, adventurer.CharacterSystemName)
             .GetProperty<GameCounter>(adventurer, AttributeBonusCounter.GetBonusCounterName(Dexterity));
 
         ParseTreeBase parseTree = DiceRollParseTree.BuildWithRerolls(8, 0, 1);
@@ -247,6 +320,7 @@ internal class SwnSystem : GameSystem
         AdventurerCombatant combatant = new()
         {
             Alias = nameAliasCollection.Add(adventurer.Name, 10, false),
+            CharacterSystemName = adventurer.CharacterSystemName,
             Initiative = initiative,
             InitiativeRollWorking = working,
             Name = adventurer.Name,
@@ -259,10 +333,12 @@ internal class SwnSystem : GameSystem
 
     public override string GetCharacterSummary(ICharacterBase character)
     {
-        var characterSystem = GetCharacterSystem(character.Type, null);
-        switch (character.Type)
+        var characterSystem = GetCharacterSystem(character.Type, character.CharacterSystemName);
+
+        // Switch based on the actual character system retrieved
+        switch (characterSystem.Name)
         {
-            case CharacterType.PlayerCharacter:
+            case PlayerCharacter:
                 var class1 = characterSystem.GetProperty<GameProperty>(character, "Class 1").GetValue(character);
                 var class2 = characterSystem.GetProperty<GameProperty>(character, "Class 2").GetValue(character);
                 var level = characterSystem.GetProperty<GameCounter>(character, Level).GetValue(character);
@@ -292,12 +368,17 @@ internal class SwnSystem : GameSystem
 
                 return $"Level {level} {classDescription}";
 
-            case CharacterType.Monster:
+            case Monster:
                 var hitDice = characterSystem.GetProperty<GameCounter>(character, HitDice).GetValue(character);
                 return $"{hitDice} HD Monster";
 
+            case Starship:
+                var hullClass = characterSystem.GetProperty<GameProperty>(character, HullClass).GetValue(character);
+                var cp = characterSystem.GetProperty<GameCounter>(character, CommandPoints).GetValue(character);
+                return $"{hullClass} class starship ({cp} CP)";
+
             default:
-                throw new ArgumentException("Unrecognised character type", nameof(character));
+                throw new ArgumentException($"Unrecognised character system: {characterSystem.Name}", nameof(character));
         }
     }
 
