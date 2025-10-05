@@ -1,7 +1,3 @@
-
-
-using System.ComponentModel;
-
 namespace ThirteenIsh.Game.Swn;
 
 internal class SwnSystem : GameSystem

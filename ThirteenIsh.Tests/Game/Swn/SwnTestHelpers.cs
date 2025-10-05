@@ -157,8 +157,6 @@ internal static class SwnTestHelpers
     /// </summary>
     public static void SetupFullMonster(Character monster, SwnCharacterSystem characterSystem)
     {
-        var sheet = monster.Sheet;
-
         // Set monster stats
         characterSystem.GetProperty<GameCounter>(monster, SwnSystem.HitDice).EditCharacterProperty("4", monster);
         characterSystem.GetProperty<GameCounter>(monster, SwnSystem.ArmorClass).EditCharacterProperty("15", monster);
@@ -166,6 +164,45 @@ internal static class SwnTestHelpers
         characterSystem.GetProperty<GameCounter>(monster, SwnSystem.Morale).EditCharacterProperty("8", monster);
         characterSystem.GetProperty<GameCounter>(monster, SwnSystem.Skill).EditCharacterProperty("+2", monster);
         characterSystem.GetProperty<GameCounter>(monster, SwnSystem.Save).EditCharacterProperty("12", monster);
+    }
+
+    /// <summary>
+    /// Creates a basic starship character with the SWN system.
+    /// </summary>
+    public static Character CreateStarship(string name = "TestStarship", ulong userId = 12345)
+    {
+        return new Character
+        {
+            Id = 3,
+            Name = name,
+            UserId = userId,
+            CharacterType = CharacterType.Monster,
+            GameSystem = SwnSystem.SystemName,
+            CharacterSystemName = SwnSystem.Starship,
+            Sheet = new CharacterSheet(),
+            LastEdited = DateTimeOffset.UtcNow
+        };
+    }
+
+    /// <summary>
+    /// Sets up a starship with all basic values for comprehensive testing.
+    /// </summary>
+    public static void SetupFullStarship(Character starship, SwnCharacterSystem characterSystem, string hullClass = SwnSystem.Frigate)
+    {
+        // Set hull class
+        characterSystem.GetProperty<GameProperty>(starship, SwnSystem.HullClass).EditCharacterProperty(hullClass, starship);
+
+        // Set custom starship stats (different from defaults to verify editability)
+        characterSystem.GetProperty<GameCounter>(starship, SwnSystem.HitPoints).EditCharacterProperty("30", starship);
+        characterSystem.GetProperty<GameCounter>(starship, SwnSystem.ArmorClass).EditCharacterProperty("16", starship);
+        characterSystem.GetProperty<GameCounter>(starship, SwnSystem.Armor).EditCharacterProperty("10", starship);
+        characterSystem.GetProperty<GameCounter>(starship, SwnSystem.Speed).EditCharacterProperty("3", starship);
+        characterSystem.GetProperty<GameCounter>(starship, SwnSystem.Skill).EditCharacterProperty("2", starship);
+        characterSystem.GetProperty<GameCounter>(starship, SwnSystem.Power).EditCharacterProperty("20", starship);
+        characterSystem.GetProperty<GameCounter>(starship, SwnSystem.Mass).EditCharacterProperty("15", starship);
+        characterSystem.GetProperty<GameCounter>(starship, SwnSystem.Crew).EditCharacterProperty("25", starship);
+        characterSystem.GetProperty<GameCounter>(starship, SwnSystem.CommandPoints).EditCharacterProperty("6", starship);
+        characterSystem.GetProperty<GameCounter>(starship, SwnSystem.Weapons).EditCharacterProperty("+5", starship);
     }
 
     /// <summary>
