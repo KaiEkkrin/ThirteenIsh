@@ -1,5 +1,3 @@
-
-
 namespace ThirteenIsh.Game.Swn;
 
 internal class AttackBonusCounter(GameProperty class1Property, GameProperty class2Property, GameCounter levelCounter)

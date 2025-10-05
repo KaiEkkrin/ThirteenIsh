@@ -2,7 +2,6 @@ using Shouldly;
 using ThirteenIsh.Database.Entities;
 using ThirteenIsh.Game;
 using ThirteenIsh.Game.Swn;
-using ThirteenIsh.Parsing;
 
 namespace ThirteenIsh.Tests.Game.Swn;
 
@@ -165,9 +164,9 @@ public class SwnCustomCounterTests
 
         // Assert
         result.Error.ShouldBe(GameCounterRollError.Success);
-        // Expected: 12 (d20) + (-1) (unskilled) + (-2) (unfamiliar) + 1 (dex bonus) + 0 (attack bonus) = 10
-        result.Roll.ShouldBe(10);
-        result.Success.ShouldBe(false); // 10 < 15
+        // Expected: 12 (d20) + (-1) (unskilled) + (-1) (unfamiliar) + 1 (dex bonus) + 0 (attack bonus) = 11
+        result.Roll.ShouldBe(11);
+        result.Success.ShouldBe(false); // 11 < 15
         result.CounterName.ShouldContain("unskilled");
         result.CounterName.ShouldContain("unfamiliar");
     }

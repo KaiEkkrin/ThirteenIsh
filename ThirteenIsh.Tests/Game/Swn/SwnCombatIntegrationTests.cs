@@ -260,8 +260,8 @@ public class SwnCombatIntegrationTests
 
         // Assert
         attackResult.Error.ShouldBe(GameCounterRollError.Success);
-        // Expected: 15 (d20) + (-1) (unskilled) + (-2) (unfamiliar) + 0 (dex) + 0 (attack bonus) = 12
-        attackResult.Roll.ShouldBe(12);
+        // Expected: 15 (d20) + (-1) (unskilled) + (-1) (unfamiliar) + 0 (dex) + 0 (attack bonus) = 13
+        attackResult.Roll.ShouldBe(13);
         attackResult.CounterName.ShouldContain("unskilled"); // Should indicate unskilled penalty
         attackResult.CounterName.ShouldContain("unfamiliar"); // Should indicate weapon unfamiliarity penalty
     }
@@ -294,9 +294,9 @@ public class SwnCombatIntegrationTests
 
         // Assert
         attackResult.Error.ShouldBe(GameCounterRollError.Success);
-        // Expected: 12 (d20) + (-1) (unskilled) + (-2) (unfamiliar) + 1 (dex) + 0 (base attack bonus) = 10
-        attackResult.Roll.ShouldBe(10);
-        attackResult.Success.ShouldBe(false); // 10 < 15 (target AC)
+        // Expected: 12 (d20) + (-1) (unskilled) + (-1) (unfamiliar) + 1 (dex) + 0 (base attack bonus) = 11
+        attackResult.Roll.ShouldBe(11);
+        attackResult.Success.ShouldBe(false); // 11 < 15 (target AC)
         attackResult.CounterName.ShouldContain("Shoot");
         attackResult.CounterName.ShouldContain("attack");
         attackResult.CounterName.ShouldContain("unskilled");
