@@ -169,7 +169,7 @@ internal class SwnSystem : GameSystem
         var monsterStats = new GamePropertyGroupBuilder(MonsterStats)
             .AddProperty(hitDiceCounter)
             .AddProperty(new GameCounter(ArmorClass, ArmorClassAlias))
-            .AddProperty(new AttackCounter())
+            .AddProperty(new MonsterAttackCounter())
             .AddProperty(monsterMorale)
             .AddProperty(new MonsterSkillCounter(Skill))
             .AddProperty(new MonsterSavingThrowCounter())
