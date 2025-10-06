@@ -103,6 +103,48 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
         await _context.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<Adventurer?> AddAdventurerAsync(Adventure adventure, Character character,
+        CancellationToken cancellationToken = default)
+    {
+        // Validate game system compatibility
+        if (adventure.GameSystem != character.GameSystem)
+            return null;
+
+        // Check if user already has an adventurer with this character name in the adventure
+        var existingByName = await _context.Adventurers
+            .FirstOrDefaultAsync(a => a.AdventureId == adventure.Id && a.Name == character.Name, cancellationToken);
+        if (existingByName != null)
+            return null;
+
+        // Determine if this should be the default adventurer (first one for this user in this adventure)
+        var hasExistingAdventurers = await _context.Adventurers
+            .AnyAsync(a => a.AdventureId == adventure.Id && a.UserId == character.UserId, cancellationToken);
+
+        var adventurer = new Adventurer
+        {
+            AdventureId = adventure.Id,
+            Name = character.Name,
+            UserId = character.UserId,
+            LastUpdated = DateTimeOffset.UtcNow,
+            Sheet = character.Sheet,
+            CharacterSystemName = character.CharacterSystemName,
+            IsDefault = !hasExistingAdventurers
+        };
+
+        _context.Adventurers.Add(adventurer);
+
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            return adventurer;
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
+        {
+            // Unique constraint violation - character name already exists in this adventure
+            return null;
+        }
+    }
+
     public async Task<Character?> CreateCharacterAsync(string name, CharacterType characterType,
         string gameSystem, ulong userId, Action<Character>? initialiseCharacter = null, CancellationToken cancellationToken = default)
     {
@@ -143,18 +185,44 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
         return adventure;
     }
 
-    public async Task<Adventurer?> DeleteAdventurerAsync(ulong guildId, ulong userId, string adventureName,
+    public Task<Adventurer?> DeleteAdventurerAsync(ulong guildId, ulong userId, string adventureName,
         CancellationToken cancellationToken = default)
+    {
+        // Delegate to the overload with null adventurer name (for default)
+        return DeleteAdventurerAsync(guildId, userId, adventureName, null, cancellationToken);
+    }
+
+    public async Task<Adventurer?> DeleteAdventurerAsync(ulong guildId, ulong userId, string adventureName,
+        string? adventurerName, CancellationToken cancellationToken = default)
     {
         // TODO Find a sensible way to deal with optimistic concurrency using the retry policy.
         var guild = await GetGuildAsync(guildId, cancellationToken);
         var adventure = await GetAdventureAsync(guild, adventureName, cancellationToken);
         if (adventure == null) return null;
 
-        var adventurer = await GetAdventurerAsync(adventure, userId, cancellationToken);
+        // Get the adventurer by name (or default if name is null)
+        var adventurer = await GetAdventurerAsync(adventure, userId, adventurerName, cancellationToken);
         if (adventurer == null) return null;
 
+        var wasDefault = adventurer.IsDefault;
+        var adventurerId = adventurer.Id;
+
         _context.Adventurers.Remove(adventurer);
+
+        // If we're deleting the default adventurer, promote another one if available
+        if (wasDefault)
+        {
+            var remainingAdventurer = await _context.Adventurers
+                .Where(a => a.AdventureId == adventure.Id && a.UserId == userId && a.Id != adventurerId)
+                .OrderBy(a => a.Name)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (remainingAdventurer != null)
+            {
+                remainingAdventurer.IsDefault = true;
+            }
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
         return adventurer;
     }
@@ -249,12 +317,22 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
         return result;
     }
 
-    public async Task<EditResult<T>> EditAdventurerAsync<T>(
+    public Task<EditResult<T>> EditAdventurerAsync<T>(
         ulong guildId, ulong userId, EditOperation<T, Adventurer> operation,
         CancellationToken cancellationToken = default)
         where T : class
     {
-        // This one always fetches the user's character in the current adventure (if any.)
+        // Delegate to the overload with null adventurer name (for default)
+        return EditAdventurerAsync(guildId, userId, operation, null, cancellationToken);
+    }
+
+    public async Task<EditResult<T>> EditAdventurerAsync<T>(
+        ulong guildId, ulong userId, EditOperation<T, Adventurer> operation,
+        string? adventurerName,
+        CancellationToken cancellationToken = default)
+        where T : class
+    {
+        // This one fetches the user's character in the current adventure (by name or default if name is null)
         var guild = await GetGuildAsync(guildId, cancellationToken);
         if (string.IsNullOrEmpty(guild.CurrentAdventureName))
             return operation.CreateError("There is no current adventure in this guild.");
@@ -262,8 +340,14 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
         var adventure = await GetAdventureAsync(guild, null, cancellationToken);
         if (adventure == null) return operation.CreateError($"Adventure '{guild.CurrentAdventureName}' not found.");
 
-        var adventurer = await GetAdventurerAsync(adventure, userId, cancellationToken);
-        if (adventurer == null) return operation.CreateError("You have not joined the current adventure.");
+        var adventurer = await GetAdventurerAsync(adventure, userId, adventurerName, cancellationToken);
+        if (adventurer == null)
+        {
+            var errorMsg = adventurerName == null
+                ? "You have not joined the current adventure."
+                : $"You do not have a character named '{adventurerName}' in the current adventure.";
+            return operation.CreateError(errorMsg);
+        }
 
         var result = await EditAsync(operation, adventurer, cancellationToken);
         return result;
@@ -380,6 +464,34 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
             .SingleOrDefaultAsync(cancellationToken);
     }
 
+    public async Task<Adventurer?> GetAdventurerAsync(Adventure adventure, ulong userId, string? adventurerName,
+        CancellationToken cancellationToken = default)
+    {
+        // If no name provided, return the default adventurer
+        if (string.IsNullOrEmpty(adventurerName))
+        {
+            return await GetAdventurerAsync(adventure, userId, cancellationToken);
+        }
+
+        // Look for an exact match first
+        var adventurer = await _context.Adventurers
+            .Include(a => a.Adventure)
+            .SingleOrDefaultAsync(a => a.AdventureId == adventure.Id && a.UserId == userId && a.Name == adventurerName,
+                cancellationToken);
+
+        if (adventurer != null) return adventurer;
+
+        // Only accept an unambiguous match
+        var matchingAdventurers = await _context.Adventurers
+            .Include(a => a.Adventure)
+            .Where(a => a.AdventureId == adventure.Id &&
+                        a.UserId == userId &&
+                        a.NameUpper.StartsWith(adventurerName.ToUpperInvariant()))
+            .ToListAsync(cancellationToken);
+
+        return matchingAdventurers.Count == 1 ? matchingAdventurers[0] : null;
+    }
+
     public async Task<Adventurer?> GetAdventurerAsync(Adventure adventure, string name,
         CancellationToken cancellationToken = default)
     {
@@ -415,6 +527,41 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
         return _context.Adventurers.Where(a => a.AdventureId == adventure.Id)
             .OrderBy(a => a.Name)
             .AsAsyncEnumerable();
+    }
+
+    public IAsyncEnumerable<Adventurer> GetUserAdventurersAsync(Adventure adventure, ulong userId)
+    {
+        return _context.Adventurers
+            .Where(a => a.AdventureId == adventure.Id && a.UserId == userId)
+            .OrderBy(a => a.Name)
+            .AsAsyncEnumerable();
+    }
+
+    public async Task<bool> SetDefaultAdventurerAsync(Adventure adventure, ulong userId, string adventurerName,
+        CancellationToken cancellationToken = default)
+    {
+        // Find the adventurer to make default (with prefix matching)
+        var newDefault = await GetAdventurerAsync(adventure, userId, adventurerName, cancellationToken);
+        if (newDefault == null) return false;
+
+        // If it's already default, nothing to do
+        if (newDefault.IsDefault) return true;
+
+        // Find and unset the current default
+        var currentDefault = await _context.Adventurers
+            .FirstOrDefaultAsync(a => a.AdventureId == adventure.Id && a.UserId == userId && a.IsDefault,
+                cancellationToken);
+
+        if (currentDefault != null)
+        {
+            currentDefault.IsDefault = false;
+        }
+
+        // Set the new default
+        newDefault.IsDefault = true;
+
+        await _context.SaveChangesAsync(cancellationToken);
+        return true;
     }
 
     public async Task<Character?> GetCharacterAsync(string name, ulong userId, CharacterType characterType,

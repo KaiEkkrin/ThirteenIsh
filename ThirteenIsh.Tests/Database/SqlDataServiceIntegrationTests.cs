@@ -716,6 +716,365 @@ public class SqlDataServiceIntegrationTests : IAsyncLifetime
         adventurers[1].Name.ShouldBe("Adventurer Beta");
     }
 
+    [Fact]
+    public async Task AddAdventurerAsync_ShouldSetIsDefaultTrue_WhenFirstAdventurer()
+    {
+        // Arrange
+        const ulong guildId = 123456789;
+        const ulong userId = 987654321;
+        const string adventureName = "Test Adventure";
+        const string characterName = "First Character";
+
+        await _sqlDataService.EnsureGuildAsync(guildId);
+        var adventureResult = await _sqlDataService.AddAdventureAsync(guildId, adventureName, "Description", "13th Age");
+        var adventure = adventureResult!.Adventure;
+
+        var character = await _sqlDataService.CreateCharacterAsync(characterName, CharacterType.PlayerCharacter, "13th Age", userId);
+
+        // Act
+        var adventurer = await _sqlDataService.AddAdventurerAsync(adventure, character!);
+
+        // Assert
+        adventurer.ShouldNotBeNull();
+        adventurer.IsDefault.ShouldBeTrue();
+        adventurer.Name.ShouldBe(characterName);
+        adventurer.UserId.ShouldBe(userId);
+    }
+
+    [Fact]
+    public async Task AddAdventurerAsync_ShouldSetIsDefaultFalse_WhenSecondAdventurer()
+    {
+        // Arrange
+        const ulong guildId = 123456789;
+        const ulong userId = 987654321;
+        const string adventureName = "Test Adventure";
+
+        await _sqlDataService.EnsureGuildAsync(guildId);
+        var adventureResult = await _sqlDataService.AddAdventureAsync(guildId, adventureName, "Description", "13th Age");
+        var adventure = adventureResult!.Adventure;
+
+        var character1 = await _sqlDataService.CreateCharacterAsync("First Character", CharacterType.PlayerCharacter, "13th Age", userId);
+        var character2 = await _sqlDataService.CreateCharacterAsync("Second Character", CharacterType.PlayerCharacter, "13th Age", userId);
+
+        // Act
+        var adventurer1 = await _sqlDataService.AddAdventurerAsync(adventure, character1!);
+        var adventurer2 = await _sqlDataService.AddAdventurerAsync(adventure, character2!);
+
+        // Assert
+        adventurer1.ShouldNotBeNull();
+        adventurer1!.IsDefault.ShouldBeTrue();
+
+        adventurer2.ShouldNotBeNull();
+        adventurer2!.IsDefault.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task AddAdventurerAsync_ShouldReturnNull_WhenDuplicateCharacterName()
+    {
+        // Arrange
+        const ulong guildId = 123456789;
+        const ulong userId1 = 111111111;
+        const ulong userId2 = 222222222;
+        const string adventureName = "Test Adventure";
+        const string characterName = "Duplicate Name";
+
+        await _sqlDataService.EnsureGuildAsync(guildId);
+        var adventureResult = await _sqlDataService.AddAdventureAsync(guildId, adventureName, "Description", "13th Age");
+        var adventure = adventureResult!.Adventure;
+
+        var character1 = await _sqlDataService.CreateCharacterAsync(characterName, CharacterType.PlayerCharacter, "13th Age", userId1);
+        var character2 = await _sqlDataService.CreateCharacterAsync(characterName, CharacterType.PlayerCharacter, "13th Age", userId2);
+
+        // Act
+        var adventurer1 = await _sqlDataService.AddAdventurerAsync(adventure, character1!);
+        var adventurer2 = await _sqlDataService.AddAdventurerAsync(adventure, character2!);
+
+        // Assert
+        adventurer1.ShouldNotBeNull();
+        adventurer2.ShouldBeNull(); // Should fail due to duplicate name in adventure
+    }
+
+    [Fact]
+    public async Task AddAdventurerAsync_ShouldReturnNull_WhenGameSystemMismatch()
+    {
+        // Arrange
+        const ulong guildId = 123456789;
+        const ulong userId = 987654321;
+        const string adventureName = "13th Age Adventure";
+
+        await _sqlDataService.EnsureGuildAsync(guildId);
+        var adventureResult = await _sqlDataService.AddAdventureAsync(guildId, adventureName, "Description", "13th Age");
+        var adventure = adventureResult!.Adventure;
+
+        var character = await _sqlDataService.CreateCharacterAsync("Dragonbane Character", CharacterType.PlayerCharacter, "Dragonbane", userId);
+
+        // Act
+        var adventurer = await _sqlDataService.AddAdventurerAsync(adventure, character!);
+
+        // Assert
+        adventurer.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task GetAdventurerAsync_WithName_ShouldReturnCorrectAdventurer()
+    {
+        // Arrange
+        const ulong guildId = 123456789;
+        const ulong userId = 987654321;
+        const string adventureName = "Test Adventure";
+
+        await _sqlDataService.EnsureGuildAsync(guildId);
+        var adventureResult = await _sqlDataService.AddAdventureAsync(guildId, adventureName, "Description", "13th Age");
+        var adventure = adventureResult!.Adventure;
+
+        var char1 = await _sqlDataService.CreateCharacterAsync("Fighter", CharacterType.PlayerCharacter, "13th Age", userId);
+        var char2 = await _sqlDataService.CreateCharacterAsync("Wizard", CharacterType.PlayerCharacter, "13th Age", userId);
+
+        await _sqlDataService.AddAdventurerAsync(adventure, char1!);
+        await _sqlDataService.AddAdventurerAsync(adventure, char2!);
+
+        // Act
+        var adventurer = await _sqlDataService.GetAdventurerAsync(adventure, userId, "Wizard");
+
+        // Assert
+        adventurer.ShouldNotBeNull();
+        adventurer!.Name.ShouldBe("Wizard");
+        adventurer.IsDefault.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task GetAdventurerAsync_WithName_ShouldSupportPrefixMatching()
+    {
+        // Arrange
+        const ulong guildId = 123456789;
+        const ulong userId = 987654321;
+        const string adventureName = "Test Adventure";
+
+        await _sqlDataService.EnsureGuildAsync(guildId);
+        var adventureResult = await _sqlDataService.AddAdventureAsync(guildId, adventureName, "Description", "13th Age");
+        var adventure = adventureResult!.Adventure;
+
+        var character = await _sqlDataService.CreateCharacterAsync("Gandalf the Grey", CharacterType.PlayerCharacter, "13th Age", userId);
+        await _sqlDataService.AddAdventurerAsync(adventure, character!);
+
+        // Act
+        var adventurer = await _sqlDataService.GetAdventurerAsync(adventure, userId, "Gand");
+
+        // Assert
+        adventurer.ShouldNotBeNull();
+        adventurer!.Name.ShouldBe("Gandalf the Grey");
+    }
+
+    [Fact]
+    public async Task GetAdventurerAsync_WithNullName_ShouldReturnDefault()
+    {
+        // Arrange
+        const ulong guildId = 123456789;
+        const ulong userId = 987654321;
+        const string adventureName = "Test Adventure";
+
+        await _sqlDataService.EnsureGuildAsync(guildId);
+        var adventureResult = await _sqlDataService.AddAdventureAsync(guildId, adventureName, "Description", "13th Age");
+        var adventure = adventureResult!.Adventure;
+
+        var char1 = await _sqlDataService.CreateCharacterAsync("Fighter", CharacterType.PlayerCharacter, "13th Age", userId);
+        var char2 = await _sqlDataService.CreateCharacterAsync("Wizard", CharacterType.PlayerCharacter, "13th Age", userId);
+
+        await _sqlDataService.AddAdventurerAsync(adventure, char1!);
+        await _sqlDataService.AddAdventurerAsync(adventure, char2!);
+
+        // Act
+        var adventurer = await _sqlDataService.GetAdventurerAsync(adventure, userId, null);
+
+        // Assert
+        adventurer.ShouldNotBeNull();
+        adventurer!.Name.ShouldBe("Fighter"); // First one should be default
+        adventurer.IsDefault.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task GetUserAdventurersAsync_ShouldReturnAllUserAdventurers()
+    {
+        // Arrange
+        const ulong guildId = 123456789;
+        const ulong userId = 987654321;
+        const string adventureName = "Test Adventure";
+
+        await _sqlDataService.EnsureGuildAsync(guildId);
+        var adventureResult = await _sqlDataService.AddAdventureAsync(guildId, adventureName, "Description", "13th Age");
+        var adventure = adventureResult!.Adventure;
+
+        var char1 = await _sqlDataService.CreateCharacterAsync("Alpha", CharacterType.PlayerCharacter, "13th Age", userId);
+        var char2 = await _sqlDataService.CreateCharacterAsync("Beta", CharacterType.PlayerCharacter, "13th Age", userId);
+        var char3 = await _sqlDataService.CreateCharacterAsync("Gamma", CharacterType.PlayerCharacter, "13th Age", 111111111); // Different user
+
+        await _sqlDataService.AddAdventurerAsync(adventure, char1!);
+        await _sqlDataService.AddAdventurerAsync(adventure, char2!);
+        await _sqlDataService.AddAdventurerAsync(adventure, char3!);
+
+        // Act
+        var adventurers = await _sqlDataService.GetUserAdventurersAsync(adventure, userId).ToListAsync();
+
+        // Assert
+        adventurers.ShouldNotBeNull();
+        adventurers.Count.ShouldBe(2);
+        adventurers.ShouldContain(a => a.Name == "Alpha");
+        adventurers.ShouldContain(a => a.Name == "Beta");
+        adventurers.ShouldNotContain(a => a.Name == "Gamma");
+    }
+
+    [Fact]
+    public async Task DeleteAdventurerAsync_WithDefault_ShouldPromoteNextAdventurer()
+    {
+        // Arrange
+        const ulong guildId = 123456789;
+        const ulong userId = 987654321;
+        const string adventureName = "Test Adventure";
+
+        await _sqlDataService.EnsureGuildAsync(guildId);
+        var adventureResult = await _sqlDataService.AddAdventureAsync(guildId, adventureName, "Description", "13th Age");
+        var adventure = adventureResult!.Adventure;
+
+        var char1 = await _sqlDataService.CreateCharacterAsync("Alpha", CharacterType.PlayerCharacter, "13th Age", userId);
+        var char2 = await _sqlDataService.CreateCharacterAsync("Beta", CharacterType.PlayerCharacter, "13th Age", userId);
+
+        await _sqlDataService.AddAdventurerAsync(adventure, char1!);
+        await _sqlDataService.AddAdventurerAsync(adventure, char2!);
+
+        // Act - Delete the default adventurer (Alpha)
+        var deleted = await _sqlDataService.DeleteAdventurerAsync(guildId, userId, adventureName, "Alpha");
+
+        // Assert
+        deleted.ShouldNotBeNull();
+        deleted!.Name.ShouldBe("Alpha");
+
+        // Beta should now be the default
+        var remaining = await _sqlDataService.GetAdventurerAsync(adventure, userId);
+        remaining.ShouldNotBeNull();
+        remaining!.Name.ShouldBe("Beta");
+        remaining.IsDefault.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task DeleteAdventurerAsync_WithNonDefault_ShouldNotChangeDefault()
+    {
+        // Arrange
+        const ulong guildId = 123456789;
+        const ulong userId = 987654321;
+        const string adventureName = "Test Adventure";
+
+        await _sqlDataService.EnsureGuildAsync(guildId);
+        var adventureResult = await _sqlDataService.AddAdventureAsync(guildId, adventureName, "Description", "13th Age");
+        var adventure = adventureResult!.Adventure;
+
+        var char1 = await _sqlDataService.CreateCharacterAsync("Alpha", CharacterType.PlayerCharacter, "13th Age", userId);
+        var char2 = await _sqlDataService.CreateCharacterAsync("Beta", CharacterType.PlayerCharacter, "13th Age", userId);
+
+        await _sqlDataService.AddAdventurerAsync(adventure, char1!);
+        await _sqlDataService.AddAdventurerAsync(adventure, char2!);
+
+        // Act - Delete the non-default adventurer (Beta)
+        var deleted = await _sqlDataService.DeleteAdventurerAsync(guildId, userId, adventureName, "Beta");
+
+        // Assert
+        deleted.ShouldNotBeNull();
+        deleted!.Name.ShouldBe("Beta");
+
+        // Alpha should still be the default
+        var remaining = await _sqlDataService.GetAdventurerAsync(adventure, userId);
+        remaining.ShouldNotBeNull();
+        remaining!.Name.ShouldBe("Alpha");
+        remaining.IsDefault.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task DeleteAdventurerAsync_LastAdventurer_ShouldNotPromote()
+    {
+        // Arrange
+        const ulong guildId = 123456789;
+        const ulong userId = 987654321;
+        const string adventureName = "Test Adventure";
+
+        await _sqlDataService.EnsureGuildAsync(guildId);
+        var adventureResult = await _sqlDataService.AddAdventureAsync(guildId, adventureName, "Description", "13th Age");
+        var adventure = adventureResult!.Adventure;
+
+        var character = await _sqlDataService.CreateCharacterAsync("Solo", CharacterType.PlayerCharacter, "13th Age", userId);
+        await _sqlDataService.AddAdventurerAsync(adventure, character!);
+
+        // Act - Delete the only adventurer
+        var deleted = await _sqlDataService.DeleteAdventurerAsync(guildId, userId, adventureName, "Solo");
+
+        // Assert
+        deleted.ShouldNotBeNull();
+        deleted!.Name.ShouldBe("Solo");
+
+        // No adventurers should remain
+        var remaining = await _sqlDataService.GetAdventurerAsync(adventure, userId);
+        remaining.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task SetDefaultAdventurerAsync_ShouldUpdateDefaultFlag()
+    {
+        // Arrange
+        const ulong guildId = 123456789;
+        const ulong userId = 987654321;
+        const string adventureName = "Test Adventure";
+
+        await _sqlDataService.EnsureGuildAsync(guildId);
+        var adventureResult = await _sqlDataService.AddAdventureAsync(guildId, adventureName, "Description", "13th Age");
+        var adventure = adventureResult!.Adventure;
+
+        var char1 = await _sqlDataService.CreateCharacterAsync("Alpha", CharacterType.PlayerCharacter, "13th Age", userId);
+        var char2 = await _sqlDataService.CreateCharacterAsync("Beta", CharacterType.PlayerCharacter, "13th Age", userId);
+
+        await _sqlDataService.AddAdventurerAsync(adventure, char1!);
+        await _sqlDataService.AddAdventurerAsync(adventure, char2!);
+
+        // Act - Set Beta as the default
+        var result = await _sqlDataService.SetDefaultAdventurerAsync(adventure, userId, "Beta");
+
+        // Assert
+        result.ShouldBeTrue();
+
+        var defaultAdventurer = await _sqlDataService.GetAdventurerAsync(adventure, userId);
+        defaultAdventurer.ShouldNotBeNull();
+        defaultAdventurer!.Name.ShouldBe("Beta");
+        defaultAdventurer.IsDefault.ShouldBeTrue();
+
+        // Alpha should no longer be default
+        var alpha = await _sqlDataService.GetAdventurerAsync(adventure, userId, "Alpha");
+        alpha.ShouldNotBeNull();
+        alpha!.IsDefault.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task SetDefaultAdventurerAsync_ShouldReturnFalse_WhenNotOwned()
+    {
+        // Arrange
+        const ulong guildId = 123456789;
+        const ulong userId1 = 111111111;
+        const ulong userId2 = 222222222;
+        const string adventureName = "Test Adventure";
+
+        await _sqlDataService.EnsureGuildAsync(guildId);
+        var adventureResult = await _sqlDataService.AddAdventureAsync(guildId, adventureName, "Description", "13th Age");
+        var adventure = adventureResult!.Adventure;
+
+        var char1 = await _sqlDataService.CreateCharacterAsync("User1Char", CharacterType.PlayerCharacter, "13th Age", userId1);
+        var char2 = await _sqlDataService.CreateCharacterAsync("User2Char", CharacterType.PlayerCharacter, "13th Age", userId2);
+
+        await _sqlDataService.AddAdventurerAsync(adventure, char1!);
+        await _sqlDataService.AddAdventurerAsync(adventure, char2!);
+
+        // Act - User1 tries to set User2's character as default
+        var result = await _sqlDataService.SetDefaultAdventurerAsync(adventure, userId1, "User2Char");
+
+        // Assert
+        result.ShouldBeFalse();
+    }
+
     #endregion
 
     #region Encounter Tests
