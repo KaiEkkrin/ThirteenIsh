@@ -15,7 +15,7 @@ internal sealed class PcUpdateMessageHandler(SqlDataService dataService) : Messa
         PcUpdateMessage message, CancellationToken cancellationToken = default)
     {
         var result = await dataService.EditAdventurerAsync(
-            message.GuildId, message.UserId, new EditOperation(dataService, message.UserId), cancellationToken);
+            message.GuildId, message.UserId, new EditOperation(dataService, message.UserId), message.Name, cancellationToken);
 
         await result.Handle(
             errorMessage => interaction.ModifyOriginalResponseAsync(properties => properties.Content = errorMessage),

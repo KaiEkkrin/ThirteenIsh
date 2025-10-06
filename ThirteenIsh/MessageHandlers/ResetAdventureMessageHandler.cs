@@ -15,7 +15,7 @@ internal sealed class ResetAdventureMessageHandler(SqlDataService dataService) :
         ResetAdventurerMessage message, CancellationToken cancellationToken = default)
     {
         var result = await dataService.EditAdventurerAsync(
-            message.GuildId, message.UserId, new EditOperation(), cancellationToken);
+            message.GuildId, message.UserId, new EditOperation(), message.AdventurerName, cancellationToken);
 
         await result.Handle(
             errorMessage => interaction.RespondAsync(errorMessage, ephemeral: true),

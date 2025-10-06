@@ -12,8 +12,9 @@ internal sealed class PcGetSubCommand(bool asGm)
     public override SlashCommandOptionBuilder CreateBuilder()
     {
         return base.CreateBuilder()
-            .AddOptionIf(asGm, builder => builder.AddOption("name", ApplicationCommandOptionType.String,
-                "The character name.", isRequired: true))
+            .AddOption("name", ApplicationCommandOptionType.String,
+                asGm ? "The adventurer name." : "Your adventurer name (if you have multiple).",
+                isRequired: false)
             .AddOption("full", ApplicationCommandOptionType.Boolean, "Include full character sheet");
     }
 
@@ -23,13 +24,7 @@ internal sealed class PcGetSubCommand(bool asGm)
         if (command.GuildId is not { } guildId) return;
 
         string? name = null;
-        if (asGm && !CommandUtil.TryGetCanonicalizedMultiPartOption(option, "name", out name))
-        {
-            await command.RespondAsync(
-                $"A valid {CharacterType.PlayerCharacter.FriendlyName(FriendlyNameOptions.CapitalizeFirstCharacter)} name must be supplied.",
-                ephemeral: true);
-            return;
-        }
+        CommandUtil.TryGetCanonicalizedMultiPartOption(option, "name", out name);
 
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var guild = await dataService.GetGuildAsync(guildId, cancellationToken);
@@ -39,9 +34,9 @@ internal sealed class PcGetSubCommand(bool asGm)
             return;
         }
 
-        var adventurer = name != null // only as GM
-            ? await dataService.GetAdventurerAsync(adventure, name, cancellationToken)
-            : await dataService.GetAdventurerAsync(adventure, command.User.Id, cancellationToken);
+        var adventurer = asGm && name != null
+            ? await dataService.GetAdventurerAsync(adventure, name, cancellationToken) // GM: any player's adventurer
+            : await dataService.GetAdventurerAsync(adventure, command.User.Id, name, cancellationToken); // Player: own adventurer (or default)
 
         if (adventurer == null)
         {

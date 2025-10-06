@@ -16,6 +16,8 @@ internal sealed class PcRollSubCommand() : SubCommandBase("roll", "Rolls against
         return base.CreateBuilder()
             .AddOption("attribute", ApplicationCommandOptionType.String, "The property name to roll.",
                 isRequired: true)
+            .AddOption("name", ApplicationCommandOptionType.String, "Your adventurer name (if you have multiple).",
+                isRequired: false)
             .AddOption("bonus", ApplicationCommandOptionType.String, "A bonus dice expression to add.")
             .AddOption("vs", ApplicationCommandOptionType.Integer, "The amount that counts as a success.")
             .AddRerollsOption("rerolls")
@@ -42,13 +44,23 @@ internal sealed class PcRollSubCommand() : SubCommandBase("roll", "Rolls against
         int? dc = CommandUtil.TryGetOption<int>(option, "vs", out var t) ? t : null;
         if (!CommandUtil.TryGetOption<int>(option, "rerolls", out var rerolls)) rerolls = 0;
 
+        string? name = null;
+        CommandUtil.TryGetCanonicalizedMultiPartOption(option, "name", out name);
+
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var guild = await dataService.GetGuildAsync(guildId, cancellationToken);
         if (string.IsNullOrEmpty(guild.CurrentAdventureName) ||
-            await dataService.GetAdventureAsync(guild, guild.CurrentAdventureName, cancellationToken) is not { } adventure ||
-            await dataService.GetAdventurerAsync(adventure, command.User.Id, cancellationToken) is not { } adventurer)
+            await dataService.GetAdventureAsync(guild, guild.CurrentAdventureName, cancellationToken) is not { } adventure)
         {
-            await command.RespondAsync("Either there is no current adventure or you have not joined it.",
+            await command.RespondAsync("There is no current adventure.",
+                ephemeral: true);
+            return;
+        }
+
+        var adventurer = await dataService.GetAdventurerAsync(adventure, command.User.Id, name, cancellationToken);
+        if (adventurer == null)
+        {
+            await command.RespondAsync("You have not joined the current adventure.",
                 ephemeral: true);
             return;
         }

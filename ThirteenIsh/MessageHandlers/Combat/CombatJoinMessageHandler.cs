@@ -19,7 +19,7 @@ internal sealed class CombatJoinMessageHandler(SqlDataService dataService, Disco
         CombatJoinMessage message, CancellationToken cancellationToken = default)
     {
         var result = await dataService.EditEncounterAsync(message.GuildId, message.ChannelId,
-            new EditOperation(dataService, message.UserId, random, message.Rerolls), cancellationToken);
+            new EditOperation(dataService, message.UserId, message.Name, random, message.Rerolls), cancellationToken);
 
         await result.Handle(
             errorMessage => interaction.ModifyOriginalResponseAsync(properties => properties.Content = errorMessage),
@@ -46,7 +46,7 @@ internal sealed class CombatJoinMessageHandler(SqlDataService dataService, Disco
         return true;
     }
 
-    private sealed class EditOperation(SqlDataService dataService, ulong userId, IRandomWrapper random, int rerolls)
+    private sealed class EditOperation(SqlDataService dataService, ulong userId, string? adventurerName, IRandomWrapper random, int rerolls)
         : EditOperation<EditOutput, EncounterResult>
     {
         public override async Task<EditResult<EditOutput>> DoEditAsync(DataContext context,
@@ -58,7 +58,7 @@ internal sealed class CombatJoinMessageHandler(SqlDataService dataService, Disco
                 return CreateError("You have already joined this encounter.");
             }
 
-            var adventurer = await dataService.GetAdventurerAsync(adventure, userId, cancellationToken);
+            var adventurer = await dataService.GetAdventurerAsync(adventure, userId, adventurerName, cancellationToken);
             if (adventurer is null) return CreateError("You have not joined this adventure.");
 
             var gameSystem = GameSystem.Get(adventure.GameSystem);

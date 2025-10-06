@@ -2,4 +2,5 @@
 
 internal sealed class PcUpdateMessage : GuildMessage
 {
+    public string? Name { get; init; }
 }

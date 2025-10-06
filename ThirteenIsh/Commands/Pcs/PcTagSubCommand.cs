@@ -12,8 +12,9 @@ internal sealed class PcTagSubCommand(bool asGm) : SubCommandBase("tag", "Adds a
     public override SlashCommandOptionBuilder CreateBuilder()
     {
         return base.CreateBuilder()
-            .AddOptionIf(asGm, builder => builder.AddOption("name", ApplicationCommandOptionType.String,
-                "The character name.", isRequired: true))
+            .AddOption("name", ApplicationCommandOptionType.String,
+                asGm ? "The adventurer name." : "Your adventurer name (if you have multiple).",
+                isRequired: false)
             .AddOption("tag", ApplicationCommandOptionType.String, "The tag to add", isRequired: true);
     }
 
@@ -23,13 +24,7 @@ internal sealed class PcTagSubCommand(bool asGm) : SubCommandBase("tag", "Adds a
         if (command.GuildId is not { } guildId) return;
 
         string? name = null;
-        if (asGm && !CommandUtil.TryGetCanonicalizedMultiPartOption(option, "name", out name))
-        {
-            await command.RespondAsync(
-                $"A valid {CharacterType.PlayerCharacter.FriendlyName(FriendlyNameOptions.CapitalizeFirstCharacter)} name must be supplied.",
-                ephemeral: true);
-            return;
-        }
+        CommandUtil.TryGetCanonicalizedMultiPartOption(option, "name", out name);
 
         if (!CommandUtil.TryGetTagOption(option, "tag", out var tagValue))
         {
@@ -41,6 +36,7 @@ internal sealed class PcTagSubCommand(bool asGm) : SubCommandBase("tag", "Adds a
         await channelMessageService.AddMessageAsync(command, new PcTagMessage
         {
             GuildId = guildId,
+            AsGm = asGm,
             Name = name,
             TagValue = tagValue,
             UserId = command.User.Id

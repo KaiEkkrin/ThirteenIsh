@@ -2,4 +2,5 @@
 
 public class LeaveAdventureMessage : AdventureMessageBase
 {
+    public string? AdventurerName { get; set; }
 }

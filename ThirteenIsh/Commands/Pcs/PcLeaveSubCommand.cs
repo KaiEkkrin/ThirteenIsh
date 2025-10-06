@@ -1,16 +1,26 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using ThirteenIsh.Database.Entities.Messages;
+using ThirteenIsh.Game;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Pcs;
 
 internal sealed class PcLeaveSubCommand() : SubCommandBase("leave", "Leaves the current adventure.")
 {
+    public override SlashCommandOptionBuilder CreateBuilder()
+    {
+        return base.CreateBuilder()
+            .AddOption("name", ApplicationCommandOptionType.String, "Your adventurer name (if you have multiple).", isRequired: false);
+    }
+
     public override async Task HandleAsync(SocketSlashCommand command, SocketSlashCommandDataOption option,
         IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
         if (command.GuildId is not { } guildId) return;
+
+        string? name = null;
+        CommandUtil.TryGetCanonicalizedMultiPartOption(option, "name", out name);
 
         var dataService = serviceProvider.GetRequiredService<SqlDataService>();
         var guild = await dataService.GetGuildAsync(guildId, cancellationToken);
@@ -21,12 +31,20 @@ internal sealed class PcLeaveSubCommand() : SubCommandBase("leave", "Leaves the 
             return;
         }
 
+        var adventurer = await dataService.GetAdventurerAsync(adventure, command.User.Id, name, cancellationToken);
+        if (adventurer is null)
+        {
+            await command.RespondAsync("You do not have a character in the current adventure.", ephemeral: true);
+            return;
+        }
+
         // Supply a confirm button
         LeaveAdventureMessage message = new()
         {
             GuildId = guildId,
             Name = adventure.Name,
-            UserId = command.User.Id
+            UserId = command.User.Id,
+            AdventurerName = name
         };
 
         await dataService.AddMessageAsync(message, cancellationToken);
@@ -35,7 +53,7 @@ internal sealed class PcLeaveSubCommand() : SubCommandBase("leave", "Leaves the 
         builder.WithButton("Leave", message.GetMessageId(), ButtonStyle.Danger);
 
         await command.RespondAsync(
-            $"Do you really want to leave the adventure named '{adventure.Name}'? This cannot be undone.",
+            $"Do you really want to leave the adventure named '{adventure.Name}' with adventurer '{adventurer.Name}'? This cannot be undone.",
             ephemeral: true, components: builder.Build());
     }
 }

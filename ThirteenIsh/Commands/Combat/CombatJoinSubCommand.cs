@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using ThirteenIsh.ChannelMessages.Combat;
+using ThirteenIsh.Game;
 using ThirteenIsh.Services;
 
 namespace ThirteenIsh.Commands.Combat;
@@ -10,6 +11,7 @@ internal sealed class CombatJoinSubCommand() : SubCommandBase("join", "Joins the
     public override SlashCommandOptionBuilder CreateBuilder()
     {
         return base.CreateBuilder()
+            .AddOption("name", ApplicationCommandOptionType.String, "Your adventurer name (if you have multiple).", isRequired: false)
             .AddRerollsOption("rerolls");
     }
 
@@ -17,6 +19,9 @@ internal sealed class CombatJoinSubCommand() : SubCommandBase("join", "Joins the
         IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
         if (command is not { ChannelId: { } channelId, GuildId: { } guildId }) return;
+
+        string? name = null;
+        CommandUtil.TryGetCanonicalizedMultiPartOption(option, "name", out name);
 
         if (!CommandUtil.TryGetOption<int>(option, "rerolls", out var rerolls)) rerolls = 0;
 
@@ -26,7 +31,8 @@ internal sealed class CombatJoinSubCommand() : SubCommandBase("join", "Joins the
             ChannelId = channelId,
             GuildId = guildId,
             Rerolls = rerolls,
-            UserId = command.User.Id
+            UserId = command.User.Id,
+            Name = name
         });
     }
 }

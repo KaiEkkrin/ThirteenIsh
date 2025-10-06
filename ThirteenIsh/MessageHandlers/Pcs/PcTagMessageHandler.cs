@@ -16,9 +16,10 @@ internal sealed class PcTagMessageHandler(SqlDataService dataService) : MessageH
     {
         AddTagOperation editOperation = new(message.TagValue);
 
-        var result = message.Name != null
-            ? await dataService.EditAdventurerAsync(message.GuildId, message.Name, editOperation, cancellationToken)
-            : await dataService.EditAdventurerAsync(message.GuildId, message.UserId, editOperation, cancellationToken);
+        // If AsGm is true, pass null for userId to bypass permission check; otherwise enforce userId check
+        var result = message.AsGm && message.Name != null
+            ? await dataService.EditAdventurerAsync(message.GuildId, null, editOperation, message.Name, cancellationToken)
+            : await dataService.EditAdventurerAsync(message.GuildId, message.UserId, editOperation, message.Name, cancellationToken);
 
         await result.Handle(
             errorMessage => interaction.ModifyOriginalResponseAsync(properties => properties.Content = errorMessage),

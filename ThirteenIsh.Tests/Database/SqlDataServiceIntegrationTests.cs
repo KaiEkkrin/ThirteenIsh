@@ -1441,4 +1441,152 @@ public class SqlDataServiceIntegrationTests : IAsyncLifetime
     }
 
     #endregion
+
+    #region Authorization Tests
+
+    [Fact]
+    public async Task GetAdventurerAsync_WithUserId_ShouldReturnOwnAdventurer()
+    {
+        // Arrange
+        const ulong guildId = 123456789;
+        const ulong userId = 987654321;
+        const string adventureName = "Test Adventure";
+
+        await _sqlDataService.EnsureGuildAsync(guildId);
+        var adventureResult = await _sqlDataService.AddAdventureAsync(guildId, adventureName, "Description", "13th Age");
+        var adventure = adventureResult!.Adventure;
+
+        var character = await _sqlDataService.CreateCharacterAsync("TestChar", CharacterType.PlayerCharacter, "13th Age", userId);
+        await _sqlDataService.AddAdventurerAsync(adventure, character!);
+
+        // Act
+        var adventurer = await _sqlDataService.GetAdventurerAsync(adventure, userId, "TestChar");
+
+        // Assert
+        adventurer.ShouldNotBeNull();
+        adventurer!.Name.ShouldBe("TestChar");
+        adventurer.UserId.ShouldBe(userId);
+    }
+
+    [Fact]
+    public async Task GetAdventurerAsync_WithUserId_ShouldReturnNull_WhenNotOwned()
+    {
+        // Arrange
+        const ulong guildId = 123456789;
+        const ulong userId1 = 111111111;
+        const ulong userId2 = 222222222;
+        const string adventureName = "Test Adventure";
+
+        await _sqlDataService.EnsureGuildAsync(guildId);
+        var adventureResult = await _sqlDataService.AddAdventureAsync(guildId, adventureName, "Description", "13th Age");
+        var adventure = adventureResult!.Adventure;
+
+        var character = await _sqlDataService.CreateCharacterAsync("OtherChar", CharacterType.PlayerCharacter, "13th Age", userId1);
+        await _sqlDataService.AddAdventurerAsync(adventure, character!);
+
+        // Act - User2 tries to access User1's character
+        var adventurer = await _sqlDataService.GetAdventurerAsync(adventure, userId2, "OtherChar");
+
+        // Assert
+        adventurer.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task GetAdventurerAsync_WithNullUserId_ShouldReturnAnyAdventurer()
+    {
+        // Arrange
+        const ulong guildId = 123456789;
+        const ulong userId = 987654321;
+        const string adventureName = "Test Adventure";
+
+        await _sqlDataService.EnsureGuildAsync(guildId);
+        var adventureResult = await _sqlDataService.AddAdventureAsync(guildId, adventureName, "Description", "13th Age");
+        var adventure = adventureResult!.Adventure;
+
+        var character = await _sqlDataService.CreateCharacterAsync("AnyChar", CharacterType.PlayerCharacter, "13th Age", userId);
+        await _sqlDataService.AddAdventurerAsync(adventure, character!);
+
+        // Act - GM lookup with null userId (bypasses ownership check)
+        var adventurer = await _sqlDataService.GetAdventurerAsync(adventure, null, "AnyChar");
+
+        // Assert
+        adventurer.ShouldNotBeNull();
+        adventurer!.Name.ShouldBe("AnyChar");
+        adventurer.UserId.ShouldBe(userId); // Can access even though userId doesn't match
+    }
+
+    [Fact]
+    public async Task EditAdventurerAsync_WithUserId_ShouldNotAllowEditingOthersAdventurer()
+    {
+        // Arrange
+        const ulong guildId = 123456789;
+        const ulong userId1 = 111111111;
+        const ulong userId2 = 222222222;
+        const string adventureName = "Test Adventure";
+
+        var guild = await _sqlDataService.EnsureGuildAsync(guildId);
+        var adventureResult = await _sqlDataService.AddAdventureAsync(guildId, adventureName, "Description", "13th Age");
+        var adventure = adventureResult!.Adventure;
+        guild.CurrentAdventureName = adventureName;
+        await _sqlDataService.SaveChangesAsync();
+
+        var character = await _sqlDataService.CreateCharacterAsync("ProtectedChar", CharacterType.PlayerCharacter, "13th Age", userId1);
+        await _sqlDataService.AddAdventurerAsync(adventure, character!);
+
+        var dummyOperation = new DummyEditOperation();
+
+        // Act - User2 tries to edit User1's character
+        var result = await _sqlDataService.EditAdventurerAsync(guildId, userId2, dummyOperation, "ProtectedChar");
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.Success.ShouldBeFalse();
+
+        var errorMessage = result.Handle(err => err, _ => null!);
+        errorMessage.ShouldNotBeNull();
+        errorMessage.ShouldContain("do not have a character");
+    }
+
+    [Fact]
+    public async Task EditAdventurerAsync_WithNullUserId_ShouldAllowEditingAnyAdventurer()
+    {
+        // Arrange
+        const ulong guildId = 123456789;
+        const ulong userId1 = 111111111;
+        const string adventureName = "Test Adventure";
+
+        var guild = await _sqlDataService.EnsureGuildAsync(guildId);
+        var adventureResult = await _sqlDataService.AddAdventureAsync(guildId, adventureName, "Description", "13th Age");
+        var adventure = adventureResult!.Adventure;
+        guild.CurrentAdventureName = adventureName;
+        await _sqlDataService.SaveChangesAsync();
+
+        var character = await _sqlDataService.CreateCharacterAsync("EditableChar", CharacterType.PlayerCharacter, "13th Age", userId1);
+        await _sqlDataService.AddAdventurerAsync(adventure, character!);
+
+        var dummyOperation = new DummyEditOperation();
+
+        // Act - GM edits with null userId (bypasses ownership check)
+        var result = await _sqlDataService.EditAdventurerAsync(guildId, null, dummyOperation, "EditableChar");
+
+        // Assert
+        result.ShouldNotBeNull();
+        result.Success.ShouldBeTrue();
+
+        var adventurer = result.Handle(_ => null!, adv => adv);
+        adventurer.ShouldNotBeNull();
+        adventurer!.Name.ShouldBe("EditableChar");
+    }
+
+    // Helper class for testing edit operations
+    private sealed class DummyEditOperation : EditOperation<Adventurer, Adventurer>
+    {
+        public override Task<EditResult<Adventurer>> DoEditAsync(ThirteenIsh.Database.DataContext context, Adventurer adventurer,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new EditResult<Adventurer>(adventurer));
+        }
+    }
+
+    #endregion
 }

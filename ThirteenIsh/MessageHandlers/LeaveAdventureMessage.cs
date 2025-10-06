@@ -11,7 +11,7 @@ internal sealed class LeaveAdventureMessageHandler(SqlDataService dataService) :
         LeaveAdventureMessage message, CancellationToken cancellationToken = default)
     {
         var adventurer = await dataService.DeleteAdventurerAsync(message.GuildId, message.UserId, message.Name,
-            cancellationToken);
+            message.AdventurerName, cancellationToken);
         if (adventurer == null)
         {
             await interaction.RespondAsync($"You have not joined the adventure '{message.Name}'.", ephemeral: true);

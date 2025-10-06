@@ -12,8 +12,9 @@ internal sealed class PcFixSubCommand(bool asGm) : SubCommandBase("fix", "Fixes 
     public override SlashCommandOptionBuilder CreateBuilder()
     {
         return base.CreateBuilder()
-            .AddOptionIf(asGm, builder => builder.AddOption("name", ApplicationCommandOptionType.String,
-                "The character name.", isRequired: true))
+            .AddOption("name", ApplicationCommandOptionType.String,
+                asGm ? "The adventurer name." : "Your adventurer name (if you have multiple).",
+                isRequired: false)
             .AddOption("attribute", ApplicationCommandOptionType.String, "The attribute to fix.")
             .AddOption("value", ApplicationCommandOptionType.Integer, "The fix value.");
     }
@@ -24,13 +25,7 @@ internal sealed class PcFixSubCommand(bool asGm) : SubCommandBase("fix", "Fixes 
         if (command.GuildId is not { } guildId) return;
 
         string? name = null;
-        if (asGm && !CommandUtil.TryGetCanonicalizedMultiPartOption(option, "name", out name))
-        {
-            await command.RespondAsync(
-                $"A valid {CharacterType.PlayerCharacter.FriendlyName(FriendlyNameOptions.CapitalizeFirstCharacter)} name must be supplied.",
-                ephemeral: true);
-            return;
-        }
+        CommandUtil.TryGetCanonicalizedMultiPartOption(option, "name", out name);
 
         if (!CommandUtil.TryGetOption<string>(option, "attribute", out var counterNamePart))
         {
@@ -48,6 +43,7 @@ internal sealed class PcFixSubCommand(bool asGm) : SubCommandBase("fix", "Fixes 
         await channelMessageService.AddMessageAsync(command, new PcFixMessage
         {
             GuildId = guildId,
+            AsGm = asGm,
             Name = name,
             CounterNamePart = counterNamePart,
             FixValue = fixValue,

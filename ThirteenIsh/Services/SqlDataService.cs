@@ -354,11 +354,12 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
     }
 
     public async Task<EditResult<T>> EditAdventurerAsync<T>(
-        ulong guildId, string name, EditOperation<T, Adventurer> operation,
+        ulong guildId, ulong? userId, EditOperation<T, Adventurer> operation,
+        string adventurerName,
         CancellationToken cancellationToken = default)
         where T : class
     {
-        // This one fetches the adventurer with the matching name, ignoring permissions.
+        // Null userId bypasses permission check (GM mode)
         var guild = await GetGuildAsync(guildId, cancellationToken);
         if (string.IsNullOrEmpty(guild.CurrentAdventureName))
             return operation.CreateError("There is no current adventure in this guild.");
@@ -366,9 +367,14 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
         var adventure = await GetAdventureAsync(guild, null, cancellationToken);
         if (adventure == null) return operation.CreateError($"Adventure '{guild.CurrentAdventureName}' not found.");
 
-        var adventurer = await GetAdventurerAsync(adventure, name, cancellationToken);
+        var adventurer = await GetAdventurerAsync(adventure, userId, adventurerName, cancellationToken);
         if (adventurer == null)
-            return operation.CreateError($"There is no character named '{name}' in the current adventure.");
+        {
+            var errorMsg = userId.HasValue
+                ? $"You do not have a character named '{adventurerName}' in the current adventure."
+                : $"There is no character named '{adventurerName}' in the current adventure.";
+            return operation.CreateError(errorMsg);
+        }
 
         var result = await EditAsync(operation, adventurer, cancellationToken);
         return result;
@@ -488,6 +494,37 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
                         a.UserId == userId &&
                         a.NameUpper.StartsWith(adventurerName.ToUpperInvariant()))
             .ToListAsync(cancellationToken);
+
+        return matchingAdventurers.Count == 1 ? matchingAdventurers[0] : null;
+    }
+
+    public async Task<Adventurer?> GetAdventurerAsync(Adventure adventure, ulong? userId, string adventurerName,
+        CancellationToken cancellationToken = default)
+    {
+        // This overload is for GM operations where userId can be null (no permission check)
+        // Look for an exact match first
+        var query = _context.Adventurers
+            .Include(a => a.Adventure)
+            .Where(a => a.AdventureId == adventure.Id);
+
+        if (userId.HasValue)
+            query = query.Where(a => a.UserId == userId.Value);
+
+        var adventurer = await query
+            .SingleOrDefaultAsync(a => a.Name == adventurerName, cancellationToken);
+
+        if (adventurer != null) return adventurer;
+
+        // Only accept an unambiguous match
+        var matchingQuery = _context.Adventurers
+            .Include(a => a.Adventure)
+            .Where(a => a.AdventureId == adventure.Id &&
+                        a.NameUpper.StartsWith(adventurerName.ToUpperInvariant()));
+
+        if (userId.HasValue)
+            matchingQuery = matchingQuery.Where(a => a.UserId == userId.Value);
+
+        var matchingAdventurers = await matchingQuery.ToListAsync(cancellationToken);
 
         return matchingAdventurers.Count == 1 ? matchingAdventurers[0] : null;
     }
