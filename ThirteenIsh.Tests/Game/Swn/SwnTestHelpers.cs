@@ -62,7 +62,8 @@ internal static class SwnTestHelpers
             Name = name,
             UserId = userId,
             Sheet = new CharacterSheet(),
-            LastUpdated = DateTimeOffset.UtcNow
+            LastUpdated = DateTimeOffset.UtcNow,
+            IsDefault = true
         };
     }
 

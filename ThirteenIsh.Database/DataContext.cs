@@ -38,6 +38,11 @@ public class DataContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Adventurer>()
+            .HasIndex(a => new { a.AdventureId, a.UserId, a.IsDefault })
+            .IsUnique()
+            .HasFilter("\"IsDefault\" = true");
+
+        modelBuilder.Entity<Adventurer>()
             .OwnsOne(c => c.Sheet, s =>
             {
                 s.ToJson();

@@ -60,7 +60,8 @@ internal sealed class PcJoinMessageHandler(SqlDataService dataService, DiscordSe
                     Name = character.Name,
                     LastUpdated = DateTimeOffset.UtcNow,
                     Sheet = character.Sheet,
-                    UserId = character.UserId
+                    UserId = character.UserId,
+                    IsDefault = true
                 };
 
                 var gameSystem = GameSystem.Get(character.GameSystem);

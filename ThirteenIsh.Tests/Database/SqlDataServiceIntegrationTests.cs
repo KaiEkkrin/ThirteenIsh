@@ -526,6 +526,7 @@ public class SqlDataServiceIntegrationTests : IAsyncLifetime
             AdventureId = adventure.Id,
             LastUpdated = DateTimeOffset.UtcNow,
             Sheet = new CharacterSheet(),
+            IsDefault = true
         };
         context.Adventurers.Add(adventurer);
         await context.SaveChangesAsync();
@@ -562,6 +563,7 @@ public class SqlDataServiceIntegrationTests : IAsyncLifetime
             AdventureId = adventure.Id,
             LastUpdated = DateTimeOffset.UtcNow,
             Sheet = new CharacterSheet(),
+            IsDefault = true
         };
         context.Adventurers.Add(adventurer);
         await context.SaveChangesAsync();
@@ -597,6 +599,7 @@ public class SqlDataServiceIntegrationTests : IAsyncLifetime
             AdventureId = adventure.Id,
             LastUpdated = DateTimeOffset.UtcNow,
             Sheet = new CharacterSheet(),
+            IsDefault = true
         };
         context.Adventurers.Add(adventurer);
         await context.SaveChangesAsync();
@@ -630,6 +633,7 @@ public class SqlDataServiceIntegrationTests : IAsyncLifetime
             AdventureId = adventure.Id,
             LastUpdated = DateTimeOffset.UtcNow,
             Sheet = new CharacterSheet(),
+            IsDefault = true
         };
         context.Adventurers.Add(adventurer);
         await context.SaveChangesAsync();
@@ -685,6 +689,7 @@ public class SqlDataServiceIntegrationTests : IAsyncLifetime
             AdventureId = adventure.Id,
             LastUpdated = DateTimeOffset.UtcNow,
             Sheet = new CharacterSheet(),
+            IsDefault = true
         };
         var adventurer2 = new Adventurer
         {
@@ -693,6 +698,7 @@ public class SqlDataServiceIntegrationTests : IAsyncLifetime
             AdventureId = adventure.Id,
             LastUpdated = DateTimeOffset.UtcNow,
             Sheet = new CharacterSheet(),
+            IsDefault = true
         };
         context.Adventurers.AddRange(adventurer1, adventurer2);
         await context.SaveChangesAsync();

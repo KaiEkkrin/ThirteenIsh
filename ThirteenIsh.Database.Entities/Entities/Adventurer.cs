@@ -7,11 +7,10 @@ namespace ThirteenIsh.Database.Entities;
 /// An Adventurer is a Character within an adventure and combines their sheet
 /// (basic stats) with their state (what resources they've expended, etc).
 /// The name is the name of the matching character.
-/// For now, each user can join each adventure only once.
+/// Players can join adventures with multiple characters, but only one can be the default.
 /// </summary>
 [Index(nameof(AdventureId), nameof(Name), IsUnique = true)]
 [Index(nameof(AdventureId), nameof(NameUpper), IsUnique = true)]
-[Index(nameof(AdventureId), nameof(UserId), IsUnique = true)]
 public class Adventurer : SearchableNamedEntityBase, ITrackedCharacter
 {
     public long AdventureId { get; set; }
@@ -41,6 +40,12 @@ public class Adventurer : SearchableNamedEntityBase, ITrackedCharacter
     /// The owning user ID.
     /// </summary>
     public required ulong UserId { get; set; }
+
+    /// <summary>
+    /// Whether this is the user's default character in this adventure.
+    /// Each user can have only one default character per adventure.
+    /// </summary>
+    public required bool IsDefault { get; set; }
 
     public FixesSheet Fixes { get; set; } = new();
 

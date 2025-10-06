@@ -376,7 +376,7 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
     {
         return _context.Adventurers
             .Include(a => a.Adventure)
-            .Where(a => a.AdventureId == adventure.Id && a.UserId == userId)
+            .Where(a => a.AdventureId == adventure.Id && a.UserId == userId && a.IsDefault)
             .SingleOrDefaultAsync(cancellationToken);
     }
 
