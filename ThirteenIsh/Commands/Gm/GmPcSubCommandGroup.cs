@@ -8,6 +8,7 @@ namespace ThirteenIsh.Commands.Gm;
 internal class GmPcSubCommandGroup() : SubCommandGroupBase("pc", "Manage player characters.",
     new PcFixSubCommand(true),
     new PcGetSubCommand(true),
+    new PcListSubCommand(true),
     new PcTagSubCommand(true),
     new PcUntagSubCommand(true),
     new PcVModSubCommand(true),

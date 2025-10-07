@@ -16,12 +16,14 @@ public class SwnCombatIntegrationTests
     private readonly SwnSystem _gameSystem;
     private readonly SwnCharacterSystem _playerSystem;
     private readonly SwnCharacterSystem _monsterSystem;
+    private readonly SwnCharacterSystem _starshipSystem;
 
     public SwnCombatIntegrationTests()
     {
         _gameSystem = SwnTestHelpers.CreateSwnSystem();
         _playerSystem = (SwnCharacterSystem)_gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter, null);
         _monsterSystem = (SwnCharacterSystem)_gameSystem.GetCharacterSystem(CharacterType.Monster, null);
+        _starshipSystem = (SwnCharacterSystem)_gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter, SwnSystem.Starship);
     }
 
     [Fact]
@@ -623,5 +625,182 @@ public class SwnCombatIntegrationTests
         attackResult.Working.ShouldContain("18"); // Should show the d20 roll
         attackResult.CounterName.ShouldContain("Shoot");
         attackResult.CounterName.ShouldContain("attack");
+    }
+
+    [Fact]
+    public void Combat_StarshipEncounterJoin_RollsInitiativeWithoutDexterityBonus()
+    {
+        // Arrange
+        var encounter = SwnTestHelpers.CreateEncounter();
+        var nameAliases = new NameAliasCollection(encounter);
+
+        var starship = SwnTestHelpers.CreatePlayerCharacterStarship();
+        _starshipSystem.SetNewCharacterStartingValues(starship);
+        SwnTestHelpers.SetupFullStarship(starship, _starshipSystem);
+
+        var adventurer = SwnTestHelpers.CreateAdventurer("USS Enterprise");
+        adventurer.Sheet = starship.Sheet;
+        adventurer.CharacterSystemName = SwnSystem.Starship;
+
+        // Set up predictable dice roll for initiative
+        // Starship initiative: 1d8 (no Dexterity bonus)
+        var mockRandom = SwnTestHelpers.CreatePredictableRandom(8, 5); // Starship gets flat 5
+
+        // Act - Starship joins encounter
+        var starshipResult = _gameSystem.EncounterJoin(adventurer, encounter, nameAliases, mockRandom, 0, 12345);
+
+        // Assert
+        starshipResult.Error.ShouldBe(GameCounterRollError.Success);
+        starshipResult.Roll.ShouldBe(5); // 5 (d8) with NO Dexterity bonus
+        starshipResult.Working.ShouldContain("5"); // Should show the d8 roll
+
+        // Verify encounter has the starship
+        encounter.CombatantsInTurnOrder.Count().ShouldBe(1);
+        encounter.CombatantsInTurnOrder.First().Initiative.ShouldBe(5);
+        encounter.CombatantsInTurnOrder.First().Name.ShouldBe("USS Enterprise");
+    }
+
+    [Fact]
+    public void Combat_MixedEncounter_StarshipAndPlayerCharacterJoinTogether()
+    {
+        // Arrange
+        var encounter = SwnTestHelpers.CreateEncounter();
+        var nameAliases = new NameAliasCollection(encounter);
+
+        // Create regular player character
+        var player = SwnTestHelpers.CreatePlayerCharacter("Captain Kirk");
+        _playerSystem.SetNewCharacterStartingValues(player);
+        SwnTestHelpers.SetupFullPlayerCharacter(player, _playerSystem);
+
+        var playerAdventurer = SwnTestHelpers.CreateAdventurer("Captain Kirk");
+        playerAdventurer.Sheet = player.Sheet;
+
+        // Create player character starship
+        var starship = SwnTestHelpers.CreatePlayerCharacterStarship("USS Enterprise");
+        _starshipSystem.SetNewCharacterStartingValues(starship);
+        SwnTestHelpers.SetupFullStarship(starship, _starshipSystem);
+
+        var starshipAdventurer = SwnTestHelpers.CreateAdventurer("USS Enterprise");
+        starshipAdventurer.Sheet = starship.Sheet;
+        starshipAdventurer.CharacterSystemName = SwnSystem.Starship;
+
+        // Set up predictable dice rolls for initiative
+        // Player initiative: 1d8 + Dex bonus = d8 roll + 1 (from SetupFullPlayerCharacter: Dex 16 = +1)
+        // Starship initiative: 1d8 = d8 roll
+        var mockRandom = SwnTestHelpers.CreatePredictableRandom(8, 6, 8, 4); // Player gets 6+1=7, Starship gets 4
+
+        // Act - Both join encounter
+        var playerResult = _gameSystem.EncounterJoin(playerAdventurer, encounter, nameAliases, mockRandom, 0, 12345);
+        var starshipResult = _gameSystem.EncounterJoin(starshipAdventurer, encounter, nameAliases, mockRandom, 0, 54321);
+
+        // Assert
+        playerResult.Error.ShouldBe(GameCounterRollError.Success);
+        playerResult.Roll.ShouldBe(7); // 6 (d8) + 1 (Dex bonus)
+        playerResult.Working.ShouldContain("6");
+
+        starshipResult.Error.ShouldBe(GameCounterRollError.Success);
+        starshipResult.Roll.ShouldBe(4); // 4 (d8) for starship, no Dex bonus
+        starshipResult.Working.ShouldContain("4");
+
+        // Check encounter turn order (higher initiative goes first)
+        encounter.CombatantsInTurnOrder.Count().ShouldBe(2);
+        encounter.CombatantsInTurnOrder.First().Initiative.ShouldBe(7); // Player goes first
+        encounter.CombatantsInTurnOrder.First().Name.ShouldBe("Captain Kirk");
+        encounter.CombatantsInTurnOrder.Last().Initiative.ShouldBe(4); // Starship goes second
+        encounter.CombatantsInTurnOrder.Last().Name.ShouldBe("USS Enterprise");
+    }
+
+    [Fact]
+    public void Combat_StarshipHitPoints_TrackedCorrectly()
+    {
+        // Arrange
+        var starship = SwnTestHelpers.CreatePlayerCharacterStarship();
+        _starshipSystem.SetNewCharacterStartingValues(starship);
+        SwnTestHelpers.SetupFullStarship(starship, _starshipSystem);
+
+        var adventurer = SwnTestHelpers.CreateAdventurer("Millennium Falcon");
+        adventurer.Sheet = starship.Sheet;
+        adventurer.CharacterSystemName = SwnSystem.Starship;
+
+        // Get initial hit points
+        var hpCounter = _starshipSystem.GetProperty<GameCounter>(starship, SwnSystem.HitPoints);
+
+        var initialHP = hpCounter.GetValue(adventurer);
+        initialHP.ShouldBe(30); // Expected from SetupFullStarship
+
+        // Verify initial variable value equals max HP
+        var initialCurrentHP = hpCounter.GetVariableValue(adventurer);
+        initialCurrentHP.ShouldBe(30); // Current HP should start at max
+
+        // Act - Apply damage to starship (15 points of damage)
+        hpCounter.SetVariableClamped(initialCurrentHP!.Value - 15, adventurer);
+
+        // Assert - Check that max HP remains unchanged
+        var maxHP = hpCounter.GetValue(adventurer);
+        maxHP.ShouldBe(30); // Max HP should not change
+
+        // Assert - Check that current HP has been reduced by damage
+        var currentHP = hpCounter.GetVariableValue(adventurer);
+        currentHP.ShouldBe(15); // 30 - 15 = 15
+    }
+
+    [Fact]
+    public void Combat_StarshipWeaponsAttack_RollsCorrectly()
+    {
+        // Arrange
+        var starship = SwnTestHelpers.CreatePlayerCharacterStarship();
+        _starshipSystem.SetNewCharacterStartingValues(starship);
+        SwnTestHelpers.SetupFullStarship(starship, _starshipSystem);
+
+        var adventurer = SwnTestHelpers.CreateAdventurer("Star Destroyer");
+        adventurer.Sheet = starship.Sheet;
+        adventurer.CharacterSystemName = SwnSystem.Starship;
+
+        // Set up predictable dice roll: d20 roll = 14
+        var mockRandom = SwnTestHelpers.CreatePredictableRandom(20, 14);
+
+        // Act - Starship Weapons attack (similar to monster attack pattern)
+        var weaponsCounter = _starshipSystem.GetProperty<GameCounter>(starship, SwnSystem.Weapons);
+        int? targetAC = 17; // Enemy starship's AC
+        var attackResult = weaponsCounter.Roll(adventurer, null, mockRandom, 0, ref targetAC);
+
+        // Assert
+        attackResult.Error.ShouldBe(GameCounterRollError.Success);
+        // Expected: 14 (d20) + 5 (weapons bonus from SetupFullStarship) = 19
+        attackResult.Roll.ShouldBe(19);
+        attackResult.Success.ShouldBe(true); // 19 >= 17 (target AC)
+        attackResult.Working.ShouldContain("14"); // Should show the d20 roll
+    }
+
+    [Fact]
+    public void Combat_StarshipWithoutWeapons_CanStillJoinEncounter()
+    {
+        // Arrange
+        var encounter = SwnTestHelpers.CreateEncounter();
+        var nameAliases = new NameAliasCollection(encounter);
+
+        // Create minimal starship (just hull class and HP, no weapons)
+        var starship = SwnTestHelpers.CreatePlayerCharacterStarship("Unarmed Transport");
+        _starshipSystem.GetProperty<GameProperty>(starship, SwnSystem.HullClass).EditCharacterProperty(SwnSystem.Fighter, starship);
+        _starshipSystem.SetNewCharacterStartingValues(starship);
+
+        var adventurer = SwnTestHelpers.CreateAdventurer("Unarmed Transport");
+        adventurer.Sheet = starship.Sheet;
+        adventurer.CharacterSystemName = SwnSystem.Starship;
+
+        // Set up predictable dice roll for initiative
+        var mockRandom = SwnTestHelpers.CreatePredictableRandom(8, 3);
+
+        // Act - Minimal starship joins encounter (should not throw exception)
+        var result = _gameSystem.EncounterJoin(adventurer, encounter, nameAliases, mockRandom, 0, 12345);
+
+        // Assert
+        result.Error.ShouldBe(GameCounterRollError.Success);
+        result.Roll.ShouldBe(3); // 3 (d8) with no Dexterity bonus
+        result.Working.ShouldContain("3");
+
+        // Verify starship joined successfully
+        encounter.CombatantsInTurnOrder.Count().ShouldBe(1);
+        encounter.CombatantsInTurnOrder.First().Name.ShouldBe("Unarmed Transport");
     }
 }

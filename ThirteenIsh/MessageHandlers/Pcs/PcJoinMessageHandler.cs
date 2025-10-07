@@ -51,33 +51,42 @@ internal sealed class PcJoinMessageHandler(SqlDataService dataService, DiscordSe
             if (adventure.GameSystem != character.GameSystem)
                 return CreateError("This character was not created in the same game system as the adventure.");
 
-            var currentAdventurer = await dataService.GetAdventurerAsync(adventure, character.UserId,
-                cancellationToken);
-            if (currentAdventurer == null)
-            {
-                Adventurer adventurer = new()
-                {
-                    Name = character.Name,
-                    LastUpdated = DateTimeOffset.UtcNow,
-                    Sheet = character.Sheet,
-                    UserId = character.UserId,
-                    IsDefault = true
-                };
-
-                var gameSystem = GameSystem.Get(character.GameSystem);
-                var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter, character.CharacterSystemName);
-                characterSystem.ResetVariables(adventurer);
-                adventure.Adventurers.Add(adventurer);
-                return new EditResult<Adventure>(adventure);
-            }
-            else if (currentAdventurer.Name == character.Name)
+            // Check if this character is already joined to the adventure
+            var existingAdventurerByName = await dataService.GetAdventurerAsync(adventure, character.UserId,
+                character.Name, cancellationToken);
+            if (existingAdventurerByName != null)
             {
                 return CreateError("This character is already joined to the current adventure.");
             }
-            else
+
+            // Get all of the user's adventurers in this adventure to check the count
+            var userAdventurers = await dataService.GetUserAdventurersAsync(adventure, character.UserId)
+                .ToListAsync(cancellationToken);
+
+            // Check if user has reached the soft limit of 5 adventurers
+            if (userAdventurers.Count >= 5)
             {
-                return CreateError("You have already joined this adventure with a different character.");
+                return CreateError("You have already joined this adventure with 5 characters, which is the maximum.");
             }
+
+            // Determine if this should be the default (true if it's the first adventurer)
+            bool isDefault = userAdventurers.Count == 0;
+
+            Adventurer adventurer = new()
+            {
+                Name = character.Name,
+                LastUpdated = DateTimeOffset.UtcNow,
+                Sheet = character.Sheet,
+                CharacterSystemName = character.CharacterSystemName,
+                UserId = character.UserId,
+                IsDefault = isDefault
+            };
+
+            var gameSystem = GameSystem.Get(character.GameSystem);
+            var characterSystem = gameSystem.GetCharacterSystem(CharacterType.PlayerCharacter, character.CharacterSystemName);
+            characterSystem.ResetVariables(adventurer);
+            adventure.Adventurers.Add(adventurer);
+            return new EditResult<Adventure>(adventure);
         }
     }
 }

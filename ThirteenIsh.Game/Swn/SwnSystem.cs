@@ -293,15 +293,21 @@ internal class SwnSystem : GameSystem
         NameAliasCollection nameAliasCollection, IRandomWrapper random, int rerolls, ulong userId)
     {
         // In Stars Without Number, the initiative roll is 1d8 + Dexterity bonus.
-        var dexterityBonusCounter = GetCharacterSystem(CharacterType.PlayerCharacter, adventurer.CharacterSystemName)
-            .GetProperty<GameCounter>(adventurer, AttributeBonusCounter.GetBonusCounterName(Dexterity));
+        // Safely get the Dexterity bonus counter - it may not exist (e.g., for starships)
+        var characterSystem = GetCharacterSystem(CharacterType.PlayerCharacter, adventurer.CharacterSystemName);
+        var dexterityBonusCounter = characterSystem.GetProperty(AttributeBonusCounter.GetBonusCounterName(Dexterity)) as GameCounter;
 
         ParseTreeBase parseTree = DiceRollParseTree.BuildWithRerolls(8, 0, 1);
-        var dexterityBonus = dexterityBonusCounter.GetValue(adventurer);
-        if (dexterityBonus.HasValue)
+
+        // Only apply dexterity bonus if the counter exists and has a value
+        if (dexterityBonusCounter != null)
         {
-            parseTree = new BinaryOperationParseTree(0, parseTree, new IntegerParseTree(
-                0, dexterityBonus.Value, dexterityBonusCounter.Name), '+');
+            var dexterityBonus = dexterityBonusCounter.GetValue(adventurer);
+            if (dexterityBonus.HasValue)
+            {
+                parseTree = new BinaryOperationParseTree(0, parseTree, new IntegerParseTree(
+                    0, dexterityBonus.Value, dexterityBonusCounter.Name), '+');
+            }
         }
 
         var initiative = parseTree.Evaluate(random, out var working);

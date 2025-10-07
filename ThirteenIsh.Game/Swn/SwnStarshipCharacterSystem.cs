@@ -1,7 +1,7 @@
 namespace ThirteenIsh.Game.Swn;
 
 internal class SwnStarshipCharacterSystem(ImmutableList<GamePropertyGroup> propertyGroups)
-    : SwnCharacterSystem(SwnSystem.Starship, CharacterTypeCompatibility.Monster,
+    : SwnCharacterSystem(SwnSystem.Starship, CharacterTypeCompatibility.Both,
     null, propertyGroups)
 {
     public override void SetNewCharacterStartingValues(Character character)

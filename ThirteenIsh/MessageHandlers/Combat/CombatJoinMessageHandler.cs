@@ -53,13 +53,15 @@ internal sealed class CombatJoinMessageHandler(SqlDataService dataService, Disco
             EncounterResult encounterResult, CancellationToken cancellationToken = default)
         {
             var (adventure, encounter) = encounterResult;
-            if (encounter.Combatants.OfType<AdventurerCombatant>().Any(o => o.UserId == userId))
-            {
-                return CreateError("You have already joined this encounter.");
-            }
 
             var adventurer = await dataService.GetAdventurerAsync(adventure, userId, adventurerName, cancellationToken);
             if (adventurer is null) return CreateError("You have not joined this adventure.");
+
+            // Check if this specific adventurer (by name) has already joined the encounter
+            if (encounter.Combatants.OfType<AdventurerCombatant>().Any(o => o.Name == adventurer.Name))
+            {
+                return CreateError($"{adventurer.Name} has already joined this encounter.");
+            }
 
             var gameSystem = GameSystem.Get(adventure.GameSystem);
             NameAliasCollection nameAliasCollection = new(encounter);

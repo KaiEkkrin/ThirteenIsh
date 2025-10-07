@@ -186,6 +186,24 @@ internal static class SwnTestHelpers
     }
 
     /// <summary>
+    /// Creates a player character starship (for when players own starships).
+    /// </summary>
+    public static Character CreatePlayerCharacterStarship(string name = "TestStarship", ulong userId = 12345)
+    {
+        return new Character
+        {
+            Id = 4,
+            Name = name,
+            UserId = userId,
+            CharacterType = CharacterType.PlayerCharacter,
+            GameSystem = SwnSystem.SystemName,
+            CharacterSystemName = SwnSystem.Starship,
+            Sheet = new CharacterSheet(),
+            LastEdited = DateTimeOffset.UtcNow
+        };
+    }
+
+    /// <summary>
     /// Sets up a starship with all basic values for comprehensive testing.
     /// </summary>
     public static void SetupFullStarship(Character starship, SwnCharacterSystem characterSystem, string hullClass = SwnSystem.Frigate)

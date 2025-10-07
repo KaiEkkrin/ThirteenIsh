@@ -487,4 +487,46 @@ public class SwnPlayerCharacterIntegrationTests
         startingValue.ShouldBe(4);
         currentValue.ShouldBe(4); // Should start at starting value
     }
+
+    [Fact]
+    public void SwnSystem_CharacterSystemCompatibility_SelectableForCorrectCharacterTypes()
+    {
+        // Arrange - Get all character systems from SWN
+        var allSystems = _gameSystem.GetCharacterSystems().ToList();
+
+        // Act - Filter by compatibility flags
+        var playerCharacterSystems = allSystems
+            .Where(cs => cs.Compatibility.HasFlag(CharacterTypeCompatibility.PlayerCharacter))
+            .ToList();
+
+        var monsterSystems = allSystems
+            .Where(cs => cs.Compatibility.HasFlag(CharacterTypeCompatibility.Monster))
+            .ToList();
+
+        // Assert - Verify system counts
+        allSystems.Count.ShouldBe(3); // Player Character, Monster, Starship
+
+        // Player Character systems: should include Player Character and Starship
+        playerCharacterSystems.Count.ShouldBe(2);
+        playerCharacterSystems.Any(cs => cs.Name == SwnSystem.PlayerCharacter).ShouldBeTrue();
+        playerCharacterSystems.Any(cs => cs.Name == SwnSystem.Starship).ShouldBeTrue();
+
+        // Monster systems: should include Monster and Starship
+        monsterSystems.Count.ShouldBe(2);
+        monsterSystems.Any(cs => cs.Name == SwnSystem.Monster).ShouldBeTrue();
+        monsterSystems.Any(cs => cs.Name == SwnSystem.Starship).ShouldBeTrue();
+
+        // Verify each system's specific compatibility
+        var pcSystem = allSystems.First(cs => cs.Name == SwnSystem.PlayerCharacter);
+        pcSystem.Compatibility.ShouldBe(CharacterTypeCompatibility.PlayerCharacter);
+        pcSystem.DefaultForType.ShouldBe(CharacterType.PlayerCharacter);
+
+        var monsterSystem = allSystems.First(cs => cs.Name == SwnSystem.Monster);
+        monsterSystem.Compatibility.ShouldBe(CharacterTypeCompatibility.Monster);
+        monsterSystem.DefaultForType.ShouldBe(CharacterType.Monster);
+
+        var starshipSystem = allSystems.First(cs => cs.Name == SwnSystem.Starship);
+        starshipSystem.Compatibility.ShouldBe(CharacterTypeCompatibility.Both);
+        starshipSystem.DefaultForType.ShouldBeNull(); // Not default for either type
+    }
 }

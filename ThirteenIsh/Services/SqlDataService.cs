@@ -577,6 +577,9 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
     public async Task<bool> SetDefaultAdventurerAsync(Adventure adventure, ulong userId, string adventurerName,
         CancellationToken cancellationToken = default)
     {
+        // Use a transaction to ensure atomicity while working around the unique constraint
+        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+
         // Find the adventurer to make default (with prefix matching)
         var newDefault = await GetAdventurerAsync(adventure, userId, adventurerName, cancellationToken);
         if (newDefault == null) return false;
@@ -592,12 +595,17 @@ public sealed partial class SqlDataService(DataContext context, ILogger<SqlDataS
         if (currentDefault != null)
         {
             currentDefault.IsDefault = false;
+            // Save first to avoid unique constraint violation when setting the new default
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         // Set the new default
         newDefault.IsDefault = true;
-
         await _context.SaveChangesAsync(cancellationToken);
+
+        // Commit the transaction
+        await transaction.CommitAsync(cancellationToken);
+
         return true;
     }
 
