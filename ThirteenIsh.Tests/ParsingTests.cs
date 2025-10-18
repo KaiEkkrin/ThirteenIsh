@@ -177,4 +177,43 @@ public class ParsingTests
         var parseTree2 = Parser.Parse($"10 + {expression} + 4d8");
         parseTree2.ParseError.ShouldNotBeNullOrEmpty();
     }
+
+    [Theory]
+    [InlineData("-1d6", -3, 6, 3)]
+    [InlineData("-d6", -5, 6, 5)]
+    [InlineData("+d6", 4, 6, 4)]
+    [InlineData("5--d8", 12, 8, 7)]
+    [InlineData("5--2d8", 18, 8, 4, 8, 9)]
+    [InlineData("1+-d6", -1, 6, 2)]
+    [InlineData("1-+d6", -1, 6, 2)]
+    [InlineData("1--d6", 7, 6, 6)]
+    [InlineData("2d6--d8", 15, 6, 3, 6, 5, 8, 7)]
+    [InlineData("2d6+-d8", 1, 6, 3, 6, 5, 8, 7)]
+    [InlineData("1d8--3", 10, 8, 7)]
+    [InlineData("1d8--1d6", 12, 8, 7, 6, 5)]
+    [InlineData("0-(-3)", 3)]
+    [InlineData("0-(-1d6)", 4, 6, 4)]
+    public void NegativeDiceExpressionsWork(string expression, int expectedResult, params int[] randomExpectations)
+    {
+        MockRandomWrapper random = new(randomExpectations);
+
+        var parseTree = Parser.Parse(expression);
+        parseTree.ParseError.ShouldBeNullOrEmpty(expression);
+        var result = parseTree.Evaluate(random, out _);
+        result.ShouldBe(expectedResult);
+
+        random.AssertCompleted();
+    }
+
+    [Theory]
+    [InlineData("--1d6")]
+    [InlineData("---1d6")]
+    [InlineData("--d6")]
+    [InlineData("+-1d6")]
+    [InlineData("-+1d6")]
+    public void ChainedUnaryNegationsAreNotValid(string expression)
+    {
+        var parseTree = Parser.Parse(expression);
+        parseTree.ParseError.ShouldNotBeNullOrEmpty(expression);
+    }
 }

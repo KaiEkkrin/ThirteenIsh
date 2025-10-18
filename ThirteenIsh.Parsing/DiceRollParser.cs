@@ -72,6 +72,19 @@ internal sealed class DiceRollParser : ParserBase
             return d;
         }
 
+        // Check if there's a sign before "d" (e.g., "-d6" or "+d6")
+        if (offset < input.Length && input[offset] is '-' or '+')
+        {
+            var signChar = input[offset];
+            var dAfterSign = DParser.Parse(input, offset + 1, depth);
+            if (string.IsNullOrEmpty(dAfterSign.ParseError))
+            {
+                diceCount = 1;
+                diceSign = signChar == '-' ? -1 : 1;
+                return dAfterSign;
+            }
+        }
+
         // Parse the dice count
         var rawDiceCount = IntegerParser.Instance.Parse(input, offset, depth);
         if (!string.IsNullOrEmpty(rawDiceCount.ParseError))
