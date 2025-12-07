@@ -308,4 +308,119 @@ public class SwnFixSystemIntegrationTests
         var newAttackBonus = _playerSystem.GetProperty<GameCounter>(adventurer, SwnSystem.AttackBonus).GetValue(adventurer);
         newAttackBonus.ShouldBe(initialAttackBonus - 1); // Attack Bonus decreases by 1
     }
+
+    [Fact]
+    public void AttributeBonus_IsVisibleInCharacterSheet()
+    {
+        // Arrange
+        var character = SwnTestHelpers.CreatePlayerCharacter();
+        _playerSystem.SetNewCharacterStartingValues(character);
+        SwnTestHelpers.SetupFullPlayerCharacter(character, _playerSystem);
+
+        var adventurer = SwnTestHelpers.CreateAdventurer();
+        adventurer.Sheet = character.Sheet;
+
+        // Act - Get the Strength Bonus counter
+        var strengthBonusCounter = _playerSystem.GetProperty<GameCounter>(adventurer, "Strength Bonus");
+
+        // Assert - Verify it exists and is not hidden
+        strengthBonusCounter.ShouldNotBeNull();
+        strengthBonusCounter.Options.HasFlag(GameCounterOptions.IsHidden).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void AttributeBonus_CanBeFixed_DirectlyOnBonus()
+    {
+        // Arrange
+        var character = SwnTestHelpers.CreatePlayerCharacter();
+        _playerSystem.SetNewCharacterStartingValues(character);
+
+        // Set Strength to 14 (bonus +1)
+        _playerSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Strength).EditCharacterProperty("14", character);
+        _playerSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Constitution).EditCharacterProperty("14", character);
+
+        var adventurer = SwnTestHelpers.CreateAdventurer();
+        adventurer.Sheet = character.Sheet;
+
+        // Verify initial bonus
+        var initialStrengthBonus = _playerSystem.GetProperty<GameCounter>(adventurer, "Strength Bonus").GetValue(adventurer);
+        initialStrengthBonus.ShouldBe(1); // STR 14 = +1 bonus
+
+        // Verify initial Physical save
+        var initialPhysicalSave = _playerSystem.GetProperty<GameCounter>(adventurer, SwnSystem.Physical).GetValue(adventurer);
+        initialPhysicalSave.ShouldBe(14); // 15 - max(1, 1) = 14
+
+        // Act - Apply fix directly to Strength Bonus
+        adventurer.GetFixes().Counters.Add(new PropertyValue<int>("Strength Bonus", 1));
+
+        // Assert - Strength Bonus should now be 2 (base 1 + fix 1)
+        var newStrengthBonus = _playerSystem.GetProperty<GameCounter>(adventurer, "Strength Bonus").GetValue(adventurer);
+        newStrengthBonus.ShouldBe(2);
+
+        // Physical save should improve (uses the higher bonus)
+        var newPhysicalSave = _playerSystem.GetProperty<GameCounter>(adventurer, SwnSystem.Physical).GetValue(adventurer);
+        newPhysicalSave.ShouldBe(13); // 15 - max(2, 1) = 13
+    }
+
+    [Fact]
+    public void AttributeBonus_FixesAndAttributeFixes_StackCorrectly()
+    {
+        // Arrange
+        var character = SwnTestHelpers.CreatePlayerCharacter();
+        _playerSystem.SetNewCharacterStartingValues(character);
+
+        // Set Strength to 14 (bonus +1)
+        _playerSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Strength).EditCharacterProperty("14", character);
+
+        var adventurer = SwnTestHelpers.CreateAdventurer();
+        adventurer.Sheet = character.Sheet;
+
+        // Verify initial bonus
+        var initialStrengthBonus = _playerSystem.GetProperty<GameCounter>(adventurer, "Strength Bonus").GetValue(adventurer);
+        initialStrengthBonus.ShouldBe(1); // STR 14 = +1 bonus
+
+        // Act - Apply fix to Strength attribute (changes base bonus)
+        adventurer.GetFixes().Counters.Add(new PropertyValue<int>(SwnSystem.Strength, 4)); // STR 14 -> 18 (bonus +1 -> +2)
+
+        // Verify the attribute fix changed the bonus
+        var bonusAfterAttributeFix = _playerSystem.GetProperty<GameCounter>(adventurer, "Strength Bonus").GetValue(adventurer);
+        bonusAfterAttributeFix.ShouldBe(2);
+
+        // Apply additional fix directly to Strength Bonus
+        adventurer.GetFixes().Counters.Add(new PropertyValue<int>("Strength Bonus", 1));
+
+        // Assert - Final bonus should be 3 (base 2 from STR 18, + 1 from bonus fix)
+        var finalStrengthBonus = _playerSystem.GetProperty<GameCounter>(adventurer, "Strength Bonus").GetValue(adventurer);
+        finalStrengthBonus.ShouldBe(3);
+    }
+
+    [Fact]
+    public void AttributeBonus_RemainsCalculated_EvenIfEdited()
+    {
+        // Arrange
+        var character = SwnTestHelpers.CreatePlayerCharacter();
+        _playerSystem.SetNewCharacterStartingValues(character);
+
+        // Set Strength to 14 (bonus +1)
+        _playerSystem.GetProperty<GameAbilityCounter>(character, SwnSystem.Strength).EditCharacterProperty("14", character);
+
+        var strengthBonusCounter = _playerSystem.GetProperty<GameCounter>(character, "Strength Bonus");
+
+        // Assert - Verify that CanStore is false (value is calculated, not stored)
+        strengthBonusCounter.CanStore.ShouldBeFalse();
+
+        // Verify initial bonus is calculated correctly
+        var initialBonus = strengthBonusCounter.GetValue(character);
+        initialBonus.ShouldBe(1); // STR 14 = +1 bonus
+
+        // Even if we "edit" the bonus to a different value, it should still be calculated
+        // (TryEditCharacterProperty may succeed but the edit is ignored for calculated properties)
+        strengthBonusCounter.TryEditCharacterProperty("5", character, out var errorMessage);
+
+        // The bonus should still be calculated from the attribute, not the edited value
+        var bonusAfterEdit = strengthBonusCounter.GetValue(character);
+        bonusAfterEdit.ShouldBe(1); // Still +1, not 5
+
+        // But fixes should still work (tested in other tests)
+    }
 }

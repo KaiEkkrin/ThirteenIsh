@@ -3,7 +3,7 @@
 namespace ThirteenIsh.Game.Swn;
 
 internal class AttributeBonusCounter(GameCounter attributeCounter)
-    : GameCounter(GetBonusCounterName(attributeCounter.Name), options: GameCounterOptions.CanRoll | GameCounterOptions.IsHidden)
+    : GameCounter(GetBonusCounterName(attributeCounter.Name), options: GameCounterOptions.CanRoll)
 {
     public override bool CanStore => false;
 

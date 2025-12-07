@@ -10,6 +10,7 @@ internal class SwnSystem : GameSystem
 
     public const string Basics = "Basics";
     public const string Attributes = "Attributes";
+    public const string AttributeBonuses = "Attribute Bonuses";
     public const string Skills = "Skills";
     public const string PsychicSkills = "Psychic Skills";
     public const string General = "General";
@@ -118,14 +119,21 @@ internal class SwnSystem : GameSystem
             .AddProperties(class1Property, class2Property, levelCounter)
             .Build();
 
+        // Create both builders
         GamePropertyGroupBuilder attributesBuilder = new(Attributes);
-        var strength = BuildAttribute(attributesBuilder, Strength);
-        var dexterity = BuildAttribute(attributesBuilder, Dexterity);
-        var constitution = BuildAttribute(attributesBuilder, Constitution);
-        var intelligence = BuildAttribute(attributesBuilder, Intelligence);
-        var wisdom = BuildAttribute(attributesBuilder, Wisdom);
-        var charisma = BuildAttribute(attributesBuilder, Charisma);
+        GamePropertyGroupBuilder attributeBonusesBuilder = new(AttributeBonuses);
+
+        // BuildAttribute now adds to both groups
+        var strength = BuildAttribute(attributesBuilder, attributeBonusesBuilder, Strength);
+        var dexterity = BuildAttribute(attributesBuilder, attributeBonusesBuilder, Dexterity);
+        var constitution = BuildAttribute(attributesBuilder, attributeBonusesBuilder, Constitution);
+        var intelligence = BuildAttribute(attributesBuilder, attributeBonusesBuilder, Intelligence);
+        var wisdom = BuildAttribute(attributesBuilder, attributeBonusesBuilder, Wisdom);
+        var charisma = BuildAttribute(attributesBuilder, attributeBonusesBuilder, Charisma);
+
+        // Build both groups
         var attributes = attributesBuilder.Build();
+        var attributeBonuses = attributeBonusesBuilder.Build();
 
         // Create attack bonus counter early so it can be passed to skill counters
         AttackBonusCounter attackBonusCounter = new(class1Property, class2Property, levelCounter);
@@ -189,7 +197,7 @@ internal class SwnSystem : GameSystem
             .AddProperties(evasion, mental, physical)
             .Build();
 
-        return new SwnPlayerCharacterSystem([basics, attributes, skills, psychicSkills, general, savingThrows, equipment]);
+        return new SwnPlayerCharacterSystem([basics, attributes, attributeBonuses, skills, psychicSkills, equipment, general, savingThrows]);
     }
 
     private static SwnMonsterCharacterSystem BuildMonsterCharacterSystem()
@@ -390,11 +398,15 @@ internal class SwnSystem : GameSystem
         return encounter.GetCurrentCombatant();
     }
 
-    private static AttributeBonusCounter BuildAttribute(GamePropertyGroupBuilder builder, string attributeName)
+    private static AttributeBonusCounter BuildAttribute(
+        GamePropertyGroupBuilder attributesBuilder,
+        GamePropertyGroupBuilder attributeBonusesBuilder,
+        string attributeName)
     {
         GameAbilityCounter attributeCounter = new(attributeName);
         AttributeBonusCounter bonusCounter = new(attributeCounter);
-        builder.AddProperty(attributeCounter).AddProperty(bonusCounter);
+        attributesBuilder.AddProperty(attributeCounter);
+        attributeBonusesBuilder.AddProperty(bonusCounter);
         return bonusCounter;
     }
 
