@@ -15,7 +15,7 @@
     }
   },
 
-  "postCreateCommand": "dotnet tool install --global dotnet-ef",
+  "postCreateCommand": "dotnet tool install --global dotnet-ef && dotnet tool install --global dotnet-outdated-tool && dotnet tool install --global dotnet-consolidate",
 
   "containerEnv": {
     "BotToken": "${localEnv:BOT_TOKEN}"
