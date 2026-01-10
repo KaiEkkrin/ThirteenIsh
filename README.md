@@ -73,7 +73,8 @@ I followed the instructions in [Discord.net -- Your First Bot](https://discordne
 
 And, it will need these bot permissions:
 
-* Manage Messages (8192)
+* Manage Messages
+* Pin Messages
 
 ## Database
 
