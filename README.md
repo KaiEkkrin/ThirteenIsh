@@ -6,7 +6,10 @@ An experimental Discord bot for dice rolling and TTRPG tracking
 
 This project includes a VS Code dev container setup for easy development. The dev container provides:
 
-- Latest .NET SDK with `dotnet ef` tool pre-installed
+- .NET 10 SDK with helpful tools pre-installed:
+  - `dotnet ef` - Entity Framework Core migrations tool
+  - `dotnet-outdated` - Check for outdated NuGet packages
+  - `dotnet-consolidate` - Verify package version consistency
 - Node.js LTS
 - PostgreSQL database (automatically configured with default credentials)
 - All necessary VS Code extensions
@@ -118,6 +121,75 @@ There are other useful commands, e.g. you can list the existing migrations with
 
 ```powershell
 dotnet ef migrations list --startup-project ..\ThirteenIsh\ThirteenIsh.csproj
+```
+
+## Package Management
+
+The dev container automatically installs helpful tools for managing NuGet packages. These tools help maintain package versions, check for security vulnerabilities, and ensure consistency across projects.
+
+### Checking for Package Issues
+
+**Check for vulnerable packages:**
+```bash
+dotnet list package --vulnerable
+```
+
+**Check for outdated packages:**
+```bash
+dotnet list package --outdated
+```
+
+**View all packages including transitive dependencies:**
+```bash
+dotnet list package --include-transitive
+```
+
+### Automated Package Management Tools
+
+The following tools are pre-installed in the dev container:
+
+#### dotnet-outdated
+Identifies and optionally updates outdated NuGet packages:
+
+```bash
+# Check for outdated packages
+dotnet outdated
+
+# Automatically upgrade packages (review breaking changes first!)
+dotnet outdated --upgrade
+```
+
+**Note:** Use `--upgrade` cautiously, especially for major version bumps that may include breaking changes.
+
+#### dotnet-consolidate
+Verifies that package versions are consistent across all projects in the solution:
+
+```bash
+# Check all packages are consolidated
+dotnet consolidate
+
+# Check a specific package
+dotnet consolidate --package-id Microsoft.EntityFrameworkCore.Design
+```
+
+This tool exits with code 0 if all packages are consolidated, or prints discrepancies if version conflicts are found.
+
+### NuGet Warning Codes
+
+When running `dotnet restore` or `dotnet build`, watch for these warning codes:
+
+- **NU1605**: Package downgrade detected - a project is requesting an older version than already resolved
+- **NU1107**: Version conflict detected - NuGet found a conflict it couldn't resolve automatically
+- **NU1608**: Dependency constraint mismatch - package version constraint is incompatible with resolved version
+
+### Manual Installation (if not using dev container)
+
+If you're not using the dev container, install these tools manually:
+
+```bash
+dotnet tool install --global dotnet-ef
+dotnet tool install --global dotnet-outdated-tool
+dotnet tool install --global dotnet-consolidate
 ```
 
 ## General TO DO
