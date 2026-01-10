@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Discord.Net" Version="3.13.1" />
+    <PackageReference Include="Discord.Net" Version="3.18.0" />
   </ItemGroup>
 
   <ItemGroup>
