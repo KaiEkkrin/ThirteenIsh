@@ -16,6 +16,9 @@
     },
     "ghcr.io/itsmechlark/features/postgresql:1": {
       "version": "16"
+    },
+    "ghcr.io/devcontainers/features/powershell:1": {
+      "version": "latest"
     }
   },
 
@@ -23,9 +26,9 @@
     "source=thirteenish-pgdata,target=/var/lib/postgresql/data,type=volume"
   ],
 
-  "postCreateCommand": "dotnet tool install --global dotnet-ef && dotnet tool install --global dotnet-outdated-tool && dotnet tool install --global dotnet-consolidate",
+  "postCreateCommand": "dotnet tool install --global dotnet-ef && dotnet tool install --global dotnet-outdated-tool && dotnet tool install --global dotnet-consolidate && sudo /usr/local/share/pq-init.sh && sudo su postgres -c \"psql -c \\\"CREATE USER thirteenish WITH PASSWORD 'devcontainerpassword' CREATEDB;\\\"\" || true && sudo su postgres -c 'createdb -O thirteenish thirteenish' || true",
 
-  "postStartCommand": "sudo service postgresql start && sudo -u postgres psql -c \"CREATE USER thirteenish WITH PASSWORD 'devcontainerpassword' CREATEDB;\" || true && sudo -u postgres createdb -O thirteenish thirteenish || true",
+  "postStartCommand": "sudo /usr/local/share/pq-init.sh",
 
   "containerEnv": {
     "BotToken": "${localEnv:BOT_TOKEN}",
