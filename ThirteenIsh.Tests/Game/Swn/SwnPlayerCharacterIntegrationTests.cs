@@ -61,10 +61,10 @@ public class SwnPlayerCharacterIntegrationTests
         // Verify Armor Class (Armor Value 13 + Dex bonus 1 = 14)
         _characterSystem.GetProperty<GameCounter>(character, SwnSystem.ArmorClass).GetValue(character).ShouldBe(14);
 
-        // Verify Saving Throws
-        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Evasion).GetValue(character).ShouldBe(15 - Math.Max(1, 1)); // 15 - max(dex_bonus, int_bonus) = 14
-        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Mental).GetValue(character).ShouldBe(15 - Math.Max(1, 0)); // 15 - max(wis_bonus, cha_bonus) = 14
-        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Physical).GetValue(character).ShouldBe(15 - Math.Max(1, 0)); // 15 - max(str_bonus, con_bonus) = 14
+        // Verify Saving Throws (Level 3, so subtract 2)
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Evasion).GetValue(character).ShouldBe(12); // 15 - max(dex_bonus, int_bonus) - (level - 1) = 15 - 1 - 2 = 12
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Mental).GetValue(character).ShouldBe(12); // 15 - max(wis_bonus, cha_bonus) - (level - 1) = 15 - 1 - 2 = 12
+        _characterSystem.GetProperty<GameCounter>(character, SwnSystem.Physical).GetValue(character).ShouldBe(12); // 15 - max(str_bonus, con_bonus) - (level - 1) = 15 - 1 - 2 = 12
     }
 
     [Theory]

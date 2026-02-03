@@ -1,9 +1,13 @@
 {
   "name": "ThirteenIsh Development",
-  "dockerComposeFile": "docker-compose.yml",
-  "service": "devcontainer",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
   "workspaceFolder": "/workspace",
-  "shutdownAction": "stopCompose",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,Z",
+  "runArgs": [
+    "--userns=keep-id",
+    "--volume=${env:SSH_AUTH_SOCK}:/ssh-agent.sock"
+  ],
+  "updateRemoteUserUID": false,
 
   "features": {
     "ghcr.io/devcontainers/features/dotnet:2": {
@@ -12,13 +16,30 @@
     },
     "ghcr.io/devcontainers/features/node:1": {
       "version": "lts"
+    },
+    "ghcr.io/itsmechlark/features/postgresql:1": {
+      "version": "16"
+    },
+    "ghcr.io/devcontainers/features/powershell:1": {
+      "version": "latest"
     }
   },
 
-  "postCreateCommand": "dotnet tool install --global dotnet-ef && dotnet tool install --global dotnet-outdated-tool && dotnet tool install --global dotnet-consolidate",
+  "mounts": [
+    "source=thirteenish-pgdata,target=/var/lib/postgresql/data,type=volume"
+  ],
+
+  "postCreateCommand": "dotnet tool install --global dotnet-ef && dotnet tool install --global dotnet-outdated-tool && dotnet tool install --global dotnet-consolidate && sudo /usr/local/share/pq-init.sh && sudo su postgres -c \"psql -c \\\"CREATE USER thirteenish WITH PASSWORD 'devcontainerpassword' CREATEDB;\\\"\" || true && sudo su postgres -c 'createdb -O thirteenish thirteenish' || true && git config --global --add safe.directory /workspace",
+
+  "postStartCommand": "sudo /usr/local/share/pq-init.sh",
 
   "containerEnv": {
-    "BotToken": "${localEnv:BOT_TOKEN}"
+    "BotToken": "${localEnv:BOT_TOKEN}",
+    "DbConnectionString": "Host=localhost;Database=thirteenish;Username=thirteenish;Password=devcontainerpassword"
+  },
+
+  "remoteEnv": {
+    "SSH_AUTH_SOCK": "/ssh-agent.sock"
   },
 
   "customizations": {

@@ -190,9 +190,9 @@ internal class SwnSystem : GameSystem
             .AddProperty(hitPointsCounter)
             .Build();
 
-        SavingThrowCounter evasion = new(Evasion, dexterity, intelligence);
-        SavingThrowCounter mental = new(Mental, wisdom, charisma);
-        SavingThrowCounter physical = new(Physical, strength, constitution);
+        SavingThrowCounter evasion = new(Evasion, levelCounter, dexterity, intelligence);
+        SavingThrowCounter mental = new(Mental, levelCounter, wisdom, charisma);
+        SavingThrowCounter physical = new(Physical, levelCounter, strength, constitution);
         var savingThrows = new GamePropertyGroupBuilder(SavingThrows)
             .AddProperties(evasion, mental, physical)
             .Build();

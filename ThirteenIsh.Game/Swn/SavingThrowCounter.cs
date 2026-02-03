@@ -2,12 +2,14 @@
 
 namespace ThirteenIsh.Game.Swn;
 
-internal class SavingThrowCounter(string name, params AttributeBonusCounter[] attributeBonuses)
+internal class SavingThrowCounter(string name, GameCounter levelCounter, params AttributeBonusCounter[] attributeBonuses)
     : GameCounter(name, options: GameCounterOptions.CanRoll)
 {
     protected override int? GetValueInternal(ICharacterBase character)
     {
-        return GetSavingThrow(attributeBonuses.Select(a => a.GetValue(character)));
+        return GetSavingThrow(
+            levelCounter.GetValue(character),
+            attributeBonuses.Select(a => a.GetValue(character)));
     }
 
     public override GameCounterRollResult Roll(
@@ -49,16 +51,21 @@ internal class SavingThrowCounter(string name, params AttributeBonusCounter[] at
         };
     }
 
-    private static int? GetSavingThrow(IEnumerable<int?> bonuses)
+    private static int? GetSavingThrow(int? level, IEnumerable<int?> bonuses)
     {
-        // The saving throw is 15 minus the higher of the two bonuses
+        // The saving throw is 15 minus the higher of the two bonuses, minus (level - 1)
         List<int> bonusValues = new(2);
         foreach (var bonus in bonuses)
         {
             if (bonus.HasValue) bonusValues.Add(bonus.Value);
         }
 
-        int? savingThrowValue = bonusValues.Count == 0 ? null : bonusValues.Max();
-        return 15 - savingThrowValue;
+        int? maxBonus = bonusValues.Count == 0 ? null : bonusValues.Max();
+
+        // Level reduction: reduce save by 1 for each level above 1
+        // If level is null or not set, default to level 1 (no reduction)
+        int levelReduction = level.HasValue ? Math.Max(0, level.Value - 1) : 0;
+
+        return 15 - maxBonus - levelReduction;
     }
 }

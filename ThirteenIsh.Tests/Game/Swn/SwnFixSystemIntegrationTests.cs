@@ -37,16 +37,16 @@ public class SwnFixSystemIntegrationTests
 
         var sheet = character.Sheet;
 
-        // Get initial values - STR 14 (+1), CON 13 (+0), so Physical Save = 15 - max(1, 0) = 14
+        // Get initial values - STR 14 (+1), CON 13 (+0), Level 3, so Physical Save = 15 - max(1, 0) - (3-1) = 12
         var initialPhysicalSave = _playerSystem.GetProperty<GameCounter>(adventurer, SwnSystem.Physical).GetValue(adventurer);
-        initialPhysicalSave.ShouldBe(14);
+        initialPhysicalSave.ShouldBe(12);
 
         // Act - Apply a +4 fix to Strength (14 + 4 = 18, which is +2 bonus instead of +1)
         adventurer.GetFixes().Counters.Add(new PropertyValue<int>(SwnSystem.Strength, 4)); // +4 fix to the base attribute
 
         // Assert - Physical save should improve because STR bonus increased from +1 to +2
         var newPhysicalSave = _playerSystem.GetProperty<GameCounter>(adventurer, SwnSystem.Physical).GetValue(adventurer);
-        newPhysicalSave.ShouldBe(13); // 15 - max(2, 0) = 13
+        newPhysicalSave.ShouldBe(11); // 15 - max(2, 0) - (3-1) = 11
     }
 
     [Fact]
@@ -66,9 +66,9 @@ public class SwnFixSystemIntegrationTests
         var initialAC = _playerSystem.GetProperty<GameCounter>(adventurer, SwnSystem.ArmorClass).GetValue(adventurer);
         initialAC.ShouldBe(14);
 
-        // Evasion with DEX +1, INT +0 = 15 - max(1, 0) = 14
+        // Evasion with DEX +1, INT +0, Level 3 = 15 - max(1, 0) - (3-1) = 12
         var initialEvasion = _playerSystem.GetProperty<GameCounter>(adventurer, SwnSystem.Evasion).GetValue(adventurer);
-        initialEvasion.ShouldBe(14);
+        initialEvasion.ShouldBe(12);
 
         // Act - Apply a +2 fix to Dexterity (from 16 to 18, bonus from +1 to +2)
         adventurer.GetFixes().Counters.Add(new PropertyValue<int>(SwnSystem.Dexterity, 2)); // +2 fix to the base attribute
@@ -78,7 +78,7 @@ public class SwnFixSystemIntegrationTests
         newAC.ShouldBe(15); // 13 + 2 = 15
 
         var newEvasion = _playerSystem.GetProperty<GameCounter>(adventurer, SwnSystem.Evasion).GetValue(adventurer);
-        newEvasion.ShouldBe(13); // 15 - max(2, 0) = 13
+        newEvasion.ShouldBe(11); // 15 - max(2, 0) - (3-1) = 11
     }
 
     [Fact]
@@ -99,9 +99,9 @@ public class SwnFixSystemIntegrationTests
         var initialHP = _playerSystem.GetProperty<GameCounter>(adventurer, SwnSystem.HitPoints).GetValue(adventurer);
         initialHP.ShouldBe(19);
 
-        // Physical save with STR +1, CON +0 = 15 - max(1, 0) = 14
+        // Physical save with STR +1, CON +0, Level 3 = 15 - max(1, 0) - (3-1) = 12
         var initialPhysical = _playerSystem.GetProperty<GameCounter>(adventurer, SwnSystem.Physical).GetValue(adventurer);
-        initialPhysical.ShouldBe(14);
+        initialPhysical.ShouldBe(12);
 
         // Act - Apply a +4 fix to Constitution (from 13 to 17, bonus from +0 to +1)
         adventurer.GetFixes().Counters.Add(new PropertyValue<int>(SwnSystem.Constitution, 4)); // +4 fix to the base attribute
@@ -111,7 +111,7 @@ public class SwnFixSystemIntegrationTests
         newHP.ShouldBe(22); // 6 + 7 + (1 + 2) * 3 = 22
 
         var newPhysical = _playerSystem.GetProperty<GameCounter>(adventurer, SwnSystem.Physical).GetValue(adventurer);
-        newPhysical.ShouldBe(14); // 15 - max(1, 1) = 14 (no change since max is still 1)
+        newPhysical.ShouldBe(12); // 15 - max(1, 1) - (3-1) = 12 (no change since max is still 1)
     }
 
     [Fact]
